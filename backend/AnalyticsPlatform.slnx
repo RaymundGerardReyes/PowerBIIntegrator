@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AnalyticsPlatform.Api/AnalyticsPlatform.Api.csproj" />
+    <Project Path="src/AnalyticsPlatform.Application/AnalyticsPlatform.Application.csproj" />
+    <Project Path="src/AnalyticsPlatform.Domain/AnalyticsPlatform.Domain.csproj" />
+    <Project Path="src/AnalyticsPlatform.Infrastructure/AnalyticsPlatform.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AnalyticsPlatform.E2ETests/AnalyticsPlatform.E2ETests.csproj" />
+    <Project Path="tests/AnalyticsPlatform.IntegrationTests/AnalyticsPlatform.IntegrationTests.csproj" />
+    <Project Path="tests/AnalyticsPlatform.PathTests/AnalyticsPlatform.PathTests.csproj" />
+    <Project Path="tests/AnalyticsPlatform.RegressionTests/AnalyticsPlatform.RegressionTests.csproj" />
+    <Project Path="tests/AnalyticsPlatform.SecurityTests/AnalyticsPlatform.SecurityTests.csproj" />
+    <Project Path="tests/AnalyticsPlatform.UnitTests/AnalyticsPlatform.UnitTests.csproj" />
+  </Folder>
+</Solution>

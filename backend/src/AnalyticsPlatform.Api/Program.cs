@@ -1,0 +1,56 @@
+using Serilog;
+using AnalyticsPlatform.Api.Endpoints;
+using AnalyticsPlatform.Api.HealthChecks;
+using AnalyticsPlatform.Api.Middleware;
+using AnalyticsPlatform.Application;
+using AnalyticsPlatform.Infrastructure;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console());
+
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+});
+
+builder.Services.AddOpenApi();
+
+builder.Services.AddHealthChecks()
+    .AddCheck<PowerBiHealthCheck>("powerbi");
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy => policy
+        .WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>())
+        .AllowAnyHeader()
+        .AllowAnyMethod());
+});
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseCors();
+app.UseHttpsRedirection();
+
+app.MapAnalyticsEndpoints();
+app.MapDashboardEndpoints();
+app.MapDataSourceEndpoints();
+app.MapPowerBiEndpoints();
+app.MapHealthChecks("/health/live");
+
+app.Run();
+
+public partial class Program { }

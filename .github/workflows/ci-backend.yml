@@ -1,0 +1,33 @@
+name: CI - Backend
+on:
+  pull_request:
+    paths: ["backend/**"]
+  push:
+    branches: [main]
+    paths: ["backend/**"]
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "10.0.x" }
+      - run: dotnet restore backend/AnalyticsPlatform.slnx
+      - run: dotnet test backend/tests/AnalyticsPlatform.UnitTests --no-restore
+  integration:
+    needs: unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "10.0.x" }
+      - run: dotnet test backend/tests/AnalyticsPlatform.IntegrationTests
+  path-and-regression:
+    needs: integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "10.0.x" }
+      - run: dotnet test backend/tests/AnalyticsPlatform.PathTests
+      - run: dotnet test backend/tests/AnalyticsPlatform.RegressionTests

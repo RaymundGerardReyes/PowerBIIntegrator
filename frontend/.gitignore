@@ -1,0 +1,17 @@
+# Frontend specific .gitignore
+node_modules/
+dist/
+dist-ssr/
+build/
+.vite/
+*.local
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/
+playwright-report/
+blob-report/
+test-results/

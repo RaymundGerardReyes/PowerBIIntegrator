@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: analytics-backend }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: analytics-backend } }
+  template:
+    metadata: { labels: { app: analytics-backend } }
+    spec:
+      containers:
+        - name: backend
+          image: analytics-backend:latest
+          ports: [{ containerPort: 8080 }]
+          readinessProbe: { httpGet: { path: /health/live, port: 8080 } }

@@ -1,0 +1,11 @@
+name: CD - Production
+on:
+  release:
+    types: [published]
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Build & push images, then kubectl apply -k infra/k8s/overlays/production"

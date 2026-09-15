@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Your_password123"
+    ports: ["1433:1433"]
+
+  backend:
+    build:
+      context: ../../
+      dockerfile: infra/docker/backend.Dockerfile
+    depends_on: [sqlserver]
+    ports: ["8080:8080"]
+    environment:
+      ConnectionStrings__Default: "Server=sqlserver;Database=AnalyticsPlatform;User Id=sa;Password=Your_password123;TrustServerCertificate=True;"
+
+  frontend:
+    build:
+      context: ../../
+      dockerfile: infra/docker/frontend.Dockerfile
+    depends_on: [backend]
+    ports: ["5173:80"]

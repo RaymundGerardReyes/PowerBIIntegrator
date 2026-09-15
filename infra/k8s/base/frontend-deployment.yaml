@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: analytics-frontend }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: analytics-frontend } }
+  template:
+    metadata: { labels: { app: analytics-frontend } }
+    spec:
+      containers:
+        - name: frontend
+          image: analytics-frontend:latest
+          ports: [{ containerPort: 80 }]

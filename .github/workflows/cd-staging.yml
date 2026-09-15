@@ -1,0 +1,11 @@
+name: CD - Staging
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Build & push images, then kubectl apply -k infra/k8s/overlays/staging"

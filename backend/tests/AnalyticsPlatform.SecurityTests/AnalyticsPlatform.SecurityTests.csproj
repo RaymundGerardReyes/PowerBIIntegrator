@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/AnalyticsPlatform.Domain/AnalyticsPlatform.Domain.csproj" />
+    <ProjectReference Include="../../src/AnalyticsPlatform.Application/AnalyticsPlatform.Application.csproj" />
+    <ProjectReference Include="../../src/AnalyticsPlatform.Infrastructure/AnalyticsPlatform.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/AnalyticsPlatform.Api/AnalyticsPlatform.Api.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="NetArchTest.Rules" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

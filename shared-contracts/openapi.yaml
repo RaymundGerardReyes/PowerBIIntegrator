@@ -1,0 +1,125 @@
+openapi: 3.0.3
+info:
+  title: Analytics Platform API
+  version: "1.0.0"
+paths:
+  /api/analytics/measures:
+    post:
+      summary: Create a canonical measure
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                expression: { type: string }
+                tableName: { type: string }
+      responses:
+        "200": { description: Created }
+  /api/powerbi/publish:
+    post:
+      summary: Compile and publish a dashboard definition to Fabric
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dashboardDefinitionId: { type: string, format: uuid }
+                targetWorkspaceId: { type: string }
+      responses:
+        "200": { description: Published }
+  /api/powerbi/compile-pbip:
+    post:
+      summary: Compile a complete Power BI Project (.pbip)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dashboardDefinitionId: { type: string, format: uuid }
+                analyticsModelId: { type: string, format: uuid }
+                projectName: { type: string }
+      responses:
+        "200": { description: Compiled project manifest }
+  /api/powerbi/compile-pbip/download:
+    post:
+      summary: Compile and stream download a .pbip.zip archive
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dashboardDefinitionId: { type: string, format: uuid }
+                analyticsModelId: { type: string, format: uuid }
+                projectName: { type: string }
+      responses:
+        "200":
+          description: Zip archive file stream
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+  /api/powerbi/compile-pbir:
+    post:
+      summary: Compile PBIR report definition files
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dashboardDefinitionId: { type: string, format: uuid }
+                semanticModelRelativePath: { type: string }
+      responses:
+        "200": { description: Compiled PBIR report definition }
+  /api/powerbi/compile-tmdl:
+    post:
+      summary: Compile TMDL semantic model definition files
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                analyticsModelId: { type: string, format: uuid }
+      responses:
+        "200": { description: Compiled TMDL semantic model }
+  /api/data-sources/register:
+    post:
+      summary: Register a data source and extract column schema
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                type: { type: string, enum: [Excel, Csv, SqlServer, PostgreSql, MySql] }
+                connectionOrPath: { type: string }
+      responses:
+        "201": { description: Registered data source definition with extracted schema }
+        "400": { description: Invalid parameters or schema extraction error }
+  /api/data-sources/{id}/schema:
+    get:
+      summary: Retrieve extracted column schema for a registered data source
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: List of column schemas }
+        "404": { description: Data source not found }
+
