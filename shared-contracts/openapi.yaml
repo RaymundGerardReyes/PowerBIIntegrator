@@ -122,4 +122,86 @@ paths:
       responses:
         "200": { description: List of column schemas }
         "404": { description: Data source not found }
+  /api/reports/pdf:
+    post:
+      summary: Generate a high-fidelity vector PDF report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                subtitle: { type: string }
+                author: { type: string }
+                organization: { type: string }
+                sections:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "200":
+          description: Generated PDF document stream
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "400": { description: Validation error }
+  /api/reports/excel:
+    post:
+      summary: Generate an executive Excel spreadsheet report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                subtitle: { type: string }
+                author: { type: string }
+                organization: { type: string }
+                sections:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "200":
+          description: Generated Excel workbook stream
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        "400": { description: Validation error }
+  /api/reports/word:
+    post:
+      summary: Generate an executive Word document report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                subtitle: { type: string }
+                author: { type: string }
+                organization: { type: string }
+                sections:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "200":
+          description: Generated Word document stream
+          content:
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema:
+                type: string
+                format: binary
+        "400": { description: Validation error }
+
 

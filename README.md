@@ -201,6 +201,9 @@ The backend strictly adheres to Clean Architecture principles, enforced continuo
 | `GET` | `/api/data-sources/{id}/schema` | Retrieves extracted column schema by ID | None | `200 OK` (`ColumnSchema[]`) |
 | `POST` | `/api/data-sources/sql` | Registers SQL Server connection with schema | `RegisterSqlDataSourceRequest` | `201 Created` (`DataSourceResponse`) |
 | `POST` | `/api/data-sources/upload` | Legacy upload and schema extraction endpoint | `UploadDataSourceRequest` | `200 OK` (`DataSourceResponse`) |
+| `POST` | `/api/reports/pdf` | Generates high-fidelity vector PDF executive report | `ReportDocumentModel` | `200 OK` (`application/pdf`) |
+| `POST` | `/api/reports/excel` | Generates formatted multi-tab Excel spreadsheet | `ReportDocumentModel` | `200 OK` (`application/vnd.openxmlformats...sheet`) |
+| `POST` | `/api/reports/word` | Generates formatted Word document report | `ReportDocumentModel` | `200 OK` (`application/vnd.openxmlformats...document`) |
 | `POST` | `/api/analytics/measures` | Creates a canonical DAX measure | Measure creation payload | `200 OK` |
 | `GET` | `/health/live` | Application liveness health check | None | `200 OK` |
 
@@ -218,13 +221,13 @@ dotnet test backend/AnalyticsPlatform.slnx
 
 | Category | Project | Tests | Focus |
 |---|---|---|---|
-| **Unit** | `AnalyticsPlatform.UnitTests` | 14 | Domain business rules, pure functions, handler unit logic (mocked) |
-| **Regression** | `AnalyticsPlatform.RegressionTests` | 14 | Golden snapshots for PBIR JSON layouts, TMDL structures, type inference |
-| **Integration** | `AnalyticsPlatform.IntegrationTests` | 9 | ASP.NET Core `WebApplicationFactory` endpoint round-trips |
-| **Path** | `AnalyticsPlatform.PathTests` | 4 | Complete in-memory end-to-end compile & streaming pipelines |
-| **Security** | `AnalyticsPlatform.SecurityTests` | 16 | NetArchTest layer boundaries, directory traversal guards (`..`), SQL injection |
-| **E2E** | `AnalyticsPlatform.E2ETests` | 3 | Full HTTP round-trip workflows (compile/download zip, register/get schema) |
-| **Total** | **All 6 Test Projects** | **60 / 60 Passed** | **100% Green, 0 Failures** |
+| **Unit** | `AnalyticsPlatform.UnitTests` | 41 | Domain rules, pure functions, CQRS command validators & mocked handlers |
+| **Regression** | `AnalyticsPlatform.RegressionTests` | 17 | Golden snapshots for PBIR JSON, TMDL structures, type inference & document headers |
+| **Integration** | `AnalyticsPlatform.IntegrationTests` | 17 | `WebApplicationFactory` endpoint round-trips & OpenXml/ClosedXML/QuestPDF generators |
+| **Path** | `AnalyticsPlatform.PathTests` | 5 | In-memory end-to-end PBIP compile, multi-source ingestion & document generation |
+| **Security** | `AnalyticsPlatform.SecurityTests` | 24 | NetArchTest layer boundaries, traversal guards, Excel formula injection sanitization |
+| **E2E** | `AnalyticsPlatform.E2ETests` | 4 | Full HTTP round-trip workflows (compile/download zip, register schema, report export) |
+| **Total** | **All 6 Test Projects** | **108 / 108 Passed** | **100% Green, 0 Failures** |
 
 ### Frontend Test Taxonomy
 

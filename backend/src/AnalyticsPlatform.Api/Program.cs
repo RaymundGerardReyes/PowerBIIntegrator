@@ -49,6 +49,7 @@ app.MapAnalyticsEndpoints();
 app.MapDashboardEndpoints();
 app.MapDataSourceEndpoints();
 app.MapPowerBiEndpoints();
+app.MapReportEndpoints();
 app.MapHealthChecks("/health/live");
 
 app.Run();

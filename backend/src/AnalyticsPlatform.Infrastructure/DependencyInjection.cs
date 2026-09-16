@@ -2,11 +2,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using AnalyticsPlatform.Application.Common.Interfaces;
+using AnalyticsPlatform.Application.Features.ReportGeneration.Contracts;
 using AnalyticsPlatform.Domain.Repositories;
 using AnalyticsPlatform.Infrastructure.DataSourceConnectors;
 using AnalyticsPlatform.Infrastructure.DataSourceConnectors.Csv;
 using AnalyticsPlatform.Infrastructure.DataSourceConnectors.Excel;
 using AnalyticsPlatform.Infrastructure.DataSourceConnectors.Sql;
+using AnalyticsPlatform.Infrastructure.DocumentGenerators.Excel;
+using AnalyticsPlatform.Infrastructure.DocumentGenerators.Pdf;
+using AnalyticsPlatform.Infrastructure.DocumentGenerators.Word;
 using AnalyticsPlatform.Infrastructure.Persistence;
 using AnalyticsPlatform.Infrastructure.PowerBi;
 using AnalyticsPlatform.Infrastructure.Repositories;
@@ -45,6 +49,11 @@ public static class DependencyInjection
         services.AddKeyedScoped<IDataSourceSchemaExtractor, SqlServerConnector>("sql");
 
         services.AddScoped<IDataSourceSchemaExtractorFactory, DataSourceSchemaExtractorFactory>();
+
+        // Document Generators (Multi-Target Rendering)
+        services.AddScoped<IPdfReportGenerator, PdfReportGenerator>();
+        services.AddScoped<IExcelReportGenerator, ExcelReportGenerator>();
+        services.AddScoped<IWordReportGenerator, WordReportGenerator>();
 
         return services;
     }
