@@ -72,5 +72,31 @@ public class LlmEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
         var body = await response.Content.ReadAsStringAsync();
         body.Should().Contain("Guardrail blocked");
     }
+
+    [Fact]
+    public async Task PostChatStream_ReturnsOkWithEventStreamAndDoneToken()
+    {
+        var payload = new
+        {
+            UserPrompt = "Explain sales trend for Q3",
+            ContextIds = Array.Empty<string>(),
+            ProviderPreference = "LocalOllama",
+            PolicyId = "default",
+            CorrelationId = Guid.NewGuid().ToString()
+        };
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/llm/chat/stream")
+        {
+            Content = JsonContent.Create(payload)
+        };
+
+        var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("text/event-stream");
+
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("data: [DONE]");
+    }
 }
 
