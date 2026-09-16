@@ -14,6 +14,7 @@ public class LayerDependencyTests
             .NotHaveDependencyOnAny(
                 "AnalyticsPlatform.Application",
                 "AnalyticsPlatform.Infrastructure",
+                "AnalyticsPlatform.Api")
                 "AnalyticsPlatform.Api",
                 "AnalyticsPlatform.McpServer")
             .GetResult();
