@@ -5,9 +5,8 @@
 [![TypeScript 5.8](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Power BI PBIR](https://img.shields.io/badge/Power%20BI-PBIP%20%2F%20PBIR%202026-F2C811?logo=powerbi&logoColor=black)](https://learn.microsoft.com/power-bi/developer/projects/projects-overview)
 [![Clean Architecture](https://img.shields.io/badge/Architecture-Clean%20%26%20FSD-brightgreen)](#system-architecture)
-[![Backend Tests](https://img.shields.io/badge/Tests%20(Backend)-194%2F194%20Passed-success)](#backend-test-taxonomy)
-[![Backend Tests](https://img.shields.io/badge/Tests%20(Backend)-196%2F196%20Passed-success)](#backend-test-taxonomy)
-[![Frontend Tests](https://img.shields.io/badge/Tests%20(Frontend)-23%2F23%20Passed-success)](#frontend-test-taxonomy)
+[![Backend Tests](https://img.shields.io/badge/Tests%20(Backend)-207%2F207%20Passed-success)](#backend-test-taxonomy)
+[![Frontend Tests](https://img.shields.io/badge/Tests%20(Frontend)-55%2F55%20Passed-success)](#frontend-test-taxonomy)
 
 A high-performance, enterprise-grade analytics framework that treats Power BI reports and semantic models as **compiled software artifacts**. Built on .NET 10 LTS and React 19, the platform generates valid 2026 Power BI Enhanced Report Format (`PBIR`), Tabular Model Definition Language (`TMDL`), and complete `.pbip` project packages directly from a canonical C# Intermediate Representation (IR), accompanied by an enterprise Model Context Protocol (MCP) server for autonomous AI agents.
 
@@ -332,11 +331,15 @@ cd PowerBIEnhanced
 dotnet restore backend/AnalyticsPlatform.slnx
 dotnet build backend/AnalyticsPlatform.slnx
 
-# Run all 194 backend tests
+# Run all 207 backend tests
 dotnet test backend/AnalyticsPlatform.slnx
 
-# Launch the API server
+# Launch the API server (from root directory)
 dotnet run --project backend/src/AnalyticsPlatform.Api
+
+# OR if inside the backend/ directory:
+# cd backend
+# dotnet run --project src/AnalyticsPlatform.Api
 ```
 
 The API will be available at `https://localhost:7148` (or `http://localhost:5000`). OpenAPI specifications can be inspected at `/openapi/v1.json`.
@@ -344,10 +347,10 @@ The API will be available at `https://localhost:7148` (or `http://localhost:5000
 ### Running the Standalone MCP Server
 
 ```bash
-# Launch in Stdio Mode (for Claude Desktop / Cursor integration)
+# Launch in Stdio Mode (from root directory)
 dotnet run --project backend/src/AnalyticsPlatform.McpServer -- --stdio
 
-# Launch in SSE Mode (HTTP Server on port 5055)
+# Launch in SSE Mode (HTTP Server on port 5055, from root directory)
 dotnet run --project backend/src/AnalyticsPlatform.McpServer
 ```
 
