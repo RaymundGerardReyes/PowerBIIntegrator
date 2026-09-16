@@ -25,3 +25,4 @@ public sealed class StreamLlmChatCommandHandler : IRequestHandler<StreamLlmChatC
         return Task.FromResult(stream);
     }
 }
+

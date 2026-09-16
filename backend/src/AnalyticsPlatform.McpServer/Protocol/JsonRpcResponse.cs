@@ -15,3 +15,4 @@ public sealed record JsonRpcResponse(
     public static JsonRpcResponse FromError(object? id, int code, string message, object? data = null) =>
         new("2.0", id, null, new JsonRpcError(code, message, data));
 }
+

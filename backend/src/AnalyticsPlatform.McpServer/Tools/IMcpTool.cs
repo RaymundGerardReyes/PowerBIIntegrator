@@ -10,3 +10,4 @@ public interface IMcpTool
     string OutputSchemaJson { get; }
     Task<McpToolExecutionResult> ExecuteAsync(JsonElement inputParameters, string correlationId, CancellationToken ct);
 }
+

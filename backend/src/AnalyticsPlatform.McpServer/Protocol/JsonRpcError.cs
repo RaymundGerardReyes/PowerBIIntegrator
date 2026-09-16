@@ -14,3 +14,4 @@ public sealed record JsonRpcError(
     public const int InvalidParams = -32602;
     public const int InternalError = -32603;
 }
+

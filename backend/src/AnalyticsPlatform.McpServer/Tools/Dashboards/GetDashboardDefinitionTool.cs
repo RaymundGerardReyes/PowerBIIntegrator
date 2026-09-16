@@ -60,3 +60,4 @@ public sealed class GetDashboardDefinitionTool : IMcpTool
         return McpToolExecutionResult.Success(result.Value);
     }
 }
+

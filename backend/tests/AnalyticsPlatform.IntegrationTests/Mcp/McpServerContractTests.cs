@@ -94,3 +94,4 @@ public sealed class McpServerContractTests
         response.Error!.Code.Should().Be(JsonRpcError.MethodNotFound);
     }
 }
+

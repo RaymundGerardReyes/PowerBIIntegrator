@@ -50,3 +50,4 @@ public sealed class CompilePbirDefinitionToolTests
         result.Content[0].Text.Should().Contain("Missing or invalid 'dashboardDefinitionId'");
     }
 }
+

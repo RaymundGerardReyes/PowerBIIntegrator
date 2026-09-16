@@ -62,3 +62,4 @@ public sealed class ValidateAnalyticsModelTool : IMcpTool
         return McpToolExecutionResult.Success(result.Value);
     }
 }
+

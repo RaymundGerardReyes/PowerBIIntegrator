@@ -9,3 +9,4 @@ public sealed record JsonRpcRequest(
     [property: JsonPropertyName("method")] string Method,
     [property: JsonPropertyName("params")] JsonElement? Params
 );
+

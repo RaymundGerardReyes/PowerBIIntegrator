@@ -16,3 +16,4 @@ public sealed record QueryEventSummaryQuery(
     DateTime? SinceUtc = null,
     string? SeverityFilter = null
 ) : IRequest<Result<EventSummaryDto>>;
+

@@ -16,3 +16,4 @@
     <PackageReference Include="Serilog.Sinks.Console" />
   </ItemGroup>
 </Project>
+

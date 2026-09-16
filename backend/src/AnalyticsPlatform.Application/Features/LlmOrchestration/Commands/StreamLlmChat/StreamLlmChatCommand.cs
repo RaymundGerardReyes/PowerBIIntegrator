@@ -26,3 +26,4 @@ public sealed record StreamLlmChatCommand(
         SanitizedPrompt = sanitizedPrompt;
     }
 }
+

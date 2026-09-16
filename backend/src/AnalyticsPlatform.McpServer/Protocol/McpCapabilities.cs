@@ -19,3 +19,4 @@ public sealed record McpInitializeResult(
     [property: JsonPropertyName("capabilities")] McpServerCapabilities Capabilities,
     [property: JsonPropertyName("serverInfo")] McpServerInfo ServerInfo
 );
+

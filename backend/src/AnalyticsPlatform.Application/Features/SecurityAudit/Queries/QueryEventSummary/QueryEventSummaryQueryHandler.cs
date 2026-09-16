@@ -32,3 +32,4 @@ public sealed class QueryEventSummaryQueryHandler : IRequestHandler<QueryEventSu
         return Task.FromResult(Result<EventSummaryDto>.Success(summary));
     }
 }
+

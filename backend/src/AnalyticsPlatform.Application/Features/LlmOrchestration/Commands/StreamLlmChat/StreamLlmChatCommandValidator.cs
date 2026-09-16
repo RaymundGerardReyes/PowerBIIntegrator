@@ -9,3 +9,4 @@ public sealed class StreamLlmChatCommandValidator : AbstractValidator<StreamLlmC
         RuleFor(x => x.UserPrompt).NotEmpty().WithMessage("UserPrompt is required.");
     }
 }
+

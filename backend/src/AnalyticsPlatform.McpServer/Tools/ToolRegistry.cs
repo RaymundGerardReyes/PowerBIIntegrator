@@ -38,3 +38,4 @@ public sealed class ToolRegistry
         return await tool.ExecuteAsync(inputParameters, correlationId, ct);
     }
 }
+

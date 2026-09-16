@@ -66,3 +66,4 @@ public sealed class LlmMcpToolInvocationPathTests
         resultObj.Content[0].Text.Should().Contain("\"isValid\":true");
     }
 }
+

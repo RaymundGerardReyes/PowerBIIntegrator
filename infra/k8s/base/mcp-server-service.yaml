@@ -12,3 +12,4 @@ spec:
       name: http-mcp
   selector:
     app: mcp-server
+
