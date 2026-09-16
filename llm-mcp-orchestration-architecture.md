@@ -916,10 +916,10 @@ To ensure zero regressions and continuous delivery of working software, developm
 
 Before merging any code belonging to this subsystem, the following verification checklist must be satisfied:
 
-- [ ] **Architecture Test Passed:** `Domain_Should_Not_DependOn_OtherLayers` passes in `AnalyticsPlatform.SecurityTests`.
-- [ ] **Zero Warnings:** Build passes with `TreatWarningsAsErrors=true` across all projects.
-- [ ] **Security Gates Green:** `SensitiveDataLeakageTests` and `ApiKeyExposureTests` execute and pass.
-- [ ] **Schema Conformance:** MCP JSON schemas match the MCP 2024-11-05 specification.
-- [ ] **Correlation Propagation:** `X-Correlation-Id` is verified across Frontend -> Api -> MediatR -> McpServer -> Tool.
-- [ ] **Contract Sync:** `shared-contracts/openapi.yaml` matches TypeScript contracts in `frontend/src/shared/types/api-contracts.ts`.
-- [ ] **Local-First Verification:** With cloud policies disabled, all tasks succeed locally using Ollama.
+- [x] **Architecture Test Passed:** `Domain_Should_Not_DependOn_OtherLayers` passes in `AnalyticsPlatform.SecurityTests`.
+- [x] **Zero Warnings:** Build passes with `TreatWarningsAsErrors=true` across all projects.
+- [x] **Security Gates Green:** `SensitiveDataLeakageTests` and `ApiKeyExposureTests` execute and pass.
+- [x] **Schema Conformance:** MCP JSON schemas match the MCP 2024-11-05 specification.
+- [x] **Correlation Propagation:** `X-Correlation-Id` is verified across Frontend -> Api -> MediatR -> McpServer -> Tool.
+- [x] **Contract Sync:** `shared-contracts/openapi.yaml` matches TypeScript contracts in `frontend/src/shared/types/api-contracts.ts`.
+- [x] **Local-First Verification:** With cloud policies disabled, all tasks succeed locally using Ollama.
