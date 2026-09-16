@@ -10,3 +10,4 @@ public sealed record ImportPowerBiArtifactCommand(
     string DatasetDisplayName,
     Stream ArtifactStream,
     string FileName) : IRequest<Result<ImportPowerBiArtifactResponse>>;
+

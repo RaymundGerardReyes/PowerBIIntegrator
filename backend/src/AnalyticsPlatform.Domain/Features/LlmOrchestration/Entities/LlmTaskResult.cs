@@ -26,3 +26,4 @@ public sealed record LlmTaskResult(
         string? guardrailNotice = null)
         => new(string.Empty, LlmProviderType.LocalOllama, true, reason, guardrailNotice, TokenUsage.Zero, correlationId);
 }
+

@@ -14,3 +14,4 @@ public sealed record ValidateAnalyticsModelResponse(
     IReadOnlyList<string> DetectedCycles);
 
 public sealed record ValidateAnalyticsModelCommand(Guid AnalyticsModelId) : IRequest<Result<ValidateAnalyticsModelResponse>>;
+

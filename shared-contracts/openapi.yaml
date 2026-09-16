@@ -299,5 +299,31 @@ paths:
                 maximumAllowedSensitivity: { type: string }
       responses:
         "200": { description: Policy registered successfully }
+  /api/llm/chat/stream:
+    post:
+      summary: Stream tokens via Server-Sent Events (SSE)
+      tags: [LLM Orchestration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userPrompt]
+              properties:
+                userPrompt: { type: string }
+                contextIds:
+                  type: array
+                  items: { type: string }
+                providerPreference: { type: string }
+                policyId: { type: string }
+                correlationId: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Server-sent event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
 
 

@@ -89,3 +89,4 @@ When `PbirGenerator` encounters a visual type:
      }
    }
    ```
+

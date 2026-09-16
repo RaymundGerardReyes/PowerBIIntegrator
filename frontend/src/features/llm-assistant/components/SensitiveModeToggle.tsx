@@ -21,3 +21,4 @@ export const SensitiveModeToggle: React.FC<SensitiveModeToggleProps> = ({ enable
     </div>
   );
 };
+

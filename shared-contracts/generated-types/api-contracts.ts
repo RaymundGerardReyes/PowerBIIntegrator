@@ -91,3 +91,48 @@ export interface EmbedConfigDto {
   tokenExpiry: string;
 }
 
+export type LlmProviderPreference = "LocalOllama" | "CloudOpenAi" | "CloudAnthropic" | "CloudOllama" | "auto" | string;
+export type SensitivityLevelDto = "Public" | "Internal" | "Sensitive" | "Restricted";
+
+export interface RunLlmTaskRequest {
+  taskType: string;
+  userPrompt: string;
+  contextIds?: string[];
+  providerPreference: LlmProviderPreference;
+  sensitivity?: SensitivityLevelDto;
+  policyId: string;
+  correlationId: string;
+}
+
+export interface LlmTaskResultDto {
+  rawText: string;
+  providerUsed: string;
+  isBlocked: boolean;
+  guardrailNotice?: string;
+  correlationId: string;
+  tokenUsage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+    estimatedCostUsd?: number;
+  };
+}
+
+export interface LlmPolicyDto {
+  policyId: string;
+  name: string;
+  allowCloudProvider: boolean;
+  allowSensitiveContext: boolean;
+  allowedTools: string[];
+  maxTokensPerRequest: number;
+  maxDailyTokenBudget: number;
+  maximumAllowedSensitivity: SensitivityLevelDto | string;
+}
+
+export interface StreamLlmChatRequest {
+  userPrompt: string;
+  contextIds?: string[];
+  providerPreference?: string;
+  policyId?: string;
+  correlationId?: string;
+}

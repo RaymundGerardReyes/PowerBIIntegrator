@@ -73,3 +73,4 @@ public class LlmEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
         body.Should().Contain("Guardrail blocked");
     }
 }
+

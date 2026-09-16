@@ -73,3 +73,4 @@ curl -f https://ca-analytics-api-prod.azurecontainerapps.io/api/powerbi/embed-co
 1. Export Fabric Capacity Metrics App telemetry for the incident window.
 2. Analyze DAX query execution plans for unoptimized high-cardinality cross-joins.
 3. Review auto-scaling policies to prevent recurring resource starvation.
+

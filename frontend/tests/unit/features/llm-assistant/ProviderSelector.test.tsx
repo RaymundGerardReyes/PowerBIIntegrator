@@ -49,3 +49,4 @@ describe("ProviderSelector", () => {
     expect(screen.getByTestId("sensitive-lock-notice")).toBeInTheDocument();
   });
 });
+

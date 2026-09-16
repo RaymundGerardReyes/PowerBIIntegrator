@@ -8,3 +8,4 @@ public interface ILlmPolicyRepository
     Task<IReadOnlyList<LlmPolicy>> GetAllPoliciesAsync(CancellationToken ct);
     Task RegisterPolicyAsync(LlmPolicy policy, CancellationToken ct);
 }
+

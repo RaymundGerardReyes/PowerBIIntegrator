@@ -10,3 +10,4 @@ public sealed record LlmPolicy(
     int MaxDailyTokenBudget,
     SensitivityLevel MaximumAllowedSensitivity
 );
+

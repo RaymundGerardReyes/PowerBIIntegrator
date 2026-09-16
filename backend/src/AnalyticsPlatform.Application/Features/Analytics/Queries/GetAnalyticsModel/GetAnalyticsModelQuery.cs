@@ -43,3 +43,4 @@ public class GetAnalyticsModelQueryHandler : IRequestHandler<GetAnalyticsModelQu
         return Result<AnalyticsModelDto>.Success(dto);
     }
 }
+

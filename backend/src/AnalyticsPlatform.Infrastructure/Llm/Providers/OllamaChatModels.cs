@@ -22,3 +22,4 @@ public sealed record OllamaChatResponse(
     [property: JsonPropertyName("prompt_eval_count")] int? PromptEvalCount,
     [property: JsonPropertyName("eval_count")] int? EvalCount
 );
+

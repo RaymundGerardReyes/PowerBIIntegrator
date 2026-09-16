@@ -11,3 +11,4 @@ public class ValidateAnalyticsModelCommandValidator : AbstractValidator<Validate
             .WithMessage("AnalyticsModelId must be a valid non-empty GUID.");
     }
 }
+

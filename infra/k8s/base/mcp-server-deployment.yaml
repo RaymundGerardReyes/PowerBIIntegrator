@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-server
+  labels:
+    app: mcp-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mcp-server
+  template:
+    metadata:
+      labels:
+        app: mcp-server
+    spec:
+      containers:
+        - name: mcp-server
+          image: ghcr.io/raymundgerardreyes/analyticsplatform-mcpserver:latest
+          ports:
+            - containerPort: 5005
+              name: http-mcp
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Production"
+            - name: ASPNETCORE_URLS
+              value: "http://+:5005"
+          readinessProbe:
+            httpGet:
+              path: /health/live
+              port: 5005
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1024Mi"
+

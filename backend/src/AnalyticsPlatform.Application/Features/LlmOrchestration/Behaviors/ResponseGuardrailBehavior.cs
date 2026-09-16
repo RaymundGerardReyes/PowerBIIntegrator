@@ -61,3 +61,4 @@ public sealed class ResponseGuardrailBehavior<TRequest, TResponse> : IPipelineBe
         return response;
     }
 }
+

@@ -79,3 +79,4 @@ public class SensitiveExposureRulesTests
         result.Value.Should().BeTrue();
     }
 }
+

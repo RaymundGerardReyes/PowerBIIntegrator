@@ -120,3 +120,4 @@ public class ProviderSelectionRulesTests
         result.Value.Should().Be(LlmProviderType.LocalOllama);
     }
 }
+

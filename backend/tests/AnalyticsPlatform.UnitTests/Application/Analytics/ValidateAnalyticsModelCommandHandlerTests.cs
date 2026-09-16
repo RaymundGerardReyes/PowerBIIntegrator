@@ -58,3 +58,4 @@ public class ValidateAnalyticsModelCommandHandlerTests
         validationResult.Errors.Should().Contain(e => e.PropertyName == "AnalyticsModelId");
     }
 }
+

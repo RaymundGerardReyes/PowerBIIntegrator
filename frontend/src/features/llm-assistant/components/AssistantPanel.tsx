@@ -171,3 +171,4 @@ export const AssistantPanel: React.FC = () => {
     </div>
   );
 };
+

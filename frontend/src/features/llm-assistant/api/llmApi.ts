@@ -14,3 +14,4 @@ export async function getLlmPolicies(): Promise<LlmPolicyDto[]> {
   const { data } = await apiClient.get<LlmPolicyDto[]>("/api/llm/policies");
   return data;
 }
+

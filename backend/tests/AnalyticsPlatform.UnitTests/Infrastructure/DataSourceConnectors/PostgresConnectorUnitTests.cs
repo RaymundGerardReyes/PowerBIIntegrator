@@ -41,3 +41,4 @@ public class PostgresConnectorUnitTests
         PostgresConnector.MapSystemTypeToColumnDataType(typeof(string)).Should().Be(ColumnDataType.String);
     }
 }
+

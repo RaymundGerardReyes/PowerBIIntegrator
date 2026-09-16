@@ -119,3 +119,4 @@ public class RunLlmTaskCommandHandlerTests
         capturedTask.RequestedProvider.Should().Be(LlmProviderType.LocalOllama);
     }
 }
+

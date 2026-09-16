@@ -38,3 +38,4 @@ public class ImportPowerBiArtifactCommandHandler : IRequestHandler<ImportPowerBi
             request.FileName));
     }
 }
+

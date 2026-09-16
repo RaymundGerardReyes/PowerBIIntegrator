@@ -36,3 +36,4 @@ public class ValidateAnalyticsModelCommandHandler : IRequestHandler<ValidateAnal
         return Result<ValidateAnalyticsModelResponse>.Success(response);
     }
 }
+

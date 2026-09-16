@@ -7,3 +7,4 @@ public enum LlmProviderType
     CloudAnthropic = 3,
     CloudOllama = 4
 }
+

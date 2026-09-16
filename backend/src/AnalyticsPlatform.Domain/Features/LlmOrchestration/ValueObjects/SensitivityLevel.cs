@@ -7,3 +7,4 @@ public enum SensitivityLevel
     Sensitive = 2,
     Restricted = 3
 }
+

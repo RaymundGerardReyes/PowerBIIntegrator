@@ -9,3 +9,4 @@ public sealed record TokenUsage(
 {
     public static TokenUsage Zero => new(0, 0, 0, 0m);
 }
+

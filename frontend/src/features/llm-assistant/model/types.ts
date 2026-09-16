@@ -23,3 +23,4 @@ export interface ChatMessage {
   guardrailNotice?: string;
   isBlocked?: boolean;
 }
+

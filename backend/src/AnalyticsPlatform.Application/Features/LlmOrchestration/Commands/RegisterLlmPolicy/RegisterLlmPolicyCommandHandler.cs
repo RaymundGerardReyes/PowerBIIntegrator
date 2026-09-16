@@ -31,3 +31,4 @@ public sealed class RegisterLlmPolicyCommandHandler : IRequestHandler<RegisterLl
         return Result.Success();
     }
 }
+

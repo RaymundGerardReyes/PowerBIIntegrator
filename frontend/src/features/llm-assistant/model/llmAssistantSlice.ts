@@ -30,3 +30,4 @@ export const useLlmAssistantStore = create<LlmAssistantState>((set) => ({
   addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
   clearMessages: () => set({ messages: [] })
 }));
+

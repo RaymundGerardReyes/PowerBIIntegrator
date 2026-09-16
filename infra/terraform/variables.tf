@@ -45,3 +45,4 @@ variable "fabric_capacity_sku" {
   description = "Fabric / Power BI Embedded capacity SKU"
   default     = "F64"
 }
+

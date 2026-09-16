@@ -12,3 +12,4 @@ public sealed class RunLlmTaskCommandValidator : AbstractValidator<RunLlmTaskCom
         RuleFor(x => x.CorrelationId).NotEmpty().WithMessage("CorrelationId cannot be empty.");
     }
 }
+

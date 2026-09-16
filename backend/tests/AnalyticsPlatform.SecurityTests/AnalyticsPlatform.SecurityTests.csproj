@@ -8,6 +8,7 @@
     <ProjectReference Include="../../src/AnalyticsPlatform.Application/AnalyticsPlatform.Application.csproj" />
     <ProjectReference Include="../../src/AnalyticsPlatform.Infrastructure/AnalyticsPlatform.Infrastructure.csproj" />
     <ProjectReference Include="../../src/AnalyticsPlatform.Api/AnalyticsPlatform.Api.csproj" />
+    <ProjectReference Include="../../src/AnalyticsPlatform.McpServer/AnalyticsPlatform.McpServer.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="xunit" />

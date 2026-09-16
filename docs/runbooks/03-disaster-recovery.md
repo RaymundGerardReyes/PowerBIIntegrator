@@ -88,3 +88,4 @@ Once Microsoft resolves the primary regional outage:
 1. Re-establish geo-replication from East Asia back to Southeast Asia.
 2. Synchronize transactions until replication lag is 0ms.
 3. Perform planned failover during a scheduled maintenance window.
+

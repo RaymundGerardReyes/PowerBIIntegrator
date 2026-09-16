@@ -78,3 +78,4 @@ If authentication fails during Step 4:
 1. Revert Key Vault secret `PowerBi--ClientSecret` to the previous value.
 2. Restart Container App revision.
 3. Investigate Entra ID API permission grant logs in Azure Portal.
+

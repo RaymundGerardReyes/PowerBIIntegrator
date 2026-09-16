@@ -80,3 +80,4 @@ public class ImportPowerBiArtifactCommandHandlerTests
         result.IsValid.Should().BeTrue();
     }
 }
+

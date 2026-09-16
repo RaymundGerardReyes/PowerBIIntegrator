@@ -45,3 +45,4 @@ describe("llmAssistantSlice", () => {
     expect(useLlmAssistantStore.getState().sensitiveMode).toBe(true);
   });
 });
+

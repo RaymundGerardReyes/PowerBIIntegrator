@@ -14,3 +14,4 @@ public sealed record RegisterLlmPolicyCommand(
     int MaxDailyTokenBudget,
     SensitivityLevel MaximumAllowedSensitivity
 ) : IRequest<Result>;
+

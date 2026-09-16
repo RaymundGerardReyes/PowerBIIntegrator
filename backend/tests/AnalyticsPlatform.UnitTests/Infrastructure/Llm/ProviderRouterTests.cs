@@ -67,3 +67,4 @@ public class ProviderRouterTests
         result.GuardrailNotice.Should().Contain("routed to Local Ollama");
     }
 }
+

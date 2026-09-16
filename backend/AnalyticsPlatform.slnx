@@ -4,6 +4,7 @@
     <Project Path="src/AnalyticsPlatform.Application/AnalyticsPlatform.Application.csproj" />
     <Project Path="src/AnalyticsPlatform.Domain/AnalyticsPlatform.Domain.csproj" />
     <Project Path="src/AnalyticsPlatform.Infrastructure/AnalyticsPlatform.Infrastructure.csproj" />
+    <Project Path="src/AnalyticsPlatform.McpServer/AnalyticsPlatform.McpServer.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/AnalyticsPlatform.E2ETests/AnalyticsPlatform.E2ETests.csproj" />

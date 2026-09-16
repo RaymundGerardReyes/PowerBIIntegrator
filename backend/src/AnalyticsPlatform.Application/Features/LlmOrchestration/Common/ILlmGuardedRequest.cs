@@ -8,3 +8,4 @@ public interface ILlmGuardedRequest
     string CorrelationId { get; }
     void UpdateSanitizedPrompt(string sanitizedPrompt);
 }
+

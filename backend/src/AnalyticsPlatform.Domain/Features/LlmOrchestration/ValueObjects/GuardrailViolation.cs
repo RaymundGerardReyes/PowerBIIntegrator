@@ -5,3 +5,4 @@ public sealed record GuardrailViolation(
     string Description,
     SensitivityLevel Severity
 );
+

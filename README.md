@@ -5,10 +5,10 @@
 [![TypeScript 5.8](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Power BI PBIR](https://img.shields.io/badge/Power%20BI-PBIP%20%2F%20PBIR%202026-F2C811?logo=powerbi&logoColor=black)](https://learn.microsoft.com/power-bi/developer/projects/projects-overview)
 [![Clean Architecture](https://img.shields.io/badge/Architecture-Clean%20%26%20FSD-brightgreen)](#system-architecture)
-[![Backend Tests](https://img.shields.io/badge/Tests%20(Backend)-60%2F60%20Passed-success)](#backend-test-taxonomy)
-[![Frontend Tests](https://img.shields.io/badge/Tests%20(Frontend)-12%2F12%20Passed-success)](#frontend-test-taxonomy)
+[![Backend Tests](https://img.shields.io/badge/Tests%20(Backend)-194%2F194%20Passed-success)](#backend-test-taxonomy)
+[![Frontend Tests](https://img.shields.io/badge/Tests%20(Frontend)-23%2F23%20Passed-success)](#frontend-test-taxonomy)
 
-A high-performance, enterprise-grade analytics framework that treats Power BI reports and semantic models as **compiled software artifacts**. Built on .NET 10 LTS and React 19, the platform generates valid 2026 Power BI Enhanced Report Format (`PBIR`), Tabular Model Definition Language (`TMDL`), and complete `.pbip` project packages directly from a canonical C# Intermediate Representation (IR).
+A high-performance, enterprise-grade analytics framework that treats Power BI reports and semantic models as **compiled software artifacts**. Built on .NET 10 LTS and React 19, the platform generates valid 2026 Power BI Enhanced Report Format (`PBIR`), Tabular Model Definition Language (`TMDL`), and complete `.pbip` project packages directly from a canonical C# Intermediate Representation (IR), accompanied by an enterprise Model Context Protocol (MCP) server for autonomous AI agents.
 
 ---
 
@@ -19,15 +19,18 @@ A high-performance, enterprise-grade analytics framework that treats Power BI re
   - [1. Power BI PBIP & TMDL Compiler Engine](#1-power-bi-pbip--tmdl-compiler-engine)
   - [2. Multi-Source Ingestion Engine](#2-multi-source-ingestion-engine)
   - [3. React 19 Visual Authoring Canvas](#3-react-19-visual-authoring-canvas)
+  - [4. Multi-Target Document Generation Engine](#4-multi-target-document-generation-engine)
+  - [5. Standalone Model Context Protocol (MCP) Server & LLM Assistant](#5-standalone-model-context-protocol-mcp-server--llm-assistant)
 - [Monorepo Directory Structure](#monorepo-directory-structure)
 - [Clean Architecture & Dependency Rules](#clean-architecture--dependency-rules)
-- [API Reference](#api-reference)
+- [API & MCP Tool Reference](#api--mcp-tool-reference)
 - [Testing Taxonomy](#testing-taxonomy)
   - [Backend Test Taxonomy (6 Categories)](#backend-test-taxonomy)
   - [Frontend Test Taxonomy (5 Categories)](#frontend-test-taxonomy)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Backend Setup & Run](#backend-setup--run)
+  - [Running the Standalone MCP Server](#running-the-standalone-mcp-server)
   - [Frontend Setup & Run](#frontend-setup--run)
 - [License](#license)
 
@@ -37,15 +40,23 @@ A high-performance, enterprise-grade analytics framework that treats Power BI re
 
 ```mermaid
 graph TD
-    subgraph UI ["Frontend (React 19 + TypeScript 5.8)"]
-        Canvas["Visual Authoring Canvas"]
-        LayoutEditor["CustomLayoutBuilder"]
-        EmbedHost["Power BI Embedded Host"]
+    subgraph CLIENTS ["External Agent & User Clients"]
+        WebBrowser["React 19 Web App"]
+        ClaudeDesktop["Claude Desktop / Cursor (Stdio)"]
+        AiAgents["Autonomous Agents (SSE Transport)"]
     end
 
     subgraph API ["Api Layer (ASP.NET Core Minimal API)"]
         Endpoints["Minimal API Endpoints"]
         OpenApiContract["OpenAPI 3.0 Contract"]
+        LlmStream["SSE Chat Stream (/api/llm/chat/stream)"]
+    end
+
+    subgraph MCP ["Standalone MCP Server Host"]
+        StdioHost["Stdio JSON-RPC 2.0 Host"]
+        SseHost["Kestrel SSE Transport (/mcp/sse, /mcp/message)"]
+        ToolRegistry["McpToolRegistry (9 Tools)"]
+        PermissionMiddleware["ToolPermissionMiddleware & AuditLogger"]
     end
 
     subgraph APP ["Application Layer (MediatR CQRS)"]
@@ -60,6 +71,7 @@ graph TD
         Relationships["ModelRelationship"]
         Measures["DAX Measure Value Objects"]
         DataSourceDef["DataSourceDefinition & ColumnSchema"]
+        LlmRules["SensitiveExposureRules & ProviderSelectionRules"]
     end
 
     subgraph INFRA ["Infrastructure Layer"]
@@ -68,23 +80,35 @@ graph TD
         TmdlGen["TmdlGenerator (Dual-Mode)"]
         VTree["IVirtualFileTree (In-Memory ZIP)"]
         TypeEngine["TypeInferenceEngine"]
+        DocGenerators["QuestPDF / ClosedXML / OpenXml Generators"]
         ExcelReader["ExcelDataSourceReader (ClosedXML Streaming)"]
         CsvReader["CsvDataSourceReader (CsvHelper Streaming)"]
-        SqlConnector["SqlServerConnector (GetSchemaTable)"]
+        SqlConnector["SqlServerConnector & PostgresConnector"]
         FabricClient["FabricRestClient"]
+        OllamaClient["OllamaLocalClient & PiiRedactionService"]
     end
 
     subgraph TARGETS ["Deployment & Artifact Targets"]
         ZipDownload[".pbip.zip Archive Stream"]
         FabricWorkspace["Microsoft Fabric REST API"]
         EmbedSession["Power BI Embedded Token Session"]
+        ExportedDocs["PDF / Excel / Word Document Streams"]
     end
 
-    UI -->|REST / TanStack Query| Endpoints
-    Endpoints --> Commands & Queries
-    Commands & Queries --> Behaviors
-    Behaviors --> DOMAIN
-    Commands & Queries --> INFRA
+    WebBrowser -->|HTTP REST / SSE| Endpoints
+    WebBrowser -->|SSE Stream| LlmStream
+    ClaudeDesktop -->|Stdio JSON-RPC 2.0| StdioHost
+    AiAgents -->|HTTP SSE / JSON-RPC| SseHost
+
+    Endpoints --> APP
+    LlmStream --> APP
+    StdioHost --> ToolRegistry
+    SseHost --> ToolRegistry
+    ToolRegistry --> PermissionMiddleware
+    PermissionMiddleware --> APP
+
+    APP --> DOMAIN
+    APP --> INFRA
     INFRA --> DOMAIN
     INFRA --> TARGETS
 ```
@@ -109,6 +133,17 @@ graph TD
 - **Custom Layout Builder**: Real-time canvas positioning, coordinate calculation, and Power BI layout serialization.
 - **Live Embed Token Management**: Seamless integration with the official `powerbi-client` SDK for interactive report rendering.
 
+### 4. Multi-Target Document Generation Engine
+- **High-Fidelity PDF Engine**: Vector-rendered executive report documents via QuestPDF, including dynamic metadata blocks, headers, tabular summaries, and formula injection protection.
+- **ClosedXML Multi-Tab Excel Engine**: Memory-efficient tabular workbook export with automatic formula character sanitization (`=`, `+`, `-`, `@`, `\t`, `\r`) to mitigate spreadsheet injection attacks.
+- **OpenXML Word Engine**: High-fidelity `.docx` generation directly conforming to OpenXML WordprocessingML specifications.
+
+### 5. Standalone Model Context Protocol (MCP) Server & LLM Assistant
+- **Dual Protocol Transports**: Supports both Stdio JSON-RPC 2.0 (for Claude Desktop, Cursor, and CLI autonomous agents) and Kestrel SSE transport (`/mcp/sse` and `/mcp/message`) for containerized cluster environments.
+- **9 Domain-Safe Tool Adapters**: All MCP tools execute strictly through `AnalyticsPlatform.Application` MediatR commands and queries, preserving Clean Architecture boundaries.
+- **Fine-Grained Security & Permission Middleware**: `ToolPermissionMiddleware` inspects caller privilege (e.g., Fabric publishing restricted to privileged callers) and sensitivity rules (`SensitiveExposureRules`) before tool dispatch.
+- **Real-Time Token Streaming**: SSE chat streaming endpoint (`POST /api/llm/chat/stream`) with local Ollama fallback, PII redaction, and React 19 `ChatStream.tsx` & `ToolExecutionBadge.tsx` frontend assistant components.
+
 ---
 
 ## Monorepo Directory Structure
@@ -120,35 +155,39 @@ D:\PowerBIEnhanced\
 ├── CODEOWNERS                             # Code ownership definitions
 ├── README.md                              # Main platform documentation
 ├── shared-contracts/
-│   └── openapi.yaml                       # Single-source-of-truth OpenAPI 3.0 specification
+│   ├── openapi.yaml                       # Single-source-of-truth OpenAPI 3.0 specification
+│   └── generated-types/                   # Auto-generated TypeScript contract definitions
 ├── backend/
 │   ├── AnalyticsPlatform.slnx             # Modern .NET XML-based solution manifest
 │   ├── Directory.Build.props              # Solution-wide compiler & analyzer rules
 │   ├── Directory.Packages.props           # Central Package Management (CPM)
 │   ├── src/
-│   │   ├── AnalyticsPlatform.Domain/      # 0 external deps; Canonical IR entities
+│   │   ├── AnalyticsPlatform.Domain/      # 0 external deps; Canonical IR & LLM governance rules
 │   │   ├── AnalyticsPlatform.Application/ # MediatR commands, queries, validators
-│   │   ├── AnalyticsPlatform.Infrastructure/# PBIR/TMDL compiler, connectors, repos
-│   │   └── AnalyticsPlatform.Api/         # Minimal API endpoints & OpenAPI mapping
+│   │   ├── AnalyticsPlatform.Infrastructure/# PBIR/TMDL compiler, connectors, repos, Ollama client
+│   │   ├── AnalyticsPlatform.Api/         # Minimal API endpoints & OpenAPI mapping
+│   │   └── AnalyticsPlatform.McpServer/   # Standalone MCP Server (Stdio & SSE Transports)
 │   └── tests/
-│       ├── AnalyticsPlatform.UnitTests/   # Fast isolated domain & handler tests
-│       ├── AnalyticsPlatform.IntegrationTests/# WebApplicationFactory API tests
-│       ├── AnalyticsPlatform.PathTests/   # End-to-end in-memory workflow tests
-│       ├── AnalyticsPlatform.RegressionTests/# Golden schema snapshot tests
-│       ├── AnalyticsPlatform.SecurityTests/# Architecture & traversal prevention tests
-│       └── AnalyticsPlatform.E2ETests/    # HTTP round-trip system tests
+│       ├── AnalyticsPlatform.UnitTests/   # Fast isolated domain & handler tests (113 tests)
+│       ├── AnalyticsPlatform.IntegrationTests/# WebApplicationFactory & MCP contract tests (24 tests)
+│       ├── AnalyticsPlatform.PathTests/   # In-memory workflow & tool invocation tests (6 tests)
+│       ├── AnalyticsPlatform.RegressionTests/# Golden schema snapshots & tool schema tests (18 tests)
+│       ├── AnalyticsPlatform.SecurityTests/# Architecture, MCP auth & traversal prevention tests (29 tests)
+│       └── AnalyticsPlatform.E2ETests/    # HTTP round-trip system tests (4 tests)
 ├── frontend/
 │   ├── package.json                       # React 19.3 + TypeScript 5.8 + Vite
 │   ├── vite.config.ts                     # Vite configuration & path aliases
 │   ├── tsconfig.json                      # Strict TypeScript compiler options
-│   └── src/
-│       ├── app/                           # Application entrypoint & providers
-│       ├── features/                      # Business slices (powerbi-embed, data-sources)
-│       ├── entities/                      # Business models (dashboards, metrics)
-│       └── shared/                        # UI components, HTTP client, utilities
+│   ├── src/
+│   │   ├── app/                           # Application entrypoint & providers
+│   │   ├── features/                      # Business slices (powerbi-embed, data-sources, llm-assistant)
+│   │   ├── entities/                      # Business models (dashboards, metrics)
+│   │   └── shared/                        # UI components, HTTP client, generated types
+│   └── tests/                             # Vitest suite (Unit, Integration, Path, Regression, Security)
 └── infra/
-    ├── docker/                            # Production container definitions
-    └── k8s/                               # Kubernetes manifests & overlays
+    ├── docker/                            # Multi-stage Dockerfiles (API, McpServer, Ollama)
+    ├── k8s/                               # Kubernetes manifests & kustomization overlays
+    └── terraform/                         # Cloud infrastructure definitions
 ```
 
 ---
@@ -158,36 +197,41 @@ D:\PowerBIEnhanced\
 The backend strictly adheres to Clean Architecture principles, enforced continuously via automated architecture tests using `NetArchTest.Rules`:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                       Api Layer                         │
-│               (Composition Root & Endpoints)            │
-└────────────────────────────┬────────────────────────────┘
-                             │ references
-┌────────────────────────────▼────────────────────────────┐
-│                   Application Layer                     │
-│           (MediatR, Interfaces, CQRS Handlers)          │
-└────────────────────────────┬────────────────────────────┘
-                             │ references
-┌────────────────────────────▼────────────────────────────┐
-│                     Domain Layer                        │
-│          (0 External Dependencies, Pure C# IR)          │
-└─────────────────────────────────────────────────────────┘
-                             ▲
-                             │ implements interfaces
-┌────────────────────────────┴────────────────────────────┐
-│                  Infrastructure Layer                   │
-│       (PBIP/PBIR, TMDL, Connectors, Repositories)       │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────┐       ┌─────────────────────────────────┐
+│            Api Layer            │       │       McpServer Host            │
+│  (Composition Root & Endpoints) │       │   (Stdio & SSE MCP Transports)  │
+└────────────────┬────────────────┘       └────────────────┬────────────────┘
+                 │ references                              │ references
+                 └────────────────┬────────────────────────┘
+                                  │
+┌─────────────────────────────────▼─────────────────────────────────────────┐
+│                            Application Layer                              │
+│                    (MediatR, Interfaces, CQRS Handlers)                   │
+└─────────────────────────────────┬─────────────────────────────────────────┘
+                                  │ references
+┌─────────────────────────────────▼─────────────────────────────────────────┐
+│                               Domain Layer                                │
+│                   (0 External Dependencies, Pure C# IR)                   │
+└───────────────────────────────────────────────────────────────────────────┘
+                                  ▲
+                                  │ implements interfaces
+┌─────────────────────────────────┴─────────────────────────────────────────┐
+│                           Infrastructure Layer                            │
+│           (PBIP/PBIR, TMDL, Connectors, Repositories, Ollama)             │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Domain Layer (`AnalyticsPlatform.Domain`)**: Contains zero external NuGet package dependencies. Encapsulates `AnalyticsModel`, `ModelTable`, `ModelColumn`, `ModelRelationship`, `Measure`, and `ColumnSchema`.
-- **Application Layer (`AnalyticsPlatform.Application`)**: Depends only on Domain. Defines `IVirtualFileTree`, `IPbirGenerator`, `ITmdlGenerator`, `IPbipCompiler`, and `IDataSourceSchemaExtractor`.
-- **Infrastructure Layer (`AnalyticsPlatform.Infrastructure`)**: Implements Application interfaces using `ClosedXML`, `CsvHelper`, `Microsoft.Data.SqlClient`, and `Azure.Identity`.
+- **Domain Layer (`AnalyticsPlatform.Domain`)**: Contains zero external NuGet package dependencies. Encapsulates `AnalyticsModel`, `ModelTable`, `ModelColumn`, `ModelRelationship`, `Measure`, `ColumnSchema`, and `SensitiveExposureRules`.
+- **Application Layer (`AnalyticsPlatform.Application`)**: Depends only on Domain. Defines `IVirtualFileTree`, `IPbirGenerator`, `ITmdlGenerator`, `IPbipCompiler`, `IDataSourceSchemaExtractor`, and MediatR handlers.
+- **Infrastructure Layer (`AnalyticsPlatform.Infrastructure`)**: Implements Application interfaces using `ClosedXML`, `CsvHelper`, `Microsoft.Data.SqlClient`, `Npgsql`, `QuestPDF`, and `OllamaLocalClient`.
 - **Api Layer (`AnalyticsPlatform.Api`)**: Minimal API mapping, Serilog structured logging, and OpenAPI generation.
+- **McpServer Layer (`AnalyticsPlatform.McpServer`)**: Standalone MCP Host implementing the Model Context Protocol (2024-11-05 spec) with Stdio JSON-RPC 2.0 and Kestrel SSE endpoints. Dispatches exclusively through Application commands/queries without domain leaks.
 
 ---
 
-## API Reference
+## API & MCP Tool Reference
+
+### REST API Endpoints
 
 | Method | Route | Description | Request Body | Response |
 |---|---|---|---|---|
@@ -204,8 +248,29 @@ The backend strictly adheres to Clean Architecture principles, enforced continuo
 | `POST` | `/api/reports/pdf` | Generates high-fidelity vector PDF executive report | `ReportDocumentModel` | `200 OK` (`application/pdf`) |
 | `POST` | `/api/reports/excel` | Generates formatted multi-tab Excel spreadsheet | `ReportDocumentModel` | `200 OK` (`application/vnd.openxmlformats...sheet`) |
 | `POST` | `/api/reports/word` | Generates formatted Word document report | `ReportDocumentModel` | `200 OK` (`application/vnd.openxmlformats...document`) |
+| `POST` | `/api/llm/chat/stream` | Streams LLM response tokens via Server-Sent Events | `StreamLlmChatRequest` | `200 OK` (`text/event-stream`) |
+| `POST` | `/api/llm/tasks/run` | Runs governed LLM task with provider routing | `RunLlmTaskRequest` | `200 OK` (`LlmTaskResultDto`) |
+| `GET` | `/api/llm/policies` | Retrieves LLM governance policies | None | `200 OK` (`LlmPolicyDto[]`) |
 | `POST` | `/api/analytics/measures` | Creates a canonical DAX measure | Measure creation payload | `200 OK` |
 | `GET` | `/health/live` | Application liveness health check | None | `200 OK` |
+
+### Model Context Protocol (MCP) Endpoints & Tools
+
+The standalone MCP Server exposes:
+- **SSE Transport**: `GET /mcp/sse` (initiates server-sent event channel) and `POST /mcp/message` (submits JSON-RPC 2.0 payloads).
+- **Stdio Transport**: Executed with `--stdio` flag for direct CLI / desktop agent integration.
+
+| Tool Name | Privilege Level | Description | Primary Parameters |
+|---|---|---|---|
+| `get_analytics_model` | Standard | Retrieves analytics model definition and IR metadata | `modelId` (UUID) |
+| `validate_analytics_model` | Standard | Validates relationships, orphan tables, and measures | `modelId` (UUID) |
+| `compile_pbir_definition` | Standard | Compiles 2026 PBIR definition files | `modelId`, `reportName` |
+| `compile_tmdl_semantic_model` | Standard | Compiles TMDL semantic model script hierarchy | `modelId`, `datasetName` |
+| `compile_pbip_package` | Standard | Compiles complete `.pbip` manifest bundle | `modelId`, `projectName` |
+| `publish_pbip_to_fabric` | **Privileged** | Deploys compiled artifact to Fabric workspace | `workspaceId`, `displayName`, `payload` |
+| `get_dashboard_definition` | Standard | Retrieves canvas layout, visual cards, and filters | `dashboardId` (UUID) |
+| `get_data_source_schema` | Standard | Retrieves inferred data source schema and data types | `dataSourceId` (UUID) |
+| `query_event_summary` | **Sensitive** | Queries security audit and platform event metrics | `fromUtc`, `toUtc` |
 
 ---
 
@@ -221,13 +286,13 @@ dotnet test backend/AnalyticsPlatform.slnx
 
 | Category | Project | Tests | Focus |
 |---|---|---|---|
-| **Unit** | `AnalyticsPlatform.UnitTests` | 41 | Domain rules, pure functions, CQRS command validators & mocked handlers |
-| **Regression** | `AnalyticsPlatform.RegressionTests` | 17 | Golden snapshots for PBIR JSON, TMDL structures, type inference & document headers |
-| **Integration** | `AnalyticsPlatform.IntegrationTests` | 17 | `WebApplicationFactory` endpoint round-trips & OpenXml/ClosedXML/QuestPDF generators |
-| **Path** | `AnalyticsPlatform.PathTests` | 5 | In-memory end-to-end PBIP compile, multi-source ingestion & document generation |
-| **Security** | `AnalyticsPlatform.SecurityTests` | 24 | NetArchTest layer boundaries, traversal guards, Excel formula injection sanitization |
+| **Unit** | `AnalyticsPlatform.UnitTests` | 113 | Domain rules, pure functions, CQRS command validators, MCP registry & handlers |
+| **Regression** | `AnalyticsPlatform.RegressionTests` | 18 | Golden snapshots for PBIR JSON, TMDL structures, MCP tool schemas & document headers |
+| **Integration** | `AnalyticsPlatform.IntegrationTests` | 24 | `WebApplicationFactory` endpoint round-trips, MCP JSON-RPC protocol & OpenXml generators |
+| **Path** | `AnalyticsPlatform.PathTests` | 6 | In-memory end-to-end PBIP compile, ingestion, MCP tool routing & document generation |
+| **Security** | `AnalyticsPlatform.SecurityTests` | 29 | NetArchTest layer boundaries, MCP caller authorization, traversal guards, Excel sanitization |
 | **E2E** | `AnalyticsPlatform.E2ETests` | 4 | Full HTTP round-trip workflows (compile/download zip, register schema, report export) |
-| **Total** | **All 6 Test Projects** | **108 / 108 Passed** | **100% Green, 0 Failures** |
+| **Total** | **All 6 Test Projects** | **194 / 194 Passed** | **100% Green, 0 Failures** |
 
 ### Frontend Test Taxonomy
 
@@ -237,12 +302,12 @@ cd frontend && npm run test:all
 
 | Category | Command | Tests | Focus |
 |---|---|---|---|
-| **Unit** | `npm run test:unit` | 3 | Component unit behavior, custom hooks, Redux/Zustand slices |
+| **Unit** | `npm run test:unit` | 14 | Component unit behavior, ChatStream, ToolExecutionBadge, custom hooks, Redux slices |
 | **Integration** | `npm run test:integration` | 2 | Power BI embed container interactions, API client adapters |
 | **Path** | `npm run test:path` | 2 | Multi-step authoring and multi-source upload workflows |
 | **Regression** | `npm run test:regression` | 2 | Visual layout schema contracts and canvas state snapshots |
 | **Security** | `npm run test:security` | 3 | XSS sanitization, CSP headers, embed token leakage prevention |
-| **Total** | `npm run test:all` | **12 / 12 Passed** | **100% Green, 0 Failures** |
+| **Total** | `npm run test:all` | **23 / 23 Passed** | **100% Green, 0 Failures** |
 
 ---
 
@@ -264,7 +329,7 @@ cd PowerBIEnhanced
 dotnet restore backend/AnalyticsPlatform.slnx
 dotnet build backend/AnalyticsPlatform.slnx
 
-# Run all 60 tests
+# Run all 194 backend tests
 dotnet test backend/AnalyticsPlatform.slnx
 
 # Launch the API server
@@ -272,6 +337,16 @@ dotnet run --project backend/src/AnalyticsPlatform.Api
 ```
 
 The API will be available at `https://localhost:7148` (or `http://localhost:5000`). OpenAPI specifications can be inspected at `/openapi/v1.json`.
+
+### Running the Standalone MCP Server
+
+```bash
+# Launch in Stdio Mode (for Claude Desktop / Cursor integration)
+dotnet run --project backend/src/AnalyticsPlatform.McpServer -- --stdio
+
+# Launch in SSE Mode (HTTP Server on port 5055)
+dotnet run --project backend/src/AnalyticsPlatform.McpServer
+```
 
 ### Frontend Setup & Run
 

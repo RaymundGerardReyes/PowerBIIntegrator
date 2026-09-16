@@ -12,3 +12,4 @@ public sealed class RegisterLlmPolicyCommandValidator : AbstractValidator<Regist
         RuleFor(x => x.MaxDailyTokenBudget).GreaterThan(0).WithMessage("MaxDailyTokenBudget must be greater than zero.");
     }
 }
+

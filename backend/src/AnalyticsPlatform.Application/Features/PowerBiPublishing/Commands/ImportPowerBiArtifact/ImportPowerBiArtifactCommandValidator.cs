@@ -24,3 +24,4 @@ public class ImportPowerBiArtifactCommandValidator : AbstractValidator<ImportPow
             .WithMessage("File must have a supported extension (.pbix, .xlsx, .rdl, .json).");
     }
 }
+
