@@ -40,6 +40,63 @@ public sealed class OllamaLocalClient : IOllamaClient
         }
     }
 
+    public async IAsyncEnumerable<string> StreamChatAsync(
+        string model,
+        string prompt,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    {
+        var request = new OllamaChatRequest(
+            Model: model,
+            Messages: new[] { new OllamaChatMessage("user", prompt) },
+            Stream: true
+        );
+
+        HttpResponseMessage response;
+        try
+        {
+            var reqMsg = new HttpRequestMessage(HttpMethod.Post, "/api/chat")
+            {
+                Content = JsonContent.Create(request)
+            };
+            response = await _httpClient.SendAsync(reqMsg, HttpCompletionOption.ResponseHeadersRead, ct);
+            response.EnsureSuccessStatusCode();
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Failed to initiate stream with local Ollama service at {BaseAddress}", _httpClient.BaseAddress);
+            yield break;
+        }
+
+        using var stream = await response.Content.ReadAsStreamAsync(ct);
+        using var reader = new System.IO.StreamReader(stream);
+
+        while (!reader.EndOfStream && !ct.IsCancellationRequested)
+        {
+            var line = await reader.ReadLineAsync(ct);
+            if (string.IsNullOrWhiteSpace(line)) continue;
+
+            OllamaChatResponse? chunk = null;
+            try
+            {
+                chunk = JsonSerializer.Deserialize<OllamaChatResponse>(line);
+            }
+            catch (JsonException)
+            {
+                // Non-JSON line or partial line
+            }
+
+            if (chunk?.Message?.Content is { Length: > 0 } content)
+            {
+                yield return content;
+            }
+
+            if (chunk?.Done == true)
+            {
+                yield break;
+            }
+        }
+    }
+
     public async Task<bool> CheckHealthAsync(CancellationToken ct = default)
     {
         try
