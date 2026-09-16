@@ -51,11 +51,11 @@ public sealed class OpenAiCloudClient : ICloudLlmClient
             }
         };
 
-        return await _resiliencePipeline.ExecuteAsync(async token =>
+        return await _resiliencePipeline.ExecuteAsync(async (state, token) =>
         {
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
             {
-                Content = JsonContent.Create(requestPayload)
+                Content = JsonContent.Create(state)
             };
             httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
@@ -64,7 +64,7 @@ public sealed class OpenAiCloudClient : ICloudLlmClient
 
             var responseBody = await response.Content.ReadFromJsonAsync<OpenAiChatCompletionResponse>(cancellationToken: token);
             return responseBody?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty;
-        }, ct);
+        }, requestPayload, ct);
     }
 
     private string? GetApiKey()

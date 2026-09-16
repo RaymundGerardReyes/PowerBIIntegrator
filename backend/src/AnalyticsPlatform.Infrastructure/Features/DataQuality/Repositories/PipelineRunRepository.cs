@@ -17,3 +17,4 @@ public class PipelineRunRepository
         return Task.FromResult<IReadOnlyList<PipelineRunResult>>(_runs);
     }
 }
+

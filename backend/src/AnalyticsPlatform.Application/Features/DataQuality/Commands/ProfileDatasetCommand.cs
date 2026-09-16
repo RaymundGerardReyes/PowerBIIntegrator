@@ -19,3 +19,4 @@ public class ProfileDatasetCommandHandler : IRequestHandler<ProfileDatasetComman
         return Task.FromResult(Result.Success(profile));
     }
 }
+

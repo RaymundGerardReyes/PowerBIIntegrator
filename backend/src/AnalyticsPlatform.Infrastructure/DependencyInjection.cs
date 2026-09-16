@@ -71,8 +71,13 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(60);
         });
 
-        services.AddHttpClient<Application.Features.LlmOrchestration.Contracts.ICloudLlmClient, Llm.Providers.OpenAiCloudClient>();
-        services.AddHttpClient<Application.Features.LlmOrchestration.Contracts.ICloudLlmClient, Llm.Providers.AnthropicCloudClient>();
+        services.AddHttpClient<Llm.Providers.OpenAiCloudClient>();
+        services.AddTransient<Application.Features.LlmOrchestration.Contracts.ICloudLlmClient>(sp => sp.GetRequiredService<Llm.Providers.OpenAiCloudClient>());
+
+        services.AddHttpClient<Llm.Providers.AnthropicCloudClient>();
+        services.AddTransient<Application.Features.LlmOrchestration.Contracts.ICloudLlmClient>(sp => sp.GetRequiredService<Llm.Providers.AnthropicCloudClient>());
+
+        services.AddScoped<Application.Features.LlmOrchestration.Contracts.ILlmGateway, Llm.Policy.ProviderRouter>();
 
         // Data Quality & Transformation Engine (DQTE) Infrastructure Adapters
         services.AddScoped<Features.DataQuality.Connectors.TabularBatchReader>();

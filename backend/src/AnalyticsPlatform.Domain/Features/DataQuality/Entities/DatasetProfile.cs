@@ -26,3 +26,4 @@ public class DatasetProfile : Entity
         ColumnProfiles.Add(columnProfile);
     }
 }
+

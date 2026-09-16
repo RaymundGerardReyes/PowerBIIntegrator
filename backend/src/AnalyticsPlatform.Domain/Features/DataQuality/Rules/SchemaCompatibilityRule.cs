@@ -16,16 +16,17 @@ public static class SchemaCompatibilityRule
             var actualCol = profile.ColumnProfiles.FirstOrDefault(c => c.ColumnName.Equals(expectedCol.ColumnName, StringComparison.OrdinalIgnoreCase));
             if (actualCol == null)
             {
-                violations.Add(new SchemaViolation(expectedCol.ColumnName, "Missing required column", isFatal: !expectedCol.IsNullable));
+                violations.Add(new SchemaViolation(expectedCol.ColumnName, "Missing required column", IsFatal: !expectedCol.IsNullable));
                 continue;
             }
 
             if (!expectedCol.IsNullable && actualCol.NullCount > 0)
             {
-                violations.Add(new SchemaViolation(expectedCol.ColumnName, $"Non-nullable column contains {actualCol.NullCount} null values", isFatal: false));
+                violations.Add(new SchemaViolation(expectedCol.ColumnName, $"Non-nullable column contains {actualCol.NullCount} null values", IsFatal: false));
             }
         }
 
         return Result.Success<IReadOnlyList<SchemaViolation>>(violations);
     }
 }
+

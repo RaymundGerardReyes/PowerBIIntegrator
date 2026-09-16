@@ -35,3 +35,4 @@ public class PipelineRunResult : Entity
         StageSummaries.Add(summary);
     }
 }
+

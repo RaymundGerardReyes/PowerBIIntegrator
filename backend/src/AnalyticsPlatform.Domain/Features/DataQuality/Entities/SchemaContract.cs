@@ -29,3 +29,4 @@ public class SchemaContract : Entity
         Columns.Add(column);
     }
 }
+

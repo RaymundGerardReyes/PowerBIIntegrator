@@ -18,14 +18,14 @@ public static class VisualMappingRule
         var numericCols = profile.ColumnProfiles.Where(c => c.InferredType.Equals("Decimal", StringComparison.OrdinalIgnoreCase) || c.InferredType.Equals("Int64", StringComparison.OrdinalIgnoreCase)).ToList();
         var categoryCols = profile.ColumnProfiles.Where(c => c.InferredType.Equals("String", StringComparison.OrdinalIgnoreCase) && c.CardinalityClass == "Low").ToList();
 
-        if (dateCols.Any() && numericCols.Any())
+        if (dateCols.Count > 0 && numericCols.Count > 0)
         {
-            suggestions.Add(new ChartSuggestion("lineChart", 0.95, $"Detected datetime column '{dateCols.First().ColumnName}' and numeric column '{numericCols.First().ColumnName}' -> Line Chart recommended for time-series trend analysis."));
+            suggestions.Add(new ChartSuggestion("lineChart", 0.95, $"Detected datetime column '{dateCols[0].ColumnName}' and numeric column '{numericCols[0].ColumnName}' -> Line Chart recommended for time-series trend analysis."));
         }
 
-        if (categoryCols.Any() && numericCols.Any())
+        if (categoryCols.Count > 0 && numericCols.Count > 0)
         {
-            suggestions.Add(new ChartSuggestion("barChart", 0.90, $"Detected low-cardinality category '{categoryCols.First().ColumnName}' and numeric measure '{numericCols.First().ColumnName}' -> Bar/Column Chart recommended."));
+            suggestions.Add(new ChartSuggestion("barChart", 0.90, $"Detected low-cardinality category '{categoryCols[0].ColumnName}' and numeric measure '{numericCols[0].ColumnName}' -> Bar/Column Chart recommended."));
         }
 
         if (numericCols.Count >= 2)
@@ -33,7 +33,7 @@ public static class VisualMappingRule
             suggestions.Add(new ChartSuggestion("scatterPlot", 0.85, $"Detected multiple numeric measures ('{numericCols[0].ColumnName}', '{numericCols[1].ColumnName}') -> Scatter Plot recommended for correlation testing."));
         }
 
-        if (!suggestions.Any())
+        if (suggestions.Count == 0)
         {
             suggestions.Add(new ChartSuggestion("table", 1.0, "Default tabular grid view for raw or unclassified tabular structures."));
         }
@@ -41,3 +41,4 @@ public static class VisualMappingRule
         return suggestions;
     }
 }
+

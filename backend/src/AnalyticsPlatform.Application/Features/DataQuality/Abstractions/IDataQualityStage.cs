@@ -30,3 +30,4 @@ public interface IDataQualityStage
     string StageName { get; }
     Task<StageResult> ExecuteAsync(PipelineContext context, CancellationToken ct);
 }
+

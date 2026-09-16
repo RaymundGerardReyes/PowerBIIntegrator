@@ -49,6 +49,7 @@ app.UseHttpsRedirection();
 app.MapAnalyticsEndpoints();
 app.MapDashboardEndpoints();
 app.MapDataSourceEndpoints();
+app.MapDataQualityEndpoints();
 app.MapPowerBiEndpoints();
 app.MapReportEndpoints();
 app.MapLlmEndpoints();

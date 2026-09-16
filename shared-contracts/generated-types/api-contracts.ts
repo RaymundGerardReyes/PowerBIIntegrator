@@ -193,3 +193,53 @@ export interface ValidateAnalyticsModelResponseDto {
   orphanTables: string[];
   detectedCycles: string[];
 }
+
+export interface ColumnProfileDto {
+  columnName: string;
+  inferredType: string;
+  totalRowCount: number;
+  nullCount: number;
+  nullRatio: number;
+  distinctCount: number;
+  minValue?: string;
+  maxValue?: string;
+  topValues: string[];
+  detectedPatternRegex: string;
+  cardinalityClass: "Low" | "Medium" | "High";
+}
+
+export interface DatasetProfileDto {
+  id: string;
+  datasetName: string;
+  sourceReference: string;
+  totalRows: number;
+  profiledAtUtc: string;
+  columnProfiles: ColumnProfileDto[];
+}
+
+export interface StageRunSummaryDto {
+  stageName: string;
+  isSuccess: boolean;
+  inputRowCount: number;
+  outputRowCount: number;
+  quarantinedRowCount: number;
+  triggeredRules: string[];
+  details: string;
+}
+
+export interface PipelineRunResultDto {
+  id: string;
+  runId: string;
+  sourceReference: string;
+  startedAtUtc: string;
+  completedAtUtc: string;
+  isSuccess: boolean;
+  stageSummaries: StageRunSummaryDto[];
+}
+
+export interface ChartSuggestionDto {
+  recommendedVisualType: "lineChart" | "barChart" | "scatterPlot" | "table" | string;
+  confidenceScore: number;
+  reason: string;
+}
+

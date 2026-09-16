@@ -15,3 +15,4 @@ public record CleaningRule(
     CleaningOperation Operation,
     string? RuleParameter
 );
+

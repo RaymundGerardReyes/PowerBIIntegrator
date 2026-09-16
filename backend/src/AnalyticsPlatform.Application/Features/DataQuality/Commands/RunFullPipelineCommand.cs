@@ -24,3 +24,4 @@ public class RunFullPipelineCommandHandler : IRequestHandler<RunFullPipelineComm
         return Task.FromResult(Result.Success(result));
     }
 }
+

@@ -50,11 +50,11 @@ public sealed class AnthropicCloudClient : ICloudLlmClient
             }
         };
 
-        return await _resiliencePipeline.ExecuteAsync(async token =>
+        return await _resiliencePipeline.ExecuteAsync(async (state, token) =>
         {
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, "https://api.anthropic.com/v1/messages")
             {
-                Content = JsonContent.Create(requestPayload)
+                Content = JsonContent.Create(state)
             };
             httpRequest.Headers.Add("x-api-key", apiKey);
             httpRequest.Headers.Add("anthropic-version", "2023-06-01");
@@ -64,7 +64,7 @@ public sealed class AnthropicCloudClient : ICloudLlmClient
 
             var responseBody = await response.Content.ReadFromJsonAsync<AnthropicMessagesResponse>(cancellationToken: token);
             return responseBody?.Content?.FirstOrDefault(c => c.Type == "text")?.Text ?? string.Empty;
-        }, ct);
+        }, requestPayload, ct);
     }
 
     private string? GetApiKey()

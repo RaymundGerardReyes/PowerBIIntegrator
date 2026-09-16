@@ -17,8 +17,7 @@ public class HashDedupeEngine
         foreach (var row in batch.Rows)
         {
             var canonicalRepresentation = string.Join("|", batch.Columns.OrderBy(c => c).Select(c => row.Fields.TryGetValue(c, out var val) ? val?.Trim().ToLowerInvariant() ?? "" : ""));
-            using var sha = SHA256.Create();
-            var hashBytes = sha.ComputeHash(Encoding.UTF8.GetBytes(canonicalRepresentation));
+            var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(canonicalRepresentation));
             var hashString = Convert.ToHexString(hashBytes);
 
             if (seenHashes.TryGetValue(hashString, out var keptRowId))
@@ -42,3 +41,4 @@ public class HashDedupeEngine
         return (new TabularBatch(batch.SourceName, batch.Columns, keptRows), clusters);
     }
 }
+

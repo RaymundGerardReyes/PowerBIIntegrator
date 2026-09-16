@@ -20,3 +20,4 @@ public class SuggestChartsForTableQueryHandler : IRequestHandler<SuggestChartsFo
         return Task.FromResult(Result.Success(suggestions));
     }
 }
+

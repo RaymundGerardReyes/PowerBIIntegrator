@@ -31,3 +31,4 @@ public class QuarantineWriter
         return Task.FromResult<IReadOnlyList<QuarantinedRow>>(result);
     }
 }
+

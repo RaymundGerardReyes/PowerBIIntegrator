@@ -22,3 +22,4 @@ public class CleanDatasetCommandHandler : IRequestHandler<CleanDatasetCommand, R
         return Task.FromResult(Result.Success(result));
     }
 }
+

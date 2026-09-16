@@ -325,5 +325,88 @@ paths:
             text/event-stream:
               schema:
                 type: string
+  /api/data-quality/profile:
+    post:
+      summary: Profile a dataset deterministically
+      tags: [DataQuality]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sourceReference, datasetName]
+              properties:
+                sourceReference: { type: string }
+                datasetName: { type: string }
+      responses:
+        "200":
+          description: Dataset profile
+  /api/data-quality/clean:
+    post:
+      summary: Clean a dataset producing Silver layer
+      tags: [DataQuality]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sourceReference, datasetName]
+              properties:
+                sourceReference: { type: string }
+                datasetName: { type: string }
+      responses:
+        "200":
+          description: Pipeline run result
+  /api/data-quality/transform:
+    post:
+      summary: Transform Silver table to Gold table
+      tags: [DataQuality]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [silverSourceTable, transformationPlanName, targetGoldTable]
+              properties:
+                silverSourceTable: { type: string }
+                transformationPlanName: { type: string }
+                targetGoldTable: { type: string }
+      responses:
+        "200":
+          description: Pipeline run result
+  /api/data-quality/run-full-pipeline:
+    post:
+      summary: Execute full end-to-end data quality pipeline
+      tags: [DataQuality]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sourceReference, datasetName, targetGoldTable]
+              properties:
+                sourceReference: { type: string }
+                datasetName: { type: string }
+                targetGoldTable: { type: string }
+      responses:
+        "200":
+          description: Pipeline run result
+  /api/data-quality/chart-suggestions/{tableId}:
+    get:
+      summary: Get ranked visual chart suggestions for table
+      tags: [DataQuality]
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Chart suggestions
+
 
 

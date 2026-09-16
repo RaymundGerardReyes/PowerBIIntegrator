@@ -72,3 +72,4 @@ public class SimilarityClusterDedupeEngine
         return 1.0 - ((double)distance / maxLen);
     }
 }
+

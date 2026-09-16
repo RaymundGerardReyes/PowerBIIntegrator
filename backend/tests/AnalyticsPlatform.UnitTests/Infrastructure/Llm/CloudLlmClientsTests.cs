@@ -57,13 +57,7 @@ public sealed class CloudLlmClientsTests
 
         var router = new ProviderRouter(ollama, new[] { openAiClient }, NullLogger<ProviderRouter>.Instance);
 
-        var task = LlmTask.Create(
-            "ExplainDashboard",
-            "Analyze revenue",
-            Array.Empty<string>(),
-            LlmProviderType.CloudOpenAi,
-            SensitivityLevel.Internal,
-            "corr-100").Value!;
+        var task = LlmTask.Create("ExplainDashboard", "Analyze revenue", Array.Empty<string>(), LlmProviderType.CloudOpenAi, SensitivityLevel.Public, "corr-100").Value!;
         var policy = new LlmPolicy("policy-cloud", "Cloud Policy", AllowCloudProvider: true, AllowSensitiveContext: true, Array.Empty<string>(), 2000, 10000, SensitivityLevel.Sensitive);
 
         var result = await router.InvokeAsync(task, policy, CancellationToken.None);

@@ -13,3 +13,4 @@ public record ColumnProfile(
     string DetectedPatternRegex,
     string CardinalityClass
 );
+
