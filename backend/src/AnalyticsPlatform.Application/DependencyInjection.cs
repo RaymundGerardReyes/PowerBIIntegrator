@@ -3,6 +3,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using AnalyticsPlatform.Application.Common.Behaviors;
+using AnalyticsPlatform.Application.Features.LlmOrchestration.Behaviors;
 
 namespace AnalyticsPlatform.Application;
 
@@ -16,6 +17,9 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(assembly);
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PromptGuardrailBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ResponseGuardrailBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LlmTelemetryBehavior<,>));
 
         return services;
     }

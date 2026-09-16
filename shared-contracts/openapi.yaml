@@ -95,6 +95,37 @@ paths:
                 analyticsModelId: { type: string, format: uuid }
       responses:
         "200": { description: Compiled TMDL semantic model }
+  /api/powerbi/import:
+    post:
+      summary: Direct multipart import of Power BI artifacts (.pbix, .xlsx, .rdl) into a workspace
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, workspaceId, datasetDisplayName]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                workspaceId:
+                  type: string
+                datasetDisplayName:
+                  type: string
+      responses:
+        "200":
+          description: Import accepted with unique importId
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  importId: { type: string }
+                  workspaceId: { type: string }
+                  datasetDisplayName: { type: string }
+                  fileName: { type: string }
+        "400": { description: Invalid file or parameters }
   /api/data-sources/register:
     post:
       summary: Register a data source and extract column schema
@@ -203,5 +234,70 @@ paths:
                 type: string
                 format: binary
         "400": { description: Validation error }
+  /api/llm/tasks:
+    post:
+      summary: Dispatch an LLM task through guardrail pipeline and provider router
+      tags: [LLM Orchestration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [taskType, userPrompt, policyId, correlationId]
+              properties:
+                taskType: { type: string }
+                userPrompt: { type: string }
+                contextIds:
+                  type: array
+                  items: { type: string }
+                providerPreference: { type: string, enum: [LocalOllama, CloudOpenAi, CloudAnthropic, CloudOllama] }
+                sensitivity: { type: string, enum: [Public, Internal, Sensitive, Restricted] }
+                policyId: { type: string }
+                correlationId: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Completed LLM task result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rawText: { type: string }
+                  providerUsed: { type: string }
+                  isBlocked: { type: boolean }
+                  guardrailNotice: { type: string }
+                  correlationId: { type: string }
+        "400": { description: Guardrail block or validation error }
+  /api/llm/policies:
+    get:
+      summary: List all active LLM policies
+      tags: [LLM Orchestration]
+      responses:
+        "200":
+          description: List of active LLM policies
+    post:
+      summary: Register or update an LLM policy
+      tags: [LLM Orchestration]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [policyId, name]
+              properties:
+                policyId: { type: string }
+                name: { type: string }
+                allowCloudProvider: { type: boolean }
+                allowSensitiveContext: { type: boolean }
+                allowedTools:
+                  type: array
+                  items: { type: string }
+                maxTokensPerRequest: { type: integer }
+                maxDailyTokenBudget: { type: integer }
+                maximumAllowedSensitivity: { type: string }
+      responses:
+        "200": { description: Policy registered successfully }
 
 

@@ -1,15 +1,5 @@
-// Generated from shared-contracts/openapi.yaml — regenerate via `npm run gen:contracts`.
-export interface CreateMeasureRequest {
-  name: string;
-  expression: string;
-  tableName: string;
-}
+/**
+ * Re-export of shared OpenAPI / API Contracts for Frontend
+ */
 
-export interface PublishDashboardRequest {
-  dashboardDefinitionId: string;
-  targetWorkspaceId: string;
-}
-
-export interface PublishDashboardResponse {
-  reportId: string;
-}
+export * from "../../../../shared-contracts/generated-types/api-contracts";

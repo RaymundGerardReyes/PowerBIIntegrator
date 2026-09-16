@@ -23,7 +23,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddOpenApi();
 
 builder.Services.AddHealthChecks()
-    .AddCheck<PowerBiHealthCheck>("powerbi");
+    .AddCheck<PowerBiHealthCheck>("powerbi")
+    .AddCheck<SqlHealthCheck>("sql");
 
 builder.Services.AddCors(options =>
 {
@@ -50,6 +51,7 @@ app.MapDashboardEndpoints();
 app.MapDataSourceEndpoints();
 app.MapPowerBiEndpoints();
 app.MapReportEndpoints();
+app.MapLlmEndpoints();
 app.MapHealthChecks("/health/live");
 
 app.Run();

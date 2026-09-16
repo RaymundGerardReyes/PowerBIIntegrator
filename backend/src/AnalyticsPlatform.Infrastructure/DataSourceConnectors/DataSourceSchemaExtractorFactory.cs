@@ -19,7 +19,8 @@ public class DataSourceSchemaExtractorFactory : IDataSourceSchemaExtractorFactor
         {
             DataSourceType.Excel => "excel",
             DataSourceType.Csv => "csv",
-            DataSourceType.SqlServer or DataSourceType.PostgreSql or DataSourceType.MySql => "sql",
+            DataSourceType.SqlServer or DataSourceType.MySql => "sql",
+            DataSourceType.PostgreSql => "postgres",
             _ => throw new NotSupportedException($"Data source type '{type}' does not have a registered schema extractor.")
         };
 

@@ -2,6 +2,7 @@ using MediatR;
 using AnalyticsPlatform.Application.Features.PowerBiPublishing.Commands.CompilePbipProject;
 using AnalyticsPlatform.Application.Features.PowerBiPublishing.Commands.CompilePbirDefinition;
 using AnalyticsPlatform.Application.Features.PowerBiPublishing.Commands.CompileTmdlSemanticModel;
+using AnalyticsPlatform.Application.Features.PowerBiPublishing.Commands.ImportPowerBiArtifact;
 using AnalyticsPlatform.Application.Features.PowerBiPublishing.Commands.PublishPbipToFabric;
 using AnalyticsPlatform.Application.Features.PowerBiPublishing.Queries.DownloadPbipPackage;
 using AnalyticsPlatform.Application.Features.PowerBiPublishing.Queries.GetReportEmbedConfig;
@@ -51,5 +52,18 @@ public static class PowerBiEndpoints
             var result = await sender.Send(command);
             return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Errors);
         });
+
+        group.MapPost("/import", async (IFormFile file, string workspaceId, string datasetDisplayName, ISender sender, CancellationToken ct) =>
+        {
+            if (file == null || file.Length == 0)
+                return Results.BadRequest(new[] { "File is required." });
+
+            await using var stream = file.OpenReadStream();
+            var command = new ImportPowerBiArtifactCommand(workspaceId, datasetDisplayName, stream, file.FileName);
+            var result = await sender.Send(command, ct);
+            return result.IsSuccess && result.Value != null
+                ? Results.Ok(result.Value)
+                : Results.BadRequest(result.Errors);
+        }).DisableAntiforgery();
     }
 }

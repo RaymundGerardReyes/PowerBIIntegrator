@@ -1,3 +1,5 @@
+using MediatR;
+using AnalyticsPlatform.Application.Features.Dashboards.Queries.GetDashboardDefinition;
 using AnalyticsPlatform.Domain.Features.Dashboards.Entities;
 using AnalyticsPlatform.Domain.Repositories;
 
@@ -18,10 +20,12 @@ public static class DashboardEndpoints
             return Results.Ok(new { id = dashboard.Id, name = dashboard.Name });
         });
 
-        group.MapGet("/{id:guid}", async (Guid id, IDashboardRepository repo) =>
+        group.MapGet("/{id:guid}", async (Guid id, ISender sender) =>
         {
-            var dashboard = await repo.GetByIdAsync(id);
-            return dashboard != null ? Results.Ok(dashboard) : Results.NotFound();
+            var result = await sender.Send(new GetDashboardDefinitionQuery(id));
+            return result.IsSuccess && result.Value != null
+                ? Results.Ok(result.Value)
+                : Results.NotFound(result.Errors);
         });
     }
 }

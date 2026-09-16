@@ -56,5 +56,20 @@ public class DataSourcePathTraversalSecurityTests
         var actExtract = () => connector.ExtractSchemaAsync(invalidConn!);
         await actExtract.Should().ThrowAsync<ArgumentNullException>();
     }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public async Task PostgresConnector_WhenConnectionStringIsEmpty_ThrowsArgumentNullException(string? invalidConn)
+    {
+        var connector = new PostgresConnector();
+
+        var actRead = () => connector.ReadAsync(invalidConn!);
+        await actRead.Should().ThrowAsync<ArgumentNullException>();
+
+        var actExtract = () => connector.ExtractSchemaAsync(invalidConn!);
+        await actExtract.Should().ThrowAsync<ArgumentNullException>();
+    }
 }
 

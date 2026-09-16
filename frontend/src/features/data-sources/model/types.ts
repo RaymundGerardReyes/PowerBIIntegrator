@@ -1,3 +1,5 @@
+import type { ColumnSchemaDto } from "@shared/types/api-contracts";
+
 export type DataSourceType = "excel" | "csv" | "sqlserver" | "postgresql" | "mysql";
 
 export interface DataSourceDefinition {
@@ -5,4 +7,5 @@ export interface DataSourceDefinition {
   name: string;
   type: DataSourceType;
   connectionOrPath: string;
+  schema?: ColumnSchemaDto[];
 }

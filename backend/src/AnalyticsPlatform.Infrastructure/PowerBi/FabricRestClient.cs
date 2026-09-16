@@ -10,4 +10,10 @@ public class FabricRestClient : IPowerBiPublisher
         var reportId = $"fabric-report-{dashboard.Id:N}";
         return Task.FromResult(reportId);
     }
+
+    public Task<string> ImportArtifactAsync(string workspaceId, string datasetDisplayName, Stream artifactStream, string fileName, CancellationToken ct = default)
+    {
+        var importId = $"import-{Guid.NewGuid():N}";
+        return Task.FromResult(importId);
+    }
 }

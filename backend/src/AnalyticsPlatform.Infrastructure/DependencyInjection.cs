@@ -43,10 +43,14 @@ public static class DependencyInjection
         services.AddKeyedScoped<IDataSourceReader, ExcelDataSourceReader>("excel");
         services.AddKeyedScoped<IDataSourceReader, CsvDataSourceReader>("csv");
         services.AddKeyedScoped<IDataSourceReader, SqlServerConnector>("sql");
+        services.AddKeyedScoped<IDataSourceReader, PostgresConnector>("postgres");
+        services.AddKeyedScoped<IDataSourceReader, PostgresConnector>("postgresql");
 
         services.AddKeyedScoped<IDataSourceSchemaExtractor, ExcelDataSourceReader>("excel");
         services.AddKeyedScoped<IDataSourceSchemaExtractor, CsvDataSourceReader>("csv");
         services.AddKeyedScoped<IDataSourceSchemaExtractor, SqlServerConnector>("sql");
+        services.AddKeyedScoped<IDataSourceSchemaExtractor, PostgresConnector>("postgres");
+        services.AddKeyedScoped<IDataSourceSchemaExtractor, PostgresConnector>("postgresql");
 
         services.AddScoped<IDataSourceSchemaExtractorFactory, DataSourceSchemaExtractorFactory>();
 
@@ -54,6 +58,20 @@ public static class DependencyInjection
         services.AddScoped<IPdfReportGenerator, PdfReportGenerator>();
         services.AddScoped<IExcelReportGenerator, ExcelReportGenerator>();
         services.AddScoped<IWordReportGenerator, WordReportGenerator>();
+
+        // LLM / MCP Orchestration Infrastructure
+        services.AddSingleton<Application.Features.LlmOrchestration.Contracts.ILlmPolicyRepository, Llm.Policy.LlmPolicyRepository>();
+        services.AddSingleton<Application.Features.LlmOrchestration.Contracts.IPromptGuardrailService, Llm.Guardrails.PiiRedactionService>();
+        services.AddSingleton<Application.Features.LlmOrchestration.Contracts.IResponseGuardrailService, Llm.Guardrails.OutputContentFilter>();
+        
+        services.AddHttpClient<Application.Features.LlmOrchestration.Contracts.IOllamaClient, Llm.Providers.OllamaLocalClient>(client =>
+        {
+            var ollamaUrl = configuration["Llm:OllamaBaseUrl"] ?? "http://localhost:11434";
+            client.BaseAddress = new Uri(ollamaUrl);
+            client.Timeout = TimeSpan.FromSeconds(60);
+        });
+
+        services.AddScoped<Application.Features.LlmOrchestration.Contracts.ILlmGateway, Llm.Policy.ProviderRouter>();
 
         return services;
     }
