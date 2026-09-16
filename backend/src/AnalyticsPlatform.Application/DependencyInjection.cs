@@ -17,9 +17,12 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(assembly);
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(Features.DataQuality.Behaviors.PipelineRunAuditBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PromptGuardrailBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ResponseGuardrailBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LlmTelemetryBehavior<,>));
+
+        services.AddScoped<Features.DataQuality.Orchestration.PipelineOrchestrator>();
 
         return services;
     }

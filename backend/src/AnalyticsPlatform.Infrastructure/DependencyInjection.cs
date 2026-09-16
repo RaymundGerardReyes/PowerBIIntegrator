@@ -74,7 +74,14 @@ public static class DependencyInjection
         services.AddHttpClient<Application.Features.LlmOrchestration.Contracts.ICloudLlmClient, Llm.Providers.OpenAiCloudClient>();
         services.AddHttpClient<Application.Features.LlmOrchestration.Contracts.ICloudLlmClient, Llm.Providers.AnthropicCloudClient>();
 
-        services.AddScoped<Application.Features.LlmOrchestration.Contracts.ILlmGateway, Llm.Policy.ProviderRouter>();
+        // Data Quality & Transformation Engine (DQTE) Infrastructure Adapters
+        services.AddScoped<Features.DataQuality.Connectors.TabularBatchReader>();
+        services.AddScoped<Features.DataQuality.Dedupe.HashDedupeEngine>();
+        services.AddScoped<Features.DataQuality.Dedupe.CompositeKeyDedupeEngine>();
+        services.AddScoped<Features.DataQuality.Dedupe.SimilarityClusterDedupeEngine>();
+        services.AddSingleton<Features.DataQuality.Repositories.SchemaContractRepository>();
+        services.AddSingleton<Features.DataQuality.Repositories.PipelineRunRepository>();
+        services.AddSingleton<Features.DataQuality.Persistence.QuarantineWriter>();
 
         return services;
     }
