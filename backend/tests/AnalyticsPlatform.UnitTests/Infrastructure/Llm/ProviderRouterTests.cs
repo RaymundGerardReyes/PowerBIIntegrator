@@ -17,7 +17,7 @@ public class ProviderRouterTests
     public ProviderRouterTests()
     {
         _ollamaClient = Substitute.For<IOllamaClient>();
-        _router = new ProviderRouter(_ollamaClient, NullLogger<ProviderRouter>.Instance);
+        _router = new ProviderRouter(_ollamaClient, Enumerable.Empty<ICloudLlmClient>(), NullLogger<ProviderRouter>.Instance);
     }
 
     [Fact]

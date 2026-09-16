@@ -23,5 +23,6 @@
     <PackageReference Include="QuestPDF" />
     <PackageReference Include="DocumentFormat.OpenXml" />
     <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Polly.Core" />
   </ItemGroup>
 </Project>

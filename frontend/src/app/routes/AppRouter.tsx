@@ -1,19 +1,32 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { routePaths } from "./routePaths";
+import { AppLayout } from "../layout/AppLayout";
 import { LoginForm } from "@features/auth/components/LoginForm";
-import { DashboardCanvas } from "@features/dashboards/components/DashboardCanvas";
-import { ExcelUploadForm } from "@features/data-sources/components/ExcelUploadForm";
-import { PdfReportViewer } from "@features/reports/components/PdfReportViewer";
+import { DashboardWorkspacePage } from "@features/dashboards/components/DashboardWorkspacePage";
+import { DataSourcesPage } from "@features/data-sources/components/DataSourcesPage";
+import { ReportsHubPage } from "@features/reports/components/ReportsHubPage";
 
 export const AppRouter: React.FC = () => (
   <BrowserRouter>
-    <Routes>
-      <Route path={routePaths.login} element={<LoginForm />} />
-      <Route path={routePaths.dashboards} element={<DashboardCanvas />} />
-      <Route path={routePaths.dataSources} element={<ExcelUploadForm />} />
-      <Route path={routePaths.reports} element={<PdfReportViewer />} />
-      <Route path="*" element={<Navigate to={routePaths.dashboards} replace />} />
-    </Routes>
+    <AppLayout>
+      <Routes>
+        <Route
+          path={routePaths.login}
+          element={
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+              <div className="card" style={{ maxWidth: "400px", width: "100%" }}>
+                <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Sign In to Platform</h3>
+                <LoginForm />
+              </div>
+            </div>
+          }
+        />
+        <Route path={routePaths.dashboards} element={<DashboardWorkspacePage />} />
+        <Route path={routePaths.dataSources} element={<DataSourcesPage />} />
+        <Route path={routePaths.reports} element={<ReportsHubPage />} />
+        <Route path="*" element={<Navigate to={routePaths.dashboards} replace />} />
+      </Routes>
+    </AppLayout>
   </BrowserRouter>
 );

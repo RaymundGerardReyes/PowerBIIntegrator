@@ -14,10 +14,14 @@ export const PdfReportViewer: React.FC<PdfReportViewerProps> = ({ reportId = "",
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (data) {
+    if (data && typeof URL !== "undefined" && typeof URL.createObjectURL === "function") {
       const objectUrl = URL.createObjectURL(data);
       setUrl(objectUrl);
-      return () => URL.revokeObjectURL(objectUrl);
+      return () => {
+        if (typeof URL.revokeObjectURL === "function") {
+          URL.revokeObjectURL(objectUrl);
+        }
+      };
     }
   }, [data]);
 

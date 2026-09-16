@@ -29,7 +29,7 @@ public class ToolPermissionMiddleware
         return AuthorizeToolInvocation(toolName, correlationId, IsPrivilegedCaller, AllowSensitive);
     }
 
-    public virtual bool AuthorizeToolInvocation(string toolName, string correlationId, bool isPrivilegedCaller, bool allowSensitive)
+    public virtual bool AuthorizeToolInvocation(string toolName, string correlationId, bool isPrivilegedCaller = true, bool allowSensitive = true)
     {
         if (PrivilegedTools.Contains(toolName) && !isPrivilegedCaller)
         {

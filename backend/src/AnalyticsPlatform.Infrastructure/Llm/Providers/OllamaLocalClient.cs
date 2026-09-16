@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using AnalyticsPlatform.Application.Features.LlmOrchestration.Contracts;
+using Polly;
 
 namespace AnalyticsPlatform.Infrastructure.Llm.Providers;
 
@@ -10,10 +11,13 @@ public sealed class OllamaLocalClient : IOllamaClient
     private readonly HttpClient _httpClient;
     private readonly ILogger<OllamaLocalClient> _logger;
 
+    private readonly ResiliencePipeline _resiliencePipeline;
+
     public OllamaLocalClient(HttpClient httpClient, ILogger<OllamaLocalClient> logger)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _resiliencePipeline = AnalyticsPlatform.Infrastructure.Llm.Resilience.PollyLlmResilience.CreateLlmPipeline();
     }
 
     public async Task<string> ChatAsync(string model, string prompt, string? jsonFormat = null, CancellationToken ct = default)
@@ -27,11 +31,14 @@ public sealed class OllamaLocalClient : IOllamaClient
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync("/api/chat", request, ct);
-            response.EnsureSuccessStatusCode();
+            return await _resiliencePipeline.ExecuteAsync(async token =>
+            {
+                var response = await _httpClient.PostAsJsonAsync("/api/chat", request, token);
+                response.EnsureSuccessStatusCode();
 
-            var result = await response.Content.ReadFromJsonAsync<OllamaChatResponse>(cancellationToken: ct);
-            return result?.Message?.Content ?? string.Empty;
+                var result = await response.Content.ReadFromJsonAsync<OllamaChatResponse>(cancellationToken: token);
+                return result?.Message?.Content ?? string.Empty;
+            }, ct);
         }
         catch (HttpRequestException ex)
         {

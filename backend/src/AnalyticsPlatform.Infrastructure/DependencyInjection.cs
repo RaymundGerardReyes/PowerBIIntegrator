@@ -71,6 +71,9 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(60);
         });
 
+        services.AddHttpClient<Application.Features.LlmOrchestration.Contracts.ICloudLlmClient, Llm.Providers.OpenAiCloudClient>();
+        services.AddHttpClient<Application.Features.LlmOrchestration.Contracts.ICloudLlmClient, Llm.Providers.AnthropicCloudClient>();
+
         services.AddScoped<Application.Features.LlmOrchestration.Contracts.ILlmGateway, Llm.Policy.ProviderRouter>();
 
         return services;

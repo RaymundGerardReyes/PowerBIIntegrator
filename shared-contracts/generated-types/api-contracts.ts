@@ -84,6 +84,40 @@ export interface PublishRequest {
   targetWorkspaceId: string;
 }
 
+export interface PbirReportDefinitionDto {
+  reportId: string;
+  files: Record<string, string>;
+}
+
+export interface TmdlSemanticModelDto {
+  modelName: string;
+  tables?: Array<{ name: string; columns?: string[] }>;
+  relationships?: Array<{ fromTable: string; toTable: string }>;
+  files?: Record<string, string>;
+}
+
+export interface PbipCompilationResultDto {
+  projectName: string;
+  pbirDefinition: PbirReportDefinitionDto;
+  tmdlModel: TmdlSemanticModelDto;
+  manifestJson?: string;
+}
+
+export interface FabricPublishResultDto {
+  success: boolean;
+  workspaceId: string;
+  reportId?: string;
+  webUrl?: string;
+}
+
+export interface ImportPowerBiArtifactResponseDto {
+  importId: string;
+  datasetId?: string;
+  reportId?: string;
+  displayName: string;
+  importState: string;
+}
+
 export interface EmbedConfigDto {
   reportId: string;
   embedUrl: string;
@@ -135,4 +169,27 @@ export interface StreamLlmChatRequest {
   providerPreference?: string;
   policyId?: string;
   correlationId?: string;
+}
+
+export interface CreateMeasureRequest {
+  name: string;
+  expression: string;
+  tableName: string;
+}
+
+export interface CreateMeasureResponseDto {
+  id: string;
+  name: string;
+  expression: string;
+  tableName: string;
+}
+
+export interface ValidateAnalyticsModelResponseDto {
+  modelId: string;
+  modelName: string;
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+  orphanTables: string[];
+  detectedCycles: string[];
 }
