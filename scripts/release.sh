@@ -18,6 +18,7 @@ FORCE_TAG=0
 COMMIT_MSG=""
 TARGET_COMMIT=""
 TAG_OVERRIDE=""
+TAG_MESSAGE=""
 
 log_info()  { echo -e "\033[1;34m[INFO]\033[0m $*"; }
 log_ok()    { echo -e "\033[1;32m[SUCCESS]\033[0m $*"; }
@@ -32,6 +33,7 @@ Options:
   -m, --message MSG       Commit message (triggers stage & commit if dirty)
   -c, --commit SHA        Target commit SHA to tag (defaults to HEAD)
   -t, --tag TAG           Explicitly specify tag (bypasses auto-SemVer calculation)
+      --tag-message MSG   Custom message for the annotated tag
   -r, --remote REMOTE     Git remote name (default: origin)
   -b, --branch BRANCH     Target branch name (default: main)
       --tag-only          Tag and push existing commit without creating a commit
@@ -60,6 +62,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -t|--tag)
       TAG_OVERRIDE="$2"
+      shift 2
+      ;;
+    --tag-message)
+      TAG_MESSAGE="$2"
       shift 2
       ;;
     -r|--remote)
@@ -252,7 +258,7 @@ fi
 
 TAG_ALREADY_EXISTS_REMOTELY=0
 if [[ "$DRY_RUN" -eq 0 ]]; then
-  REMOTE_TAG_REF=$(git ls-remote --tags "$REMOTE" "refs/tags/$NEXT_TAG" 2>/dev/null || true)
+  REMOTE_TAG_REF=$(git ls-remote --tags "$REMOTE" "refs/tags/$NEXT_TAG" 2>/dev/null | tr -d '\r' || true)
   if [[ -n "$REMOTE_TAG_REF" ]]; then
     TAG_ALREADY_EXISTS_REMOTELY=1
     log_warn "Tag '$NEXT_TAG' is already present on remote '$REMOTE'."
@@ -263,7 +269,7 @@ fi
 # STEP 5: Create Annotated Tag (if not existing locally)
 # ------------------------------------------------------------------------------
 if [[ "$TAG_ALREADY_EXISTS_LOCALLY" -eq 0 ]]; then
-  TAG_MSG="Release $NEXT_TAG: Analytics Platform release for commit $COMMIT_SHA"
+  TAG_MSG="${TAG_MESSAGE:-Release $NEXT_TAG: Enterprise Power BI Analytics Platform release for commit $COMMIT_SHA}"
   log_info "Creating annotated tag '$NEXT_TAG' -> $COMMIT_SHA"
   if [[ "$DRY_RUN" -eq 1 ]]; then
     log_info "[DRY-RUN] git tag -a \"$NEXT_TAG\" \"$COMMIT_SHA\" -m \"$TAG_MSG\""
@@ -314,7 +320,7 @@ fi
 # STEP 8: Verify Remote Tag Points Directly to Target Commit SHA
 # ------------------------------------------------------------------------------
 log_info "Verifying remote tag alignment on $REMOTE..."
-REMOTE_TAG_RAW=$(git ls-remote --tags "$REMOTE" "refs/tags/$NEXT_TAG*" 2>/dev/null || true)
+REMOTE_TAG_RAW=$(git ls-remote --tags "$REMOTE" "refs/tags/$NEXT_TAG*" 2>/dev/null | tr -d '\r' || true)
 
 # Annotated tags produce two refs: refs/tags/vX.Y.Z (tag object) and refs/tags/vX.Y.Z^{} (peeled commit)
 REMOTE_RESOLVED_SHA=$(echo "$REMOTE_TAG_RAW" | grep -F '^{}' | awk '{print $1}' || true)
@@ -340,3 +346,4 @@ echo "  SemVer Tag : $NEXT_TAG"
 echo "  Remote     : $REMOTE"
 echo "  Alignment  : Remote tag points directly to commit SHA ($COMMIT_SHA)"
 echo "------------------------------------------------------------------------"
+

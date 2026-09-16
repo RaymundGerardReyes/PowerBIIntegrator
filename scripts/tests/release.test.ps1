@@ -112,12 +112,8 @@ try {
     git add file.txt
     git commit -m "fix(test): collision test commit" | Out-Null
 
-    $exitCode = 0
-    try {
-        & $releaseScript -Tag "v1.0.0" -Remote origin -Branch main *>$null | Out-Null
-    } catch {
-        $exitCode = 1
-    }
+    & $releaseScript -Tag "v1.0.0" -Remote origin -Branch main *>$null
+    $exitCode = $LASTEXITCODE
     Assert-Equal 1 $exitCode "Refuses to overwrite existing v1.0.0 tag"
 
     # TEST 4: SemVer Progression Rules
