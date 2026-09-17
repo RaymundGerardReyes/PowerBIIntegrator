@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ProfileSummaryPanel } from "./ProfileSummaryPanel";
 import { DuplicateReviewTable, DuplicateReviewItem } from "./DuplicateReviewTable";
 import { CleaningRuleEditor } from "./CleaningRuleEditor";
@@ -6,12 +6,16 @@ import { TransformationPlanBuilder } from "./TransformationPlanBuilder";
 import { ChartSuggestionPanel } from "./ChartSuggestionPanel";
 import { AdvisoryPanel } from "@features/ai-advisory";
 import { usePipelineRun } from "../hooks/usePipelineRun";
+import { useDataSources, type DataSourceDefinition } from "@features/data-sources";
 import { Button } from "@shared/ui/Button/Button";
 import { Badge } from "@shared/ui/Badge/Badge";
 import { Card } from "@shared/ui/Card/Card";
 
 export const DataQualityDashboardPage: React.FC = () => {
   const [activeStage, setActiveStage] = useState<"profile" | "dedupe" | "clean" | "transform" | "visuals" | "advisory">("profile");
+  const { data: dataSources = [], isLoading: isLoadingSources } = useDataSources();
+  const [selectedSourceId, setSelectedSourceId] = useState<string>("");
+
   const {
     profile,
     runResult,
@@ -22,27 +26,22 @@ export const DataQualityDashboardPage: React.FC = () => {
     executeFullPipeline
   } = usePipelineRun();
 
-  const [mockClusters, setMockClusters] = useState<DuplicateReviewItem[]>([
-    {
-      clusterId: "cluster_1",
-      ruleFired: "ExactHashDedupe",
-      keptRowId: "row_101",
-      droppedRowIds: ["row_108", "row_114"],
-      confidenceScore: 1.0,
-      reasonCode: "Exact SHA-256 row payload match on [CustomerName, InvoiceNo, Date]"
-    },
-    {
-      clusterId: "cluster_2",
-      ruleFired: "SimilarityClusterDedupe",
-      keptRowId: "row_204",
-      droppedRowIds: ["row_211"],
-      confidenceScore: 0.92,
-      reasonCode: "Levenshtein similarity 92% on free-text column 'CompanyName'"
+  useEffect(() => {
+    if (dataSources.length > 0 && !selectedSourceId) {
+      // Default to the latest uploaded data source
+      const latest = dataSources[dataSources.length - 1];
+      setSelectedSourceId(latest.id);
     }
-  ]);
+  }, [dataSources, selectedSourceId]);
+
+  const activeSource: DataSourceDefinition | null =
+    dataSources.find((ds: DataSourceDefinition) => ds.id === selectedSourceId) ||
+    (dataSources.length > 0 ? dataSources[dataSources.length - 1] : null);
+
+  const [clusters, setClusters] = useState<DuplicateReviewItem[]>([]);
 
   const handleKeepOverride = (clusterId: string, newKeptRowId: string) => {
-    setMockClusters((prev) =>
+    setClusters((prev) =>
       prev.map((c) =>
         c.clusterId === clusterId
           ? {
@@ -56,11 +55,19 @@ export const DataQualityDashboardPage: React.FC = () => {
   };
 
   const handleStartProfiling = () => {
-    runProfiling("sources/enterprise_sales_2026.csv", "EnterpriseSales2026");
+    if (activeSource) {
+      runProfiling(activeSource.connectionOrPath, activeSource.name);
+    } else {
+      runProfiling("DefaultSource", "DefaultDataset");
+    }
   };
 
   const handleRunFull = () => {
-    executeFullPipeline("sources/enterprise_sales_2026.csv", "EnterpriseSales2026", "Gold_Fact_Sales");
+    if (activeSource) {
+      executeFullPipeline(activeSource.connectionOrPath, activeSource.name, `Gold_${activeSource.name.replace(/[^a-zA-Z0-9_]/g, "_")}`);
+    } else {
+      executeFullPipeline("DefaultSource", "DefaultDataset", "Gold_Fact_Sales");
+    }
   };
 
   return (
@@ -78,18 +85,39 @@ export const DataQualityDashboardPage: React.FC = () => {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginBottom: "var(--space-1)" }}>
             <h2 style={{ margin: 0 }}>Data Quality & Transformation Engine</h2>
-            <Badge variant="info">Deterministic</Badge>
+            <Badge variant="info">Medallion Engine</Badge>
           </div>
           <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.875rem" }}>
             Rule-driven Medallion staging (Bronze → Silver → Gold) with explainable deduplication, declarative cleaning, and heuristic visual suggestions.
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "var(--space-2)" }}>
-          <Button variant="secondary" onClick={handleStartProfiling} disabled={isRunning}>
-            {isRunning ? "Profiling..." : "Profile Sample Dataset"}
+        <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center", flexWrap: "wrap" }}>
+          {dataSources.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+              <label htmlFor="data-source-select" style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--text-secondary)" }}>
+                Active Dataset:
+              </label>
+              <select
+                id="data-source-select"
+                className="form-input"
+                style={{ minWidth: "180px", padding: "0.375rem 0.75rem", fontSize: "0.8125rem" }}
+                value={activeSource?.id || ""}
+                onChange={(e) => setSelectedSourceId(e.target.value)}
+              >
+                {dataSources.map((ds: DataSourceDefinition) => (
+                  <option key={ds.id} value={ds.id}>
+                    {ds.name} ({ds.type.toUpperCase()})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <Button variant="secondary" onClick={handleStartProfiling} disabled={isRunning || (!activeSource && dataSources.length === 0)}>
+            {isRunning ? "Profiling..." : activeSource ? `Profile ${activeSource.name}` : "Profile Dataset"}
           </Button>
-          <Button variant="primary" onClick={handleRunFull} disabled={isRunning}>
+          <Button variant="primary" onClick={handleRunFull} disabled={isRunning || (!activeSource && dataSources.length === 0)}>
             {isRunning ? "Executing..." : "Run Full Medallion Pipeline"}
           </Button>
         </div>
@@ -119,7 +147,7 @@ export const DataQualityDashboardPage: React.FC = () => {
           role="tab"
           aria-selected={activeStage === "dedupe"}
         >
-          2. Deduplication Review ({mockClusters.length})
+          2. Deduplication Review ({clusters.length})
         </button>
         <button
           className={`tab-item ${activeStage === "clean" ? "tab-item-active" : ""}`}
@@ -165,7 +193,7 @@ export const DataQualityDashboardPage: React.FC = () => {
 
         {activeStage === "dedupe" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-            <DuplicateReviewTable clusters={mockClusters} onKeepOverride={handleKeepOverride} />
+            <DuplicateReviewTable clusters={clusters} onKeepOverride={handleKeepOverride} />
           </div>
         )}
 

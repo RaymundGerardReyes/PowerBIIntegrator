@@ -1,4 +1,5 @@
 using MediatR;
+using AnalyticsPlatform.Application.Features.DataQuality.Commands;
 using AnalyticsPlatform.Domain.Common;
 using AnalyticsPlatform.Domain.Features.DataQuality.Entities;
 using AnalyticsPlatform.Domain.Features.DataQuality.Rules;
@@ -9,15 +10,24 @@ public record SuggestChartsForTableQuery(string TableId) : IRequest<Result<IRead
 
 public class SuggestChartsForTableQueryHandler : IRequestHandler<SuggestChartsForTableQuery, Result<IReadOnlyList<ChartSuggestion>>>
 {
-    public Task<Result<IReadOnlyList<ChartSuggestion>>> Handle(SuggestChartsForTableQuery request, CancellationToken cancellationToken)
-    {
-        var dummyProfile = new DatasetProfile(request.TableId, request.TableId, 100);
-        dummyProfile.AddColumnProfile(new ColumnProfile("OrderDate", "DateTime", 100, 0, 0.0, 95, "2026-01-01", "2026-09-16", new[] { "2026-09-16" }, @"^\d{4}-\d{2}-\d{2}$", "High"));
-        dummyProfile.AddColumnProfile(new ColumnProfile("Revenue", "Decimal", 100, 0, 0.0, 90, "100.00", "50000.00", new[] { "500.00" }, @"^\d+\.\d+$", "High"));
-        dummyProfile.AddColumnProfile(new ColumnProfile("Region", "String", 100, 0, 0.0, 4, "APAC", "US", new[] { "APAC", "EU" }, @"^[A-Z]+$", "Low"));
+    private readonly ISender _sender;
 
-        var suggestions = VisualMappingRule.MapSuggestions(dummyProfile);
-        return Task.FromResult(Result.Success(suggestions));
+    public SuggestChartsForTableQueryHandler(ISender sender)
+    {
+        _sender = sender;
+    }
+
+    public async Task<Result<IReadOnlyList<ChartSuggestion>>> Handle(SuggestChartsForTableQuery request, CancellationToken cancellationToken)
+    {
+        var profileResult = await _sender.Send(new ProfileDatasetCommand(request.TableId, request.TableId), cancellationToken);
+        if (profileResult.IsSuccess && profileResult.Value != null && profileResult.Value.ColumnProfiles.Count > 0)
+        {
+            var suggestions = VisualMappingRule.MapSuggestions(profileResult.Value);
+            return Result.Success(suggestions);
+        }
+
+        var fallbackProfile = new DatasetProfile(request.TableId, request.TableId, 0);
+        return Result.Success(VisualMappingRule.MapSuggestions(fallbackProfile));
     }
 }
 

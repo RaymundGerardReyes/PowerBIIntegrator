@@ -46,6 +46,9 @@ export const handlers = [
   http.post(`${env.apiBaseUrl}/api/data-sources/upload`, async () =>
     HttpResponse.json({ id: "ds-1", name: "sales.xlsx", type: "excel", connectionOrPath: "/tmp/sales.xlsx" })
   ),
+  http.get(`${env.apiBaseUrl}/api/data-sources`, async () =>
+    HttpResponse.json([])
+  ),
   http.get(`${env.apiBaseUrl}/api/data-sources/schema/:id`, ({ params }) =>
     HttpResponse.json({
       dataSourceId: params.id,

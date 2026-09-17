@@ -11,5 +11,11 @@ public interface IAdvisoryRunRepository
     Task<IReadOnlyList<SchemaViolationSummary>> GetSchemaViolationsAsync(string runId, CancellationToken ct = default);
     Task<TransformationPlan?> GetTransformationPlanAsync(string planId, CancellationToken ct = default);
     Task<IReadOnlyList<ChartSuggestionSummary>> GetChartSuggestionsAsync(string runId, CancellationToken ct = default);
+    Task SaveRunResultAsync(
+        PipelineRunResult result,
+        DatasetProfile? profile = null,
+        IReadOnlyList<DuplicateCluster>? clusters = null,
+        IReadOnlyList<ChartSuggestionSummary>? chartSuggestions = null,
+        CancellationToken ct = default);
 }
 

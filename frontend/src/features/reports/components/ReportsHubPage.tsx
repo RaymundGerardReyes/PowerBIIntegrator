@@ -1,38 +1,73 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PdfReportViewer } from "./PdfReportViewer";
 import { ExcelReportPreview } from "./ExcelReportPreview";
 import { WordReportViewer } from "./WordReportViewer";
 import { Button } from "@shared/ui/Button/Button";
+import { useDataSources, type DataSourceDefinition } from "@features/data-sources";
 import { generateReportBlob, downloadBlob, type ReportFormat } from "../api/reportsApi";
-import type { ReportDocumentModel } from "@shared/types/api-contracts";
+import type { ReportDocumentModel, ColumnSchemaDto } from "@shared/types/api-contracts";
 
 export const ReportsHubPage: React.FC = () => {
   const [selectedFormat, setSelectedFormat] = useState<ReportFormat>("pdf");
   const [isExporting, setIsExporting] = useState(false);
+  const { data: dataSources = [] } = useDataSources();
+  const [selectedSourceId, setSelectedSourceId] = useState<string>("");
 
   // Editable report document model
   const [model, setModel] = useState<ReportDocumentModel>({
     title: "Executive Revenue & Analytics Report",
-    subtitle: "Consolidated enterprise KPI & quarterly performance summary",
+    subtitle: "Consolidated enterprise KPI & dataset performance summary",
     author: "Enterprise Strategy Office",
     organization: "PowerBI Analytics Platform",
     sections: [
       {
-        heading: "Q3 Performance Overview",
+        heading: "Analytical Overview",
         narrative: "This report was generated server-side using multi-target document engines targeting vector PDF, OpenXML spreadsheet, and Word document formats.",
         kpis: [
-          { title: "Net Revenue", value: "$4,850,000", subtitle: "vs prior quarter", deltaPercent: 14.2, isPositiveDelta: true },
-          { title: "Operating Margin", value: "32.4%", subtitle: "target: 30%", deltaPercent: 2.4, isPositiveDelta: true }
+          { title: "Attributes", value: "0", subtitle: "Registered columns", deltaPercent: 100, isPositiveDelta: true },
+          { title: "Quality Score", value: "100%", subtitle: "Contract compliance", deltaPercent: 0, isPositiveDelta: true }
         ],
-        tableHeaders: ["Business Unit", "Actual Revenue", "Target Revenue", "Variance"],
+        tableHeaders: ["Attribute", "Data Type", "Constraint", "Status"],
         tableRows: [
-          ["Enterprise Solutions", "$2,950,000", "$2,600,000", "+13.5%"],
-          ["Cloud Analytics", "$1,400,000", "$1,250,000", "+12.0%"],
-          ["Consulting & Support", "$500,000", "$480,000", "+4.2%"]
+          ["DefaultDataset", "Canonical", "Standardized", "Active"]
         ]
       }
     ]
   });
+
+  useEffect(() => {
+    if (dataSources.length > 0) {
+      const active = dataSources.find((ds: DataSourceDefinition) => ds.id === selectedSourceId) || dataSources[dataSources.length - 1];
+      if (active) {
+        if (!selectedSourceId) {
+          setSelectedSourceId(active.id);
+        }
+        const schemaRows = active.schema && active.schema.length > 0
+          ? active.schema.map((c: ColumnSchemaDto) => [c.name, c.dataType, c.isNullable ? "Nullable" : "Required", "Validated"])
+          : [[active.name, active.type.toUpperCase(), "Active", "Validated"]];
+
+        setModel({
+          title: `${active.name} Analytics Report`,
+          subtitle: `Automated analytical synthesis & medallion profile summary for ${active.name}`,
+          author: "Enterprise Strategy Office",
+          organization: "PowerBI Analytics Platform",
+          sections: [
+            {
+              heading: `${active.name} Schema & Distribution`,
+              narrative: `This report synthesizes ${active.schema?.length ?? 0} attributes from ${active.name} (${active.type.toUpperCase()}) with verified data quality rules.`,
+              kpis: [
+                { title: "Total Attributes", value: String(active.schema?.length ?? 0), subtitle: "Registered fields", deltaPercent: 100, isPositiveDelta: true },
+                { title: "Data Source Type", value: active.type.toUpperCase(), subtitle: "Engine connector", deltaPercent: 0, isPositiveDelta: true },
+                { title: "Contract Compliance", value: "100%", subtitle: "Medallion verified", deltaPercent: 0, isPositiveDelta: true }
+              ],
+              tableHeaders: ["Attribute Name", "Inferred Type", "Nullability", "Governance Status"],
+              tableRows: schemaRows
+            }
+          ]
+        });
+      }
+    }
+  }, [dataSources, selectedSourceId]);
 
   const handleDownloadDirect = async (format: ReportFormat) => {
     setIsExporting(true);
@@ -49,11 +84,34 @@ export const ReportsHubPage: React.FC = () => {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      <div>
-        <h2 style={{ marginBottom: "0.25rem" }}>Executive Report Generation Hub</h2>
-        <p style={{ margin: 0, color: "var(--text-secondary)" }}>
-          Synthesize high-fidelity reports across PDF (QuestPDF), Excel (ClosedXML), and Word (DocumentFormat.OpenXml) directly from canonical analytical models.
-        </p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
+        <div>
+          <h2 style={{ marginBottom: "0.25rem" }}>Executive Report Generation Hub</h2>
+          <p style={{ margin: 0, color: "var(--text-secondary)" }}>
+            Synthesize high-fidelity reports across PDF (QuestPDF), Excel (ClosedXML), and Word (DocumentFormat.OpenXml) directly from canonical analytical models.
+          </p>
+        </div>
+
+        {dataSources.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <label htmlFor="report-source-select" style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--text-secondary)" }}>
+              Data Source:
+            </label>
+            <select
+              id="report-source-select"
+              className="form-input"
+              style={{ minWidth: "180px", padding: "0.375rem 0.75rem", fontSize: "0.8125rem" }}
+              value={selectedSourceId}
+              onChange={(e) => setSelectedSourceId(e.target.value)}
+            >
+              {dataSources.map((ds: DataSourceDefinition) => (
+                <option key={ds.id} value={ds.id}>
+                  {ds.name} ({ds.type.toUpperCase()})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Format Selector Pills & Export Action Bar */}

@@ -53,6 +53,7 @@ public static class DependencyInjection
         services.AddKeyedScoped<IDataSourceSchemaExtractor, PostgresConnector>("postgresql");
 
         services.AddScoped<IDataSourceSchemaExtractorFactory, DataSourceSchemaExtractorFactory>();
+        services.AddScoped<IDataSourceReaderFactory, DataSourceReaderFactory>();
 
         // Document Generators (Multi-Target Rendering)
         services.AddScoped<IPdfReportGenerator, PdfReportGenerator>();

@@ -18,6 +18,11 @@ export async function registerSqlConnection(payload: {
   return data;
 }
 
+export async function getDataSources(): Promise<DataSourceDefinition[]> {
+  const { data } = await apiClient.get<DataSourceDefinition[]>("/api/data-sources");
+  return data;
+}
+
 export async function getDataSourceSchema(id: string): Promise<import("@shared/types/api-contracts").ColumnSchemaDto[]> {
   const { data } = await apiClient.get<import("@shared/types/api-contracts").ColumnSchemaDto[]>(`/api/data-sources/${id}/schema`);
   return data;

@@ -14,6 +14,22 @@ public class DataSourceRepository : IDataSourceRepository
         return Task.FromResult(dataSource);
     }
 
+    public Task<IReadOnlyList<DataSourceDefinition>> GetAllAsync(CancellationToken ct = default)
+    {
+        IReadOnlyList<DataSourceDefinition> list = _store.Values.ToList();
+        return Task.FromResult(list);
+    }
+
+    public Task<DataSourceDefinition?> GetByNameOrPathAsync(string nameOrPath, CancellationToken ct = default)
+    {
+        var match = _store.Values.FirstOrDefault(ds =>
+            string.Equals(ds.Name, nameOrPath, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(ds.ConnectionOrPath, nameOrPath, StringComparison.OrdinalIgnoreCase) ||
+            ds.Id.ToString().Equals(nameOrPath, StringComparison.OrdinalIgnoreCase));
+
+        return Task.FromResult(match);
+    }
+
     public Task AddAsync(DataSourceDefinition dataSource, CancellationToken ct = default)
     {
         _store[dataSource.Id] = dataSource;

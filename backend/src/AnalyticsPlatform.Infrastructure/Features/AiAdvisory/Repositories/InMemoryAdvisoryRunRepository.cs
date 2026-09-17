@@ -200,5 +200,30 @@ public class InMemoryAdvisoryRunRepository : IAdvisoryRunRepository
         }
         return Task.FromResult<IReadOnlyList<ChartSuggestionSummary>>(Array.Empty<ChartSuggestionSummary>());
     }
+
+    public Task SaveRunResultAsync(
+        PipelineRunResult result,
+        DatasetProfile? profile = null,
+        IReadOnlyList<DuplicateCluster>? clusters = null,
+        IReadOnlyList<ChartSuggestionSummary>? chartSuggestions = null,
+        CancellationToken ct = default)
+    {
+        _runs[result.RunId] = result;
+        if (profile != null)
+        {
+            _profiles[result.RunId] = profile;
+            _profiles[profile.DatasetName] = profile;
+            _profiles[profile.SourceReference] = profile;
+        }
+        if (clusters != null)
+        {
+            _clusters[result.RunId] = new List<DuplicateCluster>(clusters);
+        }
+        if (chartSuggestions != null)
+        {
+            _chartSuggestions[result.RunId] = new List<ChartSuggestionSummary>(chartSuggestions);
+        }
+        return Task.CompletedTask;
+    }
 }
 

@@ -90,6 +90,12 @@ public static class DataSourceEndpoints
                 : Results.BadRequest(result.Errors);
         });
 
+        group.MapGet("/", async (ISender sender) =>
+        {
+            var result = await sender.Send(new AnalyticsPlatform.Application.Features.DataSources.Queries.GetDataSources.GetDataSourcesQuery());
+            return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Errors);
+        });
+
         group.MapGet("/{id:guid}/schema", async (Guid id, ISender sender) =>
         {
             var result = await sender.Send(new GetDataSourceSchemaQuery(id));
