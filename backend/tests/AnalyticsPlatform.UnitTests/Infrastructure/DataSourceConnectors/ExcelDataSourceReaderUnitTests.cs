@@ -108,4 +108,25 @@ public sealed class ExcelDataSourceReaderUnitTests : IDisposable
         act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*directory traversal*");
     }
+
+    [Fact]
+    public async Task ExtractSchemaAsync_WhenLegacyXlsFileExists_ExtractsSchemaSuccessfully()
+    {
+        var tempUploadsDir = Path.Combine(Path.GetTempPath(), "AnalyticsPlatformUploads");
+        var existingXls = Directory.Exists(tempUploadsDir)
+            ? Directory.GetFiles(tempUploadsDir, "*.xls").FirstOrDefault()
+            : null;
+
+        if (existingXls != null && File.Exists(existingXls))
+        {
+            var reader = new ExcelDataSourceReader();
+            var schema = await reader.ExtractSchemaAsync(existingXls);
+            schema.Should().NotBeNull();
+            schema.Should().NotBeEmpty();
+
+            var rows = await reader.ReadAsync(existingXls);
+            rows.Should().NotBeNull();
+            rows.Should().NotBeEmpty();
+        }
+    }
 }
