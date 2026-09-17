@@ -4,5 +4,6 @@ export * from "./components/DuplicateReviewTable";
 export * from "./components/CleaningRuleEditor";
 export * from "./components/TransformationPlanBuilder";
 export * from "./components/ChartSuggestionPanel";
+export * from "./components/DataQualityDashboardPage";
 export * from "./hooks/usePipelineRun";
 

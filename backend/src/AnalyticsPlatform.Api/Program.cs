@@ -35,18 +35,22 @@ builder.Services.AddCors(options =>
         {
             policy.WithOrigins(origins)
                 .AllowAnyHeader()
-                .AllowAnyMethod();
+                .AllowAnyMethod()
+                .WithExposedHeaders("X-Correlation-Id", "Content-Disposition");
         }
         else
         {
             policy.SetIsOriginAllowed(_ => true)
                 .AllowAnyHeader()
-                .AllowAnyMethod();
+                .AllowAnyMethod()
+                .WithExposedHeaders("X-Correlation-Id", "Content-Disposition");
         }
     });
 });
 
 var app = builder.Build();
+
+app.UseCors();
 
 if (app.Environment.IsDevelopment())
 {
@@ -55,7 +59,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<CorrelationIdMiddleware>();
-app.UseCors();
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
@@ -65,6 +68,7 @@ app.MapAnalyticsEndpoints();
 app.MapDashboardEndpoints();
 app.MapDataSourceEndpoints();
 app.MapDataQualityEndpoints();
+app.MapAiAdvisoryEndpoints();
 app.MapPowerBiEndpoints();
 app.MapReportEndpoints();
 app.MapLlmEndpoints();

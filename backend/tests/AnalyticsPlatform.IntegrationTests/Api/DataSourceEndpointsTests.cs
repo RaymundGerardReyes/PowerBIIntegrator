@@ -110,5 +110,25 @@ public class DataSourceEndpointsTests : IClassFixture<WebApplicationFactory<Prog
         body.Should().NotBeNull();
         body!.Schema.Should().NotBeEmpty();
     }
+
+    [Fact]
+    public async Task PostUpload_WithMultipartFormData_ReturnsOkWithExtractedSchema()
+    {
+        using var form = new MultipartFormDataContent();
+        var fileBytes = await File.ReadAllBytesAsync(_tempCsvPath);
+        var fileContent = new ByteArrayContent(fileBytes);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/csv");
+        form.Add(fileContent, "file", "test_upload.csv");
+        form.Add(new StringContent("csv"), "type");
+
+        var response = await _client.PostAsync("/api/data-sources/upload", form);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<DataSourceResponse>(JsonOptions);
+        body.Should().NotBeNull();
+        body!.Name.Should().Be("test_upload.csv");
+        body.Type.Should().Be("csv");
+        body.Schema.Should().NotBeEmpty();
+    }
 }
 

@@ -32,7 +32,7 @@ public static class AnalyticsEndpoints
             var result = await sender.Send(new ValidateAnalyticsModelCommand(id));
             return result.IsSuccess && result.Value != null
                 ? Results.Ok(result.Value)
-                : Results.BadRequest(result.Errors);
+                : Results.NotFound(result.Errors);
         });
     }
 }

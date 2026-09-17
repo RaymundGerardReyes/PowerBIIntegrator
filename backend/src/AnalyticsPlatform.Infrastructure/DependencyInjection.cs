@@ -88,6 +88,19 @@ public static class DependencyInjection
         services.AddSingleton<Features.DataQuality.Repositories.PipelineRunRepository>();
         services.AddSingleton<Features.DataQuality.Persistence.QuarantineWriter>();
 
+        // AI Advisory Tier Infrastructure Adapters & Tools
+        services.AddSingleton<Application.Features.AiAdvisory.Interfaces.IAdvisoryRunRepository, Features.AiAdvisory.Repositories.InMemoryAdvisoryRunRepository>();
+        services.AddScoped<Application.Features.AiAdvisory.Interfaces.IAdvisoryTool, Features.AiAdvisory.Tools.GetPipelineRunResultTool>();
+        services.AddScoped<Application.Features.AiAdvisory.Interfaces.IAdvisoryTool, Features.AiAdvisory.Tools.GetDatasetProfileTool>();
+        services.AddScoped<Application.Features.AiAdvisory.Interfaces.IAdvisoryTool, Features.AiAdvisory.Tools.GetDuplicateClustersTool>();
+        services.AddScoped<Application.Features.AiAdvisory.Interfaces.IAdvisoryTool, Features.AiAdvisory.Tools.GetSchemaViolationsTool>();
+        services.AddScoped<Application.Features.AiAdvisory.Interfaces.IAdvisoryTool, Features.AiAdvisory.Tools.GetTransformationPlanTool>();
+        services.AddScoped<Application.Features.AiAdvisory.Interfaces.IAdvisoryTool, Features.AiAdvisory.Tools.GetChartSuggestionsTool>();
+        services.AddScoped<Application.Features.AiAdvisory.Interfaces.IAdvisoryToolRegistry, Features.AiAdvisory.ToolRegistry.AdvisoryToolRegistry>();
+        services.AddScoped<Application.Features.AiAdvisory.Services.AdvisoryContextAssembler>();
+        services.AddScoped<Application.Features.AiAdvisory.Interfaces.IGroundedAdvisorySynthesizer, Features.AiAdvisory.Synthesizer.GroundedAdvisorySynthesizer>();
+        services.AddScoped<Application.Features.AiAdvisory.Interfaces.IAdvisoryAuditLogger, Features.AiAdvisory.Audit.AdvisoryAuditLogger>();
+
         return services;
     }
 }

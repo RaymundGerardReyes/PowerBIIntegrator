@@ -7,13 +7,15 @@ import type { ColumnSchemaDto } from "@shared/types/api-contracts";
 export const ExcelUploadForm: React.FC = () => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [extractedSchema, setExtractedSchema] = useState<ColumnSchemaDto[] | null>(null);
-  const { mutate, isPending, data } = useUploadFile();
+  const { mutate, isPending, data, error } = useUploadFile();
 
   const handleUpload = () => {
     const file = inputRef.current?.files?.[0];
     if (file) {
+      const isCsv = file.name.toLowerCase().endsWith(".csv");
+      const type = isCsv ? "csv" : "excel";
       mutate(
-        { file, type: "excel" },
+        { file, type },
         {
           onSuccess: (result) => {
             if (result.schema && result.schema.length > 0) {
@@ -40,14 +42,22 @@ export const ExcelUploadForm: React.FC = () => {
     { key: "sampleValues" as const, header: "Sample Values" }
   ];
 
+  const errorMessage = error ? (error instanceof Error ? error.message : "Upload failed") : null;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        <input ref={inputRef} type="file" accept=".xlsx" aria-label="excel-upload-input" />
+        <input ref={inputRef} type="file" accept=".xlsx,.xls,.csv" aria-label="excel-upload-input" />
         <Button onClick={handleUpload} disabled={isPending}>
-          {isPending ? "Uploading..." : "Upload Excel"}
+          {isPending ? "Uploading..." : "Upload File"}
         </Button>
       </div>
+
+      {errorMessage && (
+        <div style={{ color: "#ef4444", fontSize: "0.875rem" }} role="alert">
+          {errorMessage}
+        </div>
+      )}
 
       {schemaRows.length > 0 && (
         <div style={{ marginTop: "12px" }}>

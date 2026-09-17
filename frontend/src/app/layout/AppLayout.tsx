@@ -19,6 +19,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const navItems = [
     { label: "Dashboards & PBIP", path: routePaths.dashboards },
     { label: "Data Sources", path: routePaths.dataSources },
+    { label: "Data Quality & Advisory", path: routePaths.dataQuality },
     { label: "Executive Reports", path: routePaths.reports }
   ];
 

@@ -1,5 +1,7 @@
 import React from "react";
 import type { ChartSuggestionDto } from "@shared/types/api-contracts";
+import { Badge } from "@shared/ui/Badge/Badge";
+import { Button } from "@shared/ui/Button/Button";
 
 interface ChartSuggestionPanelProps {
   suggestions: ChartSuggestionDto[];
@@ -8,36 +10,87 @@ interface ChartSuggestionPanelProps {
 
 export const ChartSuggestionPanel: React.FC<ChartSuggestionPanelProps> = ({ suggestions, onSelectSuggestion }) => {
   if (!suggestions.length) {
-    return <div className="p-4 text-gray-400">No chart suggestions available.</div>;
+    return (
+      <div className="card" style={{ padding: "var(--space-6)", textAlign: "center", color: "var(--text-muted)" }}>
+        No chart suggestions available.
+      </div>
+    );
   }
 
+  const getVisualIcon = (type: string) => {
+    switch (type) {
+      case "lineChart": return "📈";
+      case "barChart": return "📊";
+      case "scatterPlot": return "🎯";
+      default: return "📋";
+    }
+  };
+
   return (
-    <div className="bg-white border rounded-lg p-5 space-y-4">
-      <div className="flex justify-between items-center border-b pb-3">
+    <div className="card" style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderBottom: "1px solid var(--border-color)",
+          paddingBottom: "var(--space-3)"
+        }}
+      >
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Recommended Visuals</h3>
-          <p className="text-xs text-gray-500">Heuristic column-role mapping (Deterministic, no ML)</p>
+          <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 600 }}>Recommended Visuals</h3>
+          <p style={{ margin: "var(--space-1) 0 0 0", fontSize: "0.75rem", color: "var(--text-muted)" }}>
+            Heuristic column-role mapping (Deterministic, no ML).
+          </p>
         </div>
-        <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-medium">
-          PBIR Target Ready
-        </span>
+        <Badge variant="success">PBIR Target Ready</Badge>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: "var(--space-3)"
+        }}
+      >
         {suggestions.map((s, idx) => (
-          <div key={idx} className="border rounded p-3 bg-gray-50 hover:border-blue-300 transition-colors">
-            <div className="flex justify-between items-center mb-1">
-              <span className="font-semibold text-sm text-gray-900 capitalize">{s.recommendedVisualType}</span>
-              <span className="text-xs font-mono text-emerald-600">{(s.confidenceScore * 100).toFixed(0)}% Confidence</span>
+          <div
+            key={idx}
+            style={{
+              padding: "var(--space-4)",
+              borderRadius: "var(--radius-md)",
+              border: "1px solid var(--border-color)",
+              backgroundColor: "var(--bg-subtle)",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              gap: "var(--space-3)"
+            }}
+          >
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "var(--space-1)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                  <span style={{ fontSize: "1.125rem" }}>{getVisualIcon(s.recommendedVisualType)}</span>
+                  <span style={{ fontWeight: 600, fontSize: "0.9375rem", color: "var(--text-primary)", textTransform: "capitalize" }}>
+                    {s.recommendedVisualType}
+                  </span>
+                </div>
+                <Badge variant="info">{(s.confidenceScore * 100).toFixed(0)}% Match</Badge>
+              </div>
+              <p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--text-secondary)", lineHeight: 1.45 }}>
+                {s.reason}
+              </p>
             </div>
-            <p className="text-xs text-gray-600 mb-3">{s.reason}</p>
+
             {onSelectSuggestion && (
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => onSelectSuggestion(s.recommendedVisualType)}
-                className="w-full py-1 text-center bg-white border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-100"
+                style={{ width: "100%" }}
               >
                 Add to Dashboard Canvas
-              </button>
+              </Button>
             )}
           </div>
         ))}
@@ -45,4 +98,3 @@ export const ChartSuggestionPanel: React.FC<ChartSuggestionPanelProps> = ({ sugg
     </div>
   );
 };
-

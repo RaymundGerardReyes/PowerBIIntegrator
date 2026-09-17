@@ -5,9 +5,7 @@ export async function uploadFile(file: File, type: "excel" | "csv"): Promise<Dat
   const form = new FormData();
   form.append("file", file);
   form.append("type", type);
-  const { data } = await apiClient.post<DataSourceDefinition>("/api/data-sources/upload", form, {
-    headers: { "Content-Type": "multipart/form-data" }
-  });
+  const { data } = await apiClient.post<DataSourceDefinition>("/api/data-sources/upload", form);
   return data;
 }
 

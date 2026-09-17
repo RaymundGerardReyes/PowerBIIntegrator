@@ -25,6 +25,7 @@ describe("AppLayout", () => {
     expect(screen.getByText(/PowerBI Enhanced/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Dashboards & PBIP/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Data Sources/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Data Quality & Advisory/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Executive Reports/i })).toBeInTheDocument();
     expect(screen.getByText("Test Child Content")).toBeInTheDocument();
   });

@@ -1,4 +1,6 @@
 import React from "react";
+import { Badge } from "@shared/ui/Badge/Badge";
+import { Button } from "@shared/ui/Button/Button";
 
 export interface DuplicateReviewItem {
   clusterId: string;
@@ -16,40 +18,70 @@ interface DuplicateReviewTableProps {
 
 export const DuplicateReviewTable: React.FC<DuplicateReviewTableProps> = ({ clusters, onKeepOverride }) => {
   if (!clusters.length) {
-    return <div className="p-4 text-gray-500">No duplicate clusters detected. Clean data!</div>;
+    return (
+      <div className="card" style={{ padding: "var(--space-6)", textAlign: "center", color: "var(--text-muted)" }}>
+        No duplicate clusters detected. Clean data!
+      </div>
+    );
   }
 
   return (
-    <div className="bg-white border rounded-lg p-5 space-y-4">
-      <div className="flex justify-between items-center border-b pb-3">
-        <h3 className="text-lg font-semibold text-gray-900">Duplicate Clusters Review</h3>
-        <span className="text-xs bg-amber-50 text-amber-700 px-2.5 py-1 rounded font-medium">
-          {clusters.length} Duplicate Cluster(s)
-        </span>
+    <div className="card" style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderBottom: "1px solid var(--border-color)",
+          paddingBottom: "var(--space-3)"
+        }}
+      >
+        <div>
+          <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 600 }}>Duplicate Clusters Review</h3>
+          <p style={{ margin: "var(--space-1) 0 0 0", fontSize: "0.75rem", color: "var(--text-muted)" }}>
+            Deterministic exact hash, composite key, and similarity clustering matches.
+          </p>
+        </div>
+        <Badge variant="warning">{clusters.length} Duplicate Cluster(s)</Badge>
       </div>
 
-      <div className="space-y-3">
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
         {clusters.map((cluster) => (
-          <div key={cluster.clusterId} className="border rounded p-3 bg-gray-50 space-y-2">
-            <div className="flex justify-between items-center text-xs">
-              <span className="font-semibold text-gray-700">{cluster.ruleFired}</span>
-              <span className="text-gray-500 font-mono">Score: {(cluster.confidenceScore * 100).toFixed(0)}%</span>
+          <div
+            key={cluster.clusterId}
+            style={{
+              padding: "var(--space-3) var(--space-4)",
+              borderRadius: "var(--radius-md)",
+              border: "1px solid var(--border-color)",
+              backgroundColor: "var(--bg-subtle)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--space-2)"
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontWeight: 600, fontSize: "0.8125rem", color: "var(--text-primary)" }}>
+                {cluster.ruleFired}
+              </span>
+              <Badge variant={cluster.confidenceScore === 1 ? "info" : "warning"}>
+                Score: {(cluster.confidenceScore * 100).toFixed(0)}%
+              </Badge>
             </div>
-            <p className="text-xs text-gray-600">{cluster.reasonCode}</p>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-green-700 font-medium bg-green-50 px-2 py-0.5 rounded">
-                Kept: {cluster.keptRowId}
-              </span>
-              <span className="text-red-700 bg-red-50 px-2 py-0.5 rounded">
-                Dropped: {cluster.droppedRowIds.join(", ")}
-              </span>
-              {onKeepOverride && (
-                <button
+            <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+              {cluster.reasonCode}
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", flexWrap: "wrap", paddingTop: "var(--space-1)" }}>
+              <Badge variant="success">Kept: {cluster.keptRowId}</Badge>
+              <Badge variant="danger">Dropped: {cluster.droppedRowIds.join(", ")}</Badge>
+              {onKeepOverride && cluster.droppedRowIds.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => onKeepOverride(cluster.clusterId, cluster.droppedRowIds[0])}
-                  className="ml-auto text-blue-600 hover:underline text-xs"
+                  style={{ marginLeft: "auto", fontSize: "0.75rem" }}
                 >
                   Swap Kept Row
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -58,4 +90,3 @@ export const DuplicateReviewTable: React.FC<DuplicateReviewTableProps> = ({ clus
     </div>
   );
 };
-

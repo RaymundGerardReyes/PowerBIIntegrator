@@ -20,6 +20,12 @@ public class AnalyticsModel : Entity
         Culture = culture;
     }
 
+    public AnalyticsModel(Guid id, string name, string culture = "en-US")
+        : this(name, culture)
+    {
+        Id = id;
+    }
+
     public void AddMeasure(Measure measure) => Measures.Add(measure);
     public void AddDimension(Dimension dimension) => Dimensions.Add(dimension);
 

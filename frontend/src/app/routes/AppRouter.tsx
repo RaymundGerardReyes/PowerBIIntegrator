@@ -6,6 +6,7 @@ import { LoginForm } from "@features/auth/components/LoginForm";
 import { DashboardWorkspacePage } from "@features/dashboards/components/DashboardWorkspacePage";
 import { DataSourcesPage } from "@features/data-sources/components/DataSourcesPage";
 import { ReportsHubPage } from "@features/reports/components/ReportsHubPage";
+import { DataQualityDashboardPage } from "@features/data-quality/components/DataQualityDashboardPage";
 
 export const AppRouter: React.FC = () => (
   <BrowserRouter>
@@ -24,6 +25,7 @@ export const AppRouter: React.FC = () => (
         />
         <Route path={routePaths.dashboards} element={<DashboardWorkspacePage />} />
         <Route path={routePaths.dataSources} element={<DataSourcesPage />} />
+        <Route path={routePaths.dataQuality} element={<DataQualityDashboardPage />} />
         <Route path={routePaths.reports} element={<ReportsHubPage />} />
         <Route path="*" element={<Navigate to={routePaths.dashboards} replace />} />
       </Routes>
