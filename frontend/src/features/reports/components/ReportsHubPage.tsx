@@ -43,7 +43,12 @@ export const ReportsHubPage: React.FC = () => {
           setSelectedSourceId(active.id);
         }
         const schemaRows = active.schema && active.schema.length > 0
-          ? active.schema.map((c: ColumnSchemaDto) => [c.name, c.dataType, c.isNullable ? "Nullable" : "Required", "Validated"])
+          ? active.schema.map((c: ColumnSchemaDto) => [
+              c.name,
+              c.inferredType ?? c.dataType ?? "String",
+              c.isNullable ? "Nullable" : "Required",
+              "Validated"
+            ])
           : [[active.name, active.type.toUpperCase(), "Active", "Validated"]];
 
         setModel({

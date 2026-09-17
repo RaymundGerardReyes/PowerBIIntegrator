@@ -19,17 +19,29 @@ public class RunFullPipelineCommandHandler : IRequestHandler<RunFullPipelineComm
     private readonly IDataSourceReaderFactory _readerFactory;
     private readonly IAdvisoryRunRepository _advisoryRunRepository;
     private readonly ISender _sender;
+    private readonly IAnalyticsModelRepository? _modelRepository;
 
     public RunFullPipelineCommandHandler(
         IDataSourceRepository dataSourceRepository,
         IDataSourceReaderFactory readerFactory,
         IAdvisoryRunRepository advisoryRunRepository,
         ISender sender)
+        : this(dataSourceRepository, readerFactory, advisoryRunRepository, sender, null)
+    {
+    }
+
+    public RunFullPipelineCommandHandler(
+        IDataSourceRepository dataSourceRepository,
+        IDataSourceReaderFactory readerFactory,
+        IAdvisoryRunRepository advisoryRunRepository,
+        ISender sender,
+        IAnalyticsModelRepository? modelRepository)
     {
         _dataSourceRepository = dataSourceRepository;
         _readerFactory = readerFactory;
         _advisoryRunRepository = advisoryRunRepository;
         _sender = sender;
+        _modelRepository = modelRepository;
     }
 
     public async Task<Result<PipelineRunResult>> Handle(RunFullPipelineCommand request, CancellationToken cancellationToken)
@@ -156,6 +168,19 @@ public class RunFullPipelineCommandHandler : IRequestHandler<RunFullPipelineComm
             0,
             new[] { "GoldAggregationRule" },
             $"Gold table '{request.TargetGoldTable}' materialized with {distinctCount} curated records."));
+
+        if (_modelRepository != null && profile != null)
+        {
+            var goldSchema = profile.ColumnProfiles.Select(cp => new AnalyticsPlatform.Domain.Features.DataSources.Entities.ColumnSchema(
+                0,
+                cp.ColumnName,
+                Enum.TryParse<AnalyticsPlatform.Domain.Features.DataSources.Entities.ColumnDataType>(cp.InferredType, true, out var dt) ? dt : AnalyticsPlatform.Domain.Features.DataSources.Entities.ColumnDataType.String,
+                cp.NullCount > 0,
+                cp.TopValues
+            )).ToList();
+            var goldModel = AnalyticsPlatform.Application.Features.Analytics.Services.AnalyticsModelFactory.CreateFromDataSource(request.TargetGoldTable, goldSchema);
+            await _modelRepository.AddAsync(goldModel, cancellationToken);
+        }
 
         var chartNames = chartSuggestions.Select(s => s.RecommendedVisualType).ToList();
         result.AddStageSummary(new StageRunSummary(

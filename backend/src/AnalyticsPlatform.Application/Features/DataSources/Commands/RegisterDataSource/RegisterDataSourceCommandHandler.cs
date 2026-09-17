@@ -11,13 +11,23 @@ public class RegisterDataSourceCommandHandler : IRequestHandler<RegisterDataSour
 {
     private readonly IDataSourceRepository _repository;
     private readonly IDataSourceSchemaExtractorFactory _extractorFactory;
+    private readonly IAnalyticsModelRepository? _modelRepository;
 
     public RegisterDataSourceCommandHandler(
         IDataSourceRepository repository,
         IDataSourceSchemaExtractorFactory extractorFactory)
+        : this(repository, extractorFactory, null)
+    {
+    }
+
+    public RegisterDataSourceCommandHandler(
+        IDataSourceRepository repository,
+        IDataSourceSchemaExtractorFactory extractorFactory,
+        IAnalyticsModelRepository? modelRepository)
     {
         _repository = repository;
         _extractorFactory = extractorFactory;
+        _modelRepository = modelRepository;
     }
 
     public async Task<Result<DataSourceResponse>> Handle(RegisterDataSourceCommand request, CancellationToken cancellationToken)
@@ -49,6 +59,12 @@ public class RegisterDataSourceCommandHandler : IRequestHandler<RegisterDataSour
         entity.SetSchema(schema);
 
         await _repository.AddAsync(entity, cancellationToken);
+
+        if (_modelRepository != null)
+        {
+            var model = AnalyticsPlatform.Application.Features.Analytics.Services.AnalyticsModelFactory.CreateFromDataSource(entity.Name, entity.Schema);
+            await _modelRepository.AddAsync(model, cancellationToken);
+        }
 
         return Result<DataSourceResponse>.Success(new DataSourceResponse(
             entity.Id,

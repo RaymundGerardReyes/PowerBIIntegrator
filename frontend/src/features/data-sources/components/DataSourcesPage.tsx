@@ -27,7 +27,7 @@ export const DataSourcesPage: React.FC = () => {
 
   const schemaRows: Record<string, unknown>[] = (inspectedSchema ?? []).map((col) => ({
     name: col.name,
-    dataType: col.dataType,
+    dataType: col.inferredType ?? col.dataType ?? "String",
     isNullable: col.isNullable ? "Yes" : "No",
     sampleValues: col.sampleValues?.join(", ") || "None"
   }));

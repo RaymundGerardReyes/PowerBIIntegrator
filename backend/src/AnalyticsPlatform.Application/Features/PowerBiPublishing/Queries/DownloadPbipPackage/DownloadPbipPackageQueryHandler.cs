@@ -28,9 +28,8 @@ public class DownloadPbipPackageQueryHandler : IRequestHandler<DownloadPbipPacka
     {
         var dashboard = await _dashboardRepository.GetByIdAsync(request.DashboardDefinitionId, cancellationToken);
         var model = await _modelRepository.GetByIdAsync(request.AnalyticsModelId, cancellationToken);
-
-        dashboard ??= CreateDefaultDashboard(request.DashboardDefinitionId);
         model ??= CreateDefaultModel(request.AnalyticsModelId);
+        dashboard ??= Dashboards.Services.DashboardFactory.CreateFromModel(model, request.DashboardDefinitionId);
 
         var projectName = !string.IsNullOrWhiteSpace(request.ProjectName)
             ? request.ProjectName

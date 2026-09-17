@@ -13,19 +13,27 @@ public class PbirGenerator : IPbirGenerator
         var fileTree = new VirtualFileTree();
 
         // 1. definition.pbir
-        var definitionPbir = new
+        var definitionPbir = new Dictionary<string, object>
         {
-            schema = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pbir/1.0.0/schema.json",
-            version = "4.0",
-            datasetReference = new { byPath = new { path = semanticModelRelativePath } }
+            ["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json",
+            ["version"] = "4.0",
+            ["datasetReference"] = new { byPath = new { path = semanticModelRelativePath } }
         };
         fileTree.AddTextFile("definition.pbir", JsonSerializer.Serialize(definitionPbir, JsonOptions));
 
-        // 2. definition/report.json
-        var reportJson = new
+        // 2. definition/version.json (Mandatory for Power BI Desktop PBIR ExplorationSerializer)
+        var versionMetadata = new Dictionary<string, object>
         {
-            schema = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/report/1.0.0/schema.json",
-            themeCollection = new
+            ["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/versionMetadata/1.0.0/schema.json",
+            ["version"] = "2.0.0"
+        };
+        fileTree.AddTextFile("definition/version.json", JsonSerializer.Serialize(versionMetadata, JsonOptions));
+
+        // 3. definition/report.json
+        var reportJson = new Dictionary<string, object>
+        {
+            ["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/report/1.0.0/schema.json",
+            ["themeCollection"] = new
             {
                 baseTheme = new
                 {
@@ -34,59 +42,35 @@ public class PbirGenerator : IPbirGenerator
                     type = "SharedResources"
                 }
             },
-            activePageIndex = 0
+            ["activePageIndex"] = 0
         };
         fileTree.AddTextFile("definition/report.json", JsonSerializer.Serialize(reportJson, JsonOptions));
 
-        // 3. definition/pages/pages.json
+        // 4. definition/pages/pages.json
         var pageOrder = dashboard.Pages.Select(p => p.Name).ToList();
         var activePage = pageOrder.FirstOrDefault() ?? "Page1";
-        var pagesMetadata = new
+        var pagesMetadata = new Dictionary<string, object>
         {
-            schema = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.0.0/schema.json",
-            pageOrder,
-            activePageName = activePage
+            ["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.0.0/schema.json",
+            ["pageOrder"] = pageOrder,
+            ["activePageName"] = activePage
         };
         fileTree.AddTextFile("definition/pages/pages.json", JsonSerializer.Serialize(pagesMetadata, JsonOptions));
 
-        // 4. Each page and its visuals
+        // 5. Each page and its visuals
         foreach (var page in dashboard.Pages)
         {
             var pageDir = $"definition/pages/{page.Name}";
             
-            // page.json
-            var pageJson = new
+            // page.json (strictly compliant with PBIR page schema)
+            var pageJson = new Dictionary<string, object>
             {
-                schema = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/1.1.0/schema.json",
-                name = page.Name,
-                displayName = page.Name,
-                displayOption = "FitToPage",
-                width = page.CanvasWidth,
-                height = page.CanvasHeight,
-                visualContainers = page.Visuals.Select(v => new
-                {
-                    name = v.Name,
-                    visualType = v.VisualType,
-                    x = v.Layout.X,
-                    y = v.Layout.Y,
-                    width = v.Layout.Width,
-                    height = v.Layout.Height,
-                    z = v.Layout.ZOrder,
-                    visible = v.Layout.Visible,
-                    fields = v.BoundFields
-                }),
-                visuals = page.Visuals.Select(v => new
-                {
-                    name = v.Name,
-                    position = new
-                    {
-                        x = v.Layout.X,
-                        y = v.Layout.Y,
-                        width = v.Layout.Width,
-                        height = v.Layout.Height,
-                        z = v.Layout.ZOrder
-                    }
-                })
+                ["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/1.1.0/schema.json",
+                ["name"] = page.Name,
+                ["displayName"] = page.Name,
+                ["displayOption"] = "FitToPage",
+                ["width"] = page.CanvasWidth,
+                ["height"] = page.CanvasHeight
             };
             fileTree.AddTextFile($"{pageDir}/page.json", JsonSerializer.Serialize(pageJson, JsonOptions));
 
@@ -139,11 +123,11 @@ public class PbirGenerator : IPbirGenerator
             }
         }
 
-        var visualContainer = new
+        var visualContainer = new Dictionary<string, object>
         {
-            schema = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.2.0/schema.json",
-            name = visual.Name,
-            position = new
+            ["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.2.0/schema.json",
+            ["name"] = visual.Name,
+            ["position"] = new
             {
                 x = visual.Layout.X,
                 y = visual.Layout.Y,
@@ -151,7 +135,7 @@ public class PbirGenerator : IPbirGenerator
                 height = visual.Layout.Height,
                 z = visual.Layout.ZOrder
             },
-            visual = new
+            ["visual"] = new
             {
                 visualType = visual.VisualType,
                 query = new
@@ -170,13 +154,15 @@ public class PbirGenerator : IPbirGenerator
 
     public string GeneratePageJson(Page page)
     {
-        var pageDefinition = new
+        var pageDefinition = new Dictionary<string, object>
         {
-            name = page.Name,
-            displayName = page.Name,
-            width = page.CanvasWidth,
-            height = page.CanvasHeight,
-            visualContainers = page.Visuals.Select(v => new
+            ["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/1.1.0/schema.json",
+            ["name"] = page.Name,
+            ["displayName"] = page.Name,
+            ["displayOption"] = "FitToPage",
+            ["width"] = page.CanvasWidth,
+            ["height"] = page.CanvasHeight,
+            ["visualContainers"] = page.Visuals.Select(v => new
             {
                 name = v.Name,
                 visualType = v.VisualType,
@@ -195,10 +181,11 @@ public class PbirGenerator : IPbirGenerator
 
     public string GenerateDefinitionPbir(string semanticModelRelativePath)
     {
-        var definition = new
+        var definition = new Dictionary<string, object>
         {
-            version = "4.0",
-            datasetReference = new { byPath = new { path = semanticModelRelativePath } }
+            ["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json",
+            ["version"] = "4.0",
+            ["datasetReference"] = new { byPath = new { path = semanticModelRelativePath } }
         };
 
         return JsonSerializer.Serialize(definition, JsonOptions);

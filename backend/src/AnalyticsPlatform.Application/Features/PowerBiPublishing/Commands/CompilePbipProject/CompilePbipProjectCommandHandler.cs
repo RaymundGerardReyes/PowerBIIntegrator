@@ -28,15 +28,11 @@ public class CompilePbipProjectCommandHandler : IRequestHandler<CompilePbipProje
     {
         var dashboard = await _dashboardRepository.GetByIdAsync(request.DashboardDefinitionId, cancellationToken);
         var model = await _modelRepository.GetByIdAsync(request.AnalyticsModelId, cancellationToken);
+        model ??= CreateDefaultModel(request.AnalyticsModelId);
 
         if (dashboard == null)
         {
-            dashboard = CreateDefaultDashboard(request.DashboardDefinitionId);
-        }
-
-        if (model == null)
-        {
-            model = CreateDefaultModel(request.AnalyticsModelId);
+            dashboard = Dashboards.Services.DashboardFactory.CreateFromModel(model, request.DashboardDefinitionId);
         }
 
         var projectName = !string.IsNullOrWhiteSpace(request.ProjectName)

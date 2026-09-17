@@ -27,6 +27,24 @@ public static class PowerBiEndpoints
             return Results.Ok(result);
         });
 
+        group.MapGet("/desktop/status", async (ISender sender) =>
+        {
+            var result = await sender.Send(new Application.Features.PowerBiPublishing.Queries.GetLocalPowerBiStatus.GetLocalPowerBiStatusQuery());
+            return Results.Ok(result);
+        });
+
+        group.MapPost("/desktop/launch", async (Application.Features.PowerBiPublishing.Commands.LaunchLocalPowerBi.LaunchLocalPowerBiCommand command, ISender sender) =>
+        {
+            var result = await sender.Send(command);
+            return result.IsSuccess && result.Value != null ? Results.Ok(result.Value) : Results.BadRequest(result.Errors);
+        });
+
+        group.MapPost("/desktop/open-folder", async (Application.Features.PowerBiPublishing.Commands.OpenLocalPowerBiFolder.OpenLocalPowerBiFolderCommand command, ISender sender) =>
+        {
+            var result = await sender.Send(command);
+            return result.IsSuccess ? Results.Ok(new { success = result.Value }) : Results.BadRequest(result.Errors);
+        });
+
         group.MapPost("/compile-pbip", async (CompilePbipProjectCommand command, ISender sender) =>
         {
             var result = await sender.Send(command);

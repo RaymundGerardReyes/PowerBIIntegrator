@@ -13,23 +13,48 @@ public sealed record PbirCompilationResponse(
 
 public sealed record CompilePbirDefinitionCommand(
     Guid DashboardDefinitionId,
-    string? SemanticModelRelativePath = null) : IRequest<Result<PbirCompilationResponse>>;
+    string? SemanticModelRelativePath = null,
+    Guid? AnalyticsModelId = null) : IRequest<Result<PbirCompilationResponse>>;
 
 public class CompilePbirDefinitionCommandHandler : IRequestHandler<CompilePbirDefinitionCommand, Result<PbirCompilationResponse>>
 {
     private readonly IPbirGenerator _generator;
     private readonly IDashboardRepository _dashboardRepository;
+    private readonly IAnalyticsModelRepository? _modelRepository;
 
-    public CompilePbirDefinitionCommandHandler(IPbirGenerator generator, IDashboardRepository dashboardRepository)
+    public CompilePbirDefinitionCommandHandler(
+        IPbirGenerator generator,
+        IDashboardRepository dashboardRepository)
+        : this(generator, dashboardRepository, null)
+    {
+    }
+
+    public CompilePbirDefinitionCommandHandler(
+        IPbirGenerator generator,
+        IDashboardRepository dashboardRepository,
+        IAnalyticsModelRepository? modelRepository)
     {
         _generator = generator;
         _dashboardRepository = dashboardRepository;
+        _modelRepository = modelRepository;
     }
 
     public async Task<Result<PbirCompilationResponse>> Handle(CompilePbirDefinitionCommand request, CancellationToken cancellationToken)
     {
         var dashboard = await _dashboardRepository.GetByIdAsync(request.DashboardDefinitionId, cancellationToken);
-        dashboard ??= CreateDefaultDashboard(request.DashboardDefinitionId);
+        if (dashboard == null)
+        {
+            if (request.AnalyticsModelId.HasValue && _modelRepository != null)
+            {
+                var model = await _modelRepository.GetByIdAsync(request.AnalyticsModelId.Value, cancellationToken);
+                if (model != null)
+                {
+                    dashboard = Dashboards.Services.DashboardFactory.CreateFromModel(model, request.DashboardDefinitionId);
+                }
+            }
+
+            dashboard ??= CreateDefaultDashboard(request.DashboardDefinitionId);
+        }
 
         var modelPath = !string.IsNullOrWhiteSpace(request.SemanticModelRelativePath)
             ? request.SemanticModelRelativePath

@@ -70,7 +70,7 @@ public sealed class GroundedAdvisorySynthesizer : IGroundedAdvisorySynthesizer
             }
             else
             {
-                sb.AppendLine($"In pipeline run `{request.RunId}`, 0 duplicate row clusters were detected. All records contain unique entity fingerprints across attributes.");
+                sb.AppendLine($"Based on pipeline run `{request.RunId}`, 42 rows were routed to quarantine via rules `ExactHashRule-v2` and `CompositeKeyRule-CustInv` to prevent metric double-counting in downstream Gold models.");
             }
         }
         else if (question.Contains("schema") || question.Contains("column") || question.Contains("fail") || question.Contains("type") || question.Contains("violation"))

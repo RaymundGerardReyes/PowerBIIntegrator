@@ -2,6 +2,49 @@ import { http, HttpResponse } from "msw";
 import { env } from "@shared/config/env";
 
 export const handlers = [
+  http.get(`${env.apiBaseUrl}/api/analytics/models`, async () =>
+    HttpResponse.json([
+      {
+        id: "22222222-2222-2222-2222-222222222222",
+        name: "TitanicSurvival2026 Semantic Model",
+        tables: [{ name: "TitanicSurvival2026" }]
+      }
+    ])
+  ),
+  http.get(`${env.apiBaseUrl}/api/dashboards/model/:modelId`, () =>
+    HttpResponse.json({
+      id: "88888888-8888-8888-8888-888888888888",
+      name: "TitanicSurvival2026 Dashboard",
+      pages: [
+        {
+          name: "Overview & Analytics",
+          canvasWidth: 1280,
+          canvasHeight: 720,
+          visuals: [
+            {
+              name: "kpi-total-records",
+              visualType: "card",
+              layout: { x: 40, y: 30, width: 340, height: 160, z: 1, visible: true },
+              boundFields: ["TitanicSurvival2026[TotalRows]"]
+            },
+            {
+              name: "chart-pclass",
+              visualType: "barChart",
+              layout: { x: 40, y: 220, width: 720, height: 440, z: 1, visible: true },
+              boundFields: ["TitanicSurvival2026[pclass]", "TitanicSurvival2026[TotalRows]"]
+            }
+          ]
+        }
+      ]
+    })
+  ),
+  http.get(`${env.apiBaseUrl}/api/dashboards/:id`, ({ params }) =>
+    HttpResponse.json({
+      id: params.id,
+      name: "TitanicSurvival2026 Dashboard",
+      pages: []
+    })
+  ),
   http.post(`${env.apiBaseUrl}/api/analytics/measures`, async () => HttpResponse.json({ id: "measure-1" })),
   http.post(`${env.apiBaseUrl}/api/analytics/models/:id/validate`, ({ params }) =>
     HttpResponse.json({
@@ -16,6 +59,32 @@ export const handlers = [
   ),
   http.get(`${env.apiBaseUrl}/api/powerbi/embed-config/:reportId`, ({ params }) =>
     HttpResponse.json({ reportId: params.reportId, embedUrl: "https://app.powerbi.com/embed", accessToken: "fake-token" })
+  ),
+  http.get(`${env.apiBaseUrl}/api/powerbi/desktop/status`, () =>
+    HttpResponse.json({
+      isInstalled: true,
+      desktopExecutablePath: "C:\\Program Files\\WindowsApps\\Microsoft.MicrosoftPowerBIDesktop_x64__8wekyb3d8bbwe\\bin\\PBIDesktop.exe",
+      isRunning: true,
+      processId: 5368,
+      analysisServicesPort: 29761,
+      defaultOutputDirectory: "D:\\PowerBIEnhanced\\output\\pbip",
+      installationType: "Microsoft Store (WindowsApps)"
+    })
+  ),
+  http.post(`${env.apiBaseUrl}/api/powerbi/desktop/launch`, async ({ request }) => {
+    const body = (await request.json()) as { projectName?: string };
+    const name = body?.projectName || "AnalyticsProject";
+    return HttpResponse.json({
+      success: true,
+      projectName: name,
+      pbipFilePath: `D:\\PowerBIEnhanced\\output\\pbip\\${name}.pbip`,
+      projectDirectory: `D:\\PowerBIEnhanced\\output\\pbip\\${name}`,
+      launchedInDesktop: true,
+      message: `Launched project '${name}.pbip' in Power BI Desktop.`
+    });
+  }),
+  http.post(`${env.apiBaseUrl}/api/powerbi/desktop/open-folder`, async () =>
+    HttpResponse.json({ success: true })
   ),
   http.post(`${env.apiBaseUrl}/api/powerbi/compile-pbir`, async () =>
     HttpResponse.json({ reportId: "report-1", files: { "definition/report.json": "{}" } })

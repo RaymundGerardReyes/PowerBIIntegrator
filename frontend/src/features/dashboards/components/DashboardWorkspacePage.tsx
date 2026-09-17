@@ -4,63 +4,22 @@ import { useDashboardStore } from "../model/dashboardSlice";
 import { Button } from "@shared/ui/Button/Button";
 import { Modal } from "@shared/ui/Modal/Modal";
 import { ModelValidationModal } from "@features/analytics/components/ModelValidationModal";
-import { ReportEmbed } from "@features/powerbi-embed/components/ReportEmbed";
+import { getAnalyticsModels } from "@features/analytics/api/analyticsApi";
+import { LocalDesktopOrchestrator } from "@features/powerbi-embed/components/LocalDesktopOrchestrator";
 import * as powerBiApi from "@features/powerbi-embed/api/powerBiApi";
+import { getDashboardForModel } from "../api/dashboardsApi";
 import type { DashboardDefinition } from "../model/types";
+import type { AnalyticsModelDto } from "@shared/types/api-contracts";
 
-const starterDashboard: DashboardDefinition = {
-  id: "77777777-7777-7777-7777-777777777777",
-  name: "Enterprise Revenue & Operations Dashboard",
+const fallbackDashboard: DashboardDefinition = {
+  id: "00000000-0000-0000-0000-000000000000",
+  name: "Analytics Workspace Dashboard",
   pages: [
     {
-      name: "Executive Overview",
+      name: "Overview",
       canvasWidth: 1280,
       canvasHeight: 720,
-      visuals: [
-        {
-          name: "kpi-revenue",
-          visualType: "card",
-          layout: { x: 40, y: 30, width: 340, height: 160, z: 1, visible: true },
-          boundFields: ["Sales[TotalRevenue]"]
-        },
-        {
-          name: "kpi-margin",
-          visualType: "card",
-          layout: { x: 420, y: 30, width: 340, height: 160, z: 1, visible: true },
-          boundFields: ["Sales[OperatingMargin]"]
-        },
-        {
-          name: "kpi-customers",
-          visualType: "card",
-          layout: { x: 800, y: 30, width: 340, height: 160, z: 1, visible: true },
-          boundFields: ["Customers[ActiveCount]"]
-        },
-        {
-          name: "chart-sales-trend",
-          visualType: "lineChart",
-          layout: { x: 40, y: 220, width: 720, height: 440, z: 1, visible: true },
-          boundFields: ["Date[Month]", "Sales[Revenue]"]
-        },
-        {
-          name: "donut-by-region",
-          visualType: "pieChart",
-          layout: { x: 800, y: 220, width: 440, height: 440, z: 1, visible: true },
-          boundFields: ["Geography[Region]", "Sales[Revenue]"]
-        }
-      ]
-    },
-    {
-      name: "Regional Breakdown",
-      canvasWidth: 1280,
-      canvasHeight: 720,
-      visuals: [
-        {
-          name: "table-regional-sales",
-          visualType: "table",
-          layout: { x: 40, y: 40, width: 1100, height: 600, z: 1, visible: true },
-          boundFields: ["Geography[Territory]", "Sales[Revenue]", "Sales[Target]"]
-        }
-      ]
+      visuals: []
     }
   ]
 };
@@ -78,20 +37,54 @@ export const DashboardWorkspacePage: React.FC = () => {
   const [importDatasetName, setImportDatasetName] = useState("DirectImportDataset");
   const [importFile, setImportFile] = useState<File | null>(null);
 
-  useEffect(() => {
-    if (!current) {
-      setDashboard(starterDashboard);
-    }
-  }, [current, setDashboard]);
+  const [availableModels, setAvailableModels] = useState<AnalyticsModelDto[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState<string>("");
 
-  const activeDashboard = current ?? starterDashboard;
+  useEffect(() => {
+    getAnalyticsModels()
+      .then((models) => {
+        if (models && models.length > 0) {
+          setAvailableModels(models);
+          setSelectedModelId((prev) => {
+            const exists = models.some((m) => m.id === prev);
+            return exists ? prev : models[0].id;
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to fetch analytics models:", err);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!selectedModelId) return;
+    getDashboardForModel(selectedModelId)
+      .then((dash) => {
+        if (dash && dash.pages && dash.pages.length > 0) {
+          setDashboard(dash);
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to fetch tailored dashboard for model:", err);
+      });
+  }, [selectedModelId, setDashboard]);
+
+  const activeDashboard = current ?? fallbackDashboard;
+  const selectedModel = availableModels.find((m) => m.id === selectedModelId) ?? availableModels[0];
+  const activeModelId = selectedModel?.id ?? selectedModelId ?? "";
+  const activeModelName = selectedModel?.name ?? (activeDashboard.name ? `${activeDashboard.name} Model` : "Analytics Model");
 
   const handleCompilePbir = async () => {
+    if (!activeModelId) {
+      setNotification({ type: "error", message: "No active semantic model available to compile PBIR." });
+      return;
+    }
     setIsCompiling(true);
     setNotification(null);
     try {
       const result = await powerBiApi.compilePbir({
         dashboardDefinitionId: activeDashboard.id,
+        analyticsModelId: activeModelId,
         semanticModelRelativePath: "../definition"
       });
       setNotification({
@@ -109,15 +102,18 @@ export const DashboardWorkspacePage: React.FC = () => {
   };
 
   const handleCompileTmdl = async () => {
+    if (!activeModelId) {
+      setNotification({ type: "error", message: "No active semantic model available to compile TMDL." });
+      return;
+    }
     setIsCompiling(true);
     setNotification(null);
     try {
-      const result = await powerBiApi.compileTmdl({
-        analyticsModelId: "11111111-1111-1111-1111-111111111111"
-      });
+      const result = await powerBiApi.compileTmdl({ analyticsModelId: activeModelId });
+      const fileCount = result.files ? Object.keys(result.files).length : (result.tables?.length ?? 0);
       setNotification({
         type: "success",
-        message: `TMDL semantic model compiled: ${result.modelName} with ${result.tables?.length ?? 0} tables and ${result.relationships?.length ?? 0} relationships.`
+        message: `TMDL semantic model compiled: ${fileCount} files generated for '${result.modelName}'.`
       });
     } catch (err) {
       setNotification({
@@ -130,18 +126,22 @@ export const DashboardWorkspacePage: React.FC = () => {
   };
 
   const handleDownloadPbip = async () => {
+    if (!activeModelId) {
+      setNotification({ type: "error", message: "No active semantic model available to download PBIP." });
+      return;
+    }
     setIsCompiling(true);
     setNotification(null);
     try {
       const blob = await powerBiApi.downloadPbip({
         dashboardDefinitionId: activeDashboard.id,
-        analyticsModelId: "11111111-1111-1111-1111-111111111111",
-        projectName: "EnterpriseAnalytics"
+        analyticsModelId: activeModelId,
+        projectName: activeModelName
       });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${activeDashboard.name.replace(/\s+/g, "_")}.pbip.zip`;
+      a.download = `${activeModelName.replace(/\s+/g, "_")}.pbip.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -195,17 +195,39 @@ export const DashboardWorkspacePage: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
+          {availableModels.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <label htmlFor="semantic-model-select" style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                Target Model:
+              </label>
+              <select
+                id="semantic-model-select"
+                className="form-input"
+                style={{ padding: "0.35rem 0.5rem", fontSize: "0.875rem", minWidth: "220px" }}
+                value={activeModelId}
+                onChange={(e) => setSelectedModelId(e.target.value)}
+                aria-label="semantic-model-select"
+              >
+                {availableModels.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.tables?.length ?? 0} {m.tables?.length === 1 ? "table" : "tables"})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <Button
             onClick={() => setViewMode(viewMode === "canvas" ? "embed" : "canvas")}
             variant="secondary"
             aria-label="toggle-view-mode"
           >
-            {viewMode === "canvas" ? "Native Embed View" : "Layout Canvas Editor"}
+            {viewMode === "canvas" ? "Local Power BI Desktop" : "Layout Canvas Editor"}
           </Button>
           <Button
             onClick={() => setIsValidateModalOpen(true)}
             variant="secondary"
+            disabled={!activeModelId}
             aria-label="validate-model-btn"
           >
             Validate Model
@@ -213,7 +235,7 @@ export const DashboardWorkspacePage: React.FC = () => {
           <Button
             onClick={handleCompilePbir}
             variant="secondary"
-            disabled={isCompiling}
+            disabled={isCompiling || !activeModelId}
             aria-label="compile-pbir-btn"
           >
             Compile PBIR
@@ -221,14 +243,14 @@ export const DashboardWorkspacePage: React.FC = () => {
           <Button
             onClick={handleCompileTmdl}
             variant="secondary"
-            disabled={isCompiling}
+            disabled={isCompiling || !activeModelId}
             aria-label="compile-tmdl-btn"
           >
             Compile TMDL
           </Button>
           <Button
             onClick={handleDownloadPbip}
-            disabled={isCompiling}
+            disabled={isCompiling || !activeModelId}
             aria-label="download-pbip-btn"
           >
             Download PBIP (.zip)
@@ -266,30 +288,54 @@ export const DashboardWorkspacePage: React.FC = () => {
         </div>
       )}
 
-      {/* Main Canvas / Native Embed Viewport */}
-      <div className="card" style={{ padding: "1rem", minHeight: "650px", overflow: "auto" }}>
-        {viewMode === "canvas" ? (
-          <DashboardCanvas />
-        ) : (
-          <div style={{ height: "650px" }}>
-            <ReportEmbed
-              config={{
-                reportId: "demo-report-01",
-                embedUrl: "https://app.powerbi.com/reportEmbed?reportId=demo-report-01",
-                accessToken: "dummy-embed-token"
-              }}
+      {/* Main Viewport */}
+      {availableModels.length === 0 && !current ? (
+        <div
+          className="card"
+          style={{
+            padding: "3rem 2rem",
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "1rem"
+          }}
+        >
+          <div style={{ fontSize: "2.5rem" }}>📊</div>
+          <h3 style={{ margin: 0, fontSize: "1.25rem" }}>No Semantic Models Available</h3>
+          <p style={{ margin: 0, color: "var(--text-secondary)", maxWidth: "500px" }}>
+            Upload or register a dataset (Excel, CSV, or SQL Server) to automatically synthesize your DAX measures, TMDL model, and PBIR dashboard visuals.
+          </p>
+          <Button variant="primary" onClick={() => { window.location.href = "/data-sources"; }}>
+            Go to Data Sources & Ingestion
+          </Button>
+        </div>
+      ) : (
+        <div className="card" style={{ padding: "1rem", minHeight: "650px", overflow: "auto" }}>
+          {viewMode === "canvas" ? (
+            <DashboardCanvas />
+          ) : (
+            <LocalDesktopOrchestrator
+              modelId={activeModelId}
+              modelName={activeModelName}
+              dashboardId={activeDashboard.id}
+              dashboardName={activeDashboard.name}
+              onDownloadPbip={handleDownloadPbip}
+              onSwitchToCanvas={() => setViewMode("canvas")}
             />
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Model Validation Modal */}
-      <ModelValidationModal
-        open={isValidateModalOpen}
-        onClose={() => setIsValidateModalOpen(false)}
-        modelId="11111111-1111-1111-1111-111111111111"
-        modelName="Enterprise Sales & Finance Semantic Model"
-      />
+      {activeModelId && (
+        <ModelValidationModal
+          open={isValidateModalOpen}
+          onClose={() => setIsValidateModalOpen(false)}
+          modelId={activeModelId}
+          modelName={activeModelName}
+        />
+      )}
 
       {/* Direct Fabric Import Modal */}
       <Modal open={isImportModalOpen} onClose={() => setIsImportModalOpen(false)}>

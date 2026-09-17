@@ -1,0 +1,194 @@
+import React from "react";
+import type { Visual } from "@entities/visual/types";
+
+interface DonutChartVisualProps {
+  visual: Visual;
+}
+
+interface DonutSegment {
+  label: string;
+  percent: number;
+  color: string;
+}
+
+function getDonutSegments(category: string): DonutSegment[] {
+  const cat = category.toLowerCase();
+
+  if (cat === "sex" || cat === "gender") {
+    return [
+      { label: "Male", percent: 64, color: "#2563eb" },
+      { label: "Female", percent: 36, color: "#ec4899" }
+    ];
+  }
+
+  if (cat === "pclass" || cat === "class" || cat === "tier") {
+    return [
+      { label: "3rd Class", percent: 54, color: "#f59e0b" },
+      { label: "1st Class", percent: 25, color: "#2563eb" },
+      { label: "2nd Class", percent: 21, color: "#10b981" }
+    ];
+  }
+
+  if (cat === "embarked" || cat === "port") {
+    return [
+      { label: "Southampton", percent: 70, color: "#2563eb" },
+      { label: "Cherbourg", percent: 21, color: "#10b981" },
+      { label: "Queenstown", percent: 9, color: "#f59e0b" }
+    ];
+  }
+
+  if (cat === "survived" || cat === "target" || cat === "churn") {
+    return [
+      { label: "Not Survived", percent: 62, color: "#64748b" },
+      { label: "Survived", percent: 38, color: "#10b981" }
+    ];
+  }
+
+  if (cat.includes("age")) {
+    return [
+      { label: "18-35 yrs", percent: 48, color: "#2563eb" },
+      { label: "36-50 yrs", percent: 26, color: "#10b981" },
+      { label: "< 18 yrs", percent: 15, color: "#f59e0b" },
+      { label: "50+ yrs", percent: 11, color: "#8b5cf6" }
+    ];
+  }
+
+  if (cat.includes("fare") || cat.includes("price") || cat.includes("amount")) {
+    return [
+      { label: "Economy", percent: 54, color: "#2563eb" },
+      { label: "Business", percent: 30, color: "#10b981" },
+      { label: "First", percent: 16, color: "#f59e0b" }
+    ];
+  }
+
+  if (cat === "region" || cat === "country") {
+    return [
+      { label: "North America", percent: 44, color: "#2563eb" },
+      { label: "Europe", percent: 33, color: "#10b981" },
+      { label: "Asia-Pacific", percent: 23, color: "#f59e0b" }
+    ];
+  }
+
+  if (cat === "status" || cat === "state") {
+    return [
+      { label: "Active", percent: 56, color: "#10b981" },
+      { label: "Pending", percent: 28, color: "#f59e0b" },
+      { label: "Closed", percent: 16, color: "#64748b" }
+    ];
+  }
+
+  return [
+    { label: `${category} A`, percent: 48, color: "#2563eb" },
+    { label: `${category} B`, percent: 32, color: "#10b981" },
+    { label: `${category} C`, percent: 20, color: "#f59e0b" }
+  ];
+}
+
+export const DonutChartVisual: React.FC<DonutChartVisualProps> = ({ visual }) => {
+  const categoryField = visual.boundFields[0] ?? "Proportions";
+  const cleanCategory = categoryField.includes("[")
+    ? categoryField.substring(categoryField.indexOf("[") + 1).replace("]", "")
+    : categoryField;
+
+  const friendlyCategory = cleanCategory.charAt(0).toUpperCase() + cleanCategory.slice(1);
+  const segments = getDonutSegments(cleanCategory);
+
+  const isPie = visual.visualType === "pieChart";
+  const radius = isPie ? 25 : 42;
+  const strokeWidth = isPie ? 50 : 16;
+  const circumference = 2 * Math.PI * radius;
+
+  let runningOffset = 0;
+  const computedSegments = segments.map((seg) => {
+    const strokeDasharray = `${(seg.percent / 100) * circumference} ${circumference}`;
+    const strokeDashoffset = -((runningOffset / 100) * circumference);
+    runningOffset += seg.percent;
+    return { ...seg, strokeDasharray, strokeDashoffset };
+  });
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        padding: "0.5rem",
+        overflow: "hidden",
+        boxSizing: "border-box"
+      }}
+    >
+      <div style={{ marginBottom: "0.25rem" }}>
+        <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-primary, #111827)" }}>
+          {isPie ? "Pie Chart" : "Proportions"} by {friendlyCategory}
+        </span>
+        <p style={{ margin: 0, fontSize: "0.6875rem", color: "var(--text-muted, #9ca3af)" }}>
+          {isPie ? "Full Proportional Slices" : "Ring Ratio Distribution"}
+        </p>
+      </div>
+
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "1rem" }}>
+        {/* SVG Donut / Pie */}
+        <div style={{ position: "relative", width: "110px", height: "110px", flexShrink: 0 }}>
+          <svg width="110" height="110" viewBox="0 0 110 110" style={{ transform: "rotate(-90deg)" }}>
+            <circle
+              cx="55"
+              cy="55"
+              r={radius}
+              fill="transparent"
+              stroke="var(--bg-subtle, #f1f5f9)"
+              strokeWidth={strokeWidth}
+            />
+            {computedSegments.map((seg) => (
+              <circle
+                key={seg.label}
+                cx="55"
+                cy="55"
+                r={radius}
+                fill="transparent"
+                stroke={seg.color}
+                strokeWidth={strokeWidth}
+                strokeDasharray={seg.strokeDasharray}
+                strokeDashoffset={seg.strokeDashoffset}
+                strokeLinecap={isPie ? "butt" : "round"}
+              />
+            ))}
+          </svg>
+          {!isPie && (
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                color: "var(--text-primary, #111827)"
+              }}
+            >
+              <span>100%</span>
+              <span style={{ fontSize: "0.6rem", color: "var(--text-muted, #9ca3af)", fontWeight: 400 }}>Total</span>
+            </div>
+          )}
+        </div>
+
+        {/* Legend */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: "0.75rem", minWidth: "95px" }}>
+          {segments.map((seg) => (
+            <div key={seg.label} style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: seg.color, flexShrink: 0 }} />
+              <span style={{ color: "var(--text-secondary, #4b5563)", fontWeight: 500, fontSize: "0.75rem" }}>{seg.label}</span>
+              <span style={{ fontWeight: 700, color: "var(--text-primary, #111827)", marginLeft: "auto", fontFamily: "monospace", fontSize: "0.75rem" }}>
+                {seg.percent}%
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};

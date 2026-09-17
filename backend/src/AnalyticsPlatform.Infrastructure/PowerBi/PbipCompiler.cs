@@ -23,10 +23,11 @@ public class PbipCompiler : IPbipCompiler
         var projectTree = new VirtualFileTree();
 
         // 1. Root <ProjectName>.pbip descriptor
-        var pbipDescriptor = new
+        var pbipDescriptor = new Dictionary<string, object>
         {
-            version = "1.0",
-            artifacts = new object[]
+            ["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/pbip/pbipProperties/1.0.0/schema.json",
+            ["version"] = "1.0",
+            ["artifacts"] = new object[]
             {
                 new
                 {
@@ -36,7 +37,7 @@ public class PbipCompiler : IPbipCompiler
                     }
                 }
             },
-            settings = new { }
+            ["settings"] = new { }
         };
 
         var pbipJson = JsonSerializer.Serialize(pbipDescriptor, JsonOptions);
@@ -80,8 +81,21 @@ public class PbipCompiler : IPbipCompiler
 
     private static string SanitizeName(string name)
     {
+        if (string.IsNullOrWhiteSpace(name))
+            return "AnalyticsProject";
+
+        var withoutExt = name;
+        foreach (var ext in new[] { ".xls", ".xlsx", ".csv", ".json", ".pbip", ".pbix" })
+        {
+            if (withoutExt.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
+            {
+                withoutExt = withoutExt[..^ext.Length];
+                break;
+            }
+        }
+
         var invalid = Path.GetInvalidFileNameChars();
-        var cleaned = new string(name.Where(c => !invalid.Contains(c) && c != '/' && c != '\\' && c != '.').ToArray());
+        var cleaned = new string(withoutExt.Where(c => !invalid.Contains(c) && c != '/' && c != '\\' && c != '.').ToArray());
         return string.IsNullOrWhiteSpace(cleaned) ? "AnalyticsProject" : cleaned;
     }
 }

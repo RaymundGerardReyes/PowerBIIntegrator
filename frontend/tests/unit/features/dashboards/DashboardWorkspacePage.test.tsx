@@ -10,11 +10,13 @@ describe("DashboardWorkspacePage", () => {
     useDashboardStore.setState({ current: null });
   });
 
-  it("renders the dashboard workspace header, action toolbar, and canvas by default", () => {
+  it("renders the dashboard workspace header, action toolbar, and canvas by default", async () => {
     renderWithProviders(<DashboardWorkspacePage />);
 
-    expect(screen.getByText(/Enterprise Revenue & Operations Dashboard/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "toggle-view-mode" })).toHaveTextContent(/Native Embed View/i);
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "toggle-view-mode" })).toHaveTextContent(/Local Power BI Desktop/i);
     expect(screen.getByRole("button", { name: "validate-model-btn" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "compile-pbir-btn" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "compile-tmdl-btn" })).toBeInTheDocument();
@@ -22,7 +24,7 @@ describe("DashboardWorkspacePage", () => {
     expect(screen.getByRole("button", { name: "import-fabric-btn" })).toBeInTheDocument();
   });
 
-  it("toggles between Canvas layout editor and Native Embed views", async () => {
+  it("toggles between Canvas layout editor and Local Power BI Desktop views", async () => {
     const user = userEvent.setup();
     renderWithProviders(<DashboardWorkspacePage />);
 
@@ -32,7 +34,7 @@ describe("DashboardWorkspacePage", () => {
     expect(toggleBtn).toHaveTextContent(/Layout Canvas Editor/i);
 
     await user.click(toggleBtn);
-    expect(toggleBtn).toHaveTextContent(/Native Embed View/i);
+    expect(toggleBtn).toHaveTextContent(/Local Power BI Desktop/i);
   });
 
   it("compiles PBIR successfully and displays notification feedback", async () => {

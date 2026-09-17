@@ -9,3 +9,8 @@ export async function getDashboardDefinition(id: string): Promise<DashboardDefin
 export async function saveDashboardDefinition(dashboard: DashboardDefinition): Promise<void> {
   await apiClient.put(`/api/dashboards/${dashboard.id}`, dashboard);
 }
+
+export async function getDashboardForModel(modelId: string): Promise<DashboardDefinition> {
+  const { data } = await apiClient.get<DashboardDefinition>(`/api/dashboards/model/${modelId}`);
+  return data;
+}

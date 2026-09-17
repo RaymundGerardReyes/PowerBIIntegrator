@@ -8,7 +8,11 @@ import type {
   TmdlSemanticModelDto,
   PublishRequest,
   FabricPublishResultDto,
-  ImportPowerBiArtifactResponseDto
+  ImportPowerBiArtifactResponseDto,
+  LocalPowerBiStatusDto,
+  LaunchLocalPowerBiRequest,
+  LaunchProjectResultDto,
+  OpenLocalPowerBiFolderRequest
 } from "@shared/types/api-contracts";
 
 export async function compilePbip(payload: CompilePbipRequest): Promise<PbipCompilationResultDto> {
@@ -49,5 +53,20 @@ export async function importArtifact(
   formData.append("datasetDisplayName", datasetDisplayName);
 
   const { data } = await apiClient.post<ImportPowerBiArtifactResponseDto>("/api/powerbi/import", formData);
+  return data;
+}
+
+export async function getLocalPowerBiStatus(): Promise<LocalPowerBiStatusDto> {
+  const { data } = await apiClient.get<LocalPowerBiStatusDto>("/api/powerbi/desktop/status");
+  return data;
+}
+
+export async function launchLocalPowerBi(payload: LaunchLocalPowerBiRequest): Promise<LaunchProjectResultDto> {
+  const { data } = await apiClient.post<LaunchProjectResultDto>("/api/powerbi/desktop/launch", payload);
+  return data;
+}
+
+export async function openLocalPowerBiFolder(folderPath?: string): Promise<{ success: boolean }> {
+  const { data } = await apiClient.post<{ success: boolean }>("/api/powerbi/desktop/open-folder", { folderPath });
   return data;
 }

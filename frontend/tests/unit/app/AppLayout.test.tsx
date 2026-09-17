@@ -10,13 +10,11 @@ import { AuthProvider } from "@app/providers/AuthProvider";
 describe("AppLayout", () => {
   const renderLayout = (content: React.ReactNode = <div>Test Child Content</div>) =>
     renderWithProviders(
-      <MemoryRouter initialEntries={["/dashboards"]}>
-        <ThemeProvider>
-          <AuthProvider>
-            <AppLayout>{content}</AppLayout>
-          </AuthProvider>
-        </ThemeProvider>
-      </MemoryRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppLayout>{content}</AppLayout>
+        </AuthProvider>
+      </ThemeProvider>
     );
 
   it("renders top brand navigation and main content", () => {

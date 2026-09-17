@@ -20,3 +20,8 @@ export async function validateAnalyticsModel(id: string): Promise<ValidateAnalyt
   return data;
 }
 
+export async function getAnalyticsModels(): Promise<import("@shared/types/api-contracts").AnalyticsModelDto[]> {
+  const { data } = await apiClient.get<import("@shared/types/api-contracts").AnalyticsModelDto[]>("/api/analytics/models");
+  return data;
+}
+

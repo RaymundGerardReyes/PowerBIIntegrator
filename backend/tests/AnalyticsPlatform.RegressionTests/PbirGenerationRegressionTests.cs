@@ -42,16 +42,40 @@ public class PbirGenerationRegressionTests
         var fileTree = generator.GenerateReportDefinition(dashboard, "../CorporatePerformance.SemanticModel");
 
         fileTree.ContainsFile("definition.pbir").Should().BeTrue();
+        fileTree.ContainsFile("definition/version.json").Should().BeTrue();
         fileTree.ContainsFile("definition/report.json").Should().BeTrue();
         fileTree.ContainsFile("definition/pages/pages.json").Should().BeTrue();
         fileTree.ContainsFile("definition/pages/RevenueSummary/page.json").Should().BeTrue();
         fileTree.ContainsFile("definition/pages/RevenueSummary/visuals/RegionalRevenueBar/visual.json").Should().BeTrue();
 
+        var versionJson = fileTree.GetContent("definition/version.json");
+        versionJson.Should().Contain("\"$schema\": \"https://developer.microsoft.com/json-schemas/fabric/item/report/definition/versionMetadata/1.0.0/schema.json\"");
+        versionJson.Should().NotContain("\"schema\":");
+        versionJson.Should().Contain("\"version\": \"2.0.0\"");
+
         var pbir = fileTree.GetContent("definition.pbir");
+        pbir.Should().Contain("\"$schema\": \"https://developer.microsoft.com/json-schemas/fabric/item/report/definitionProperties/2.0.0/schema.json\"");
+        pbir.Should().NotContain("\"schema\":");
         pbir.Should().Contain("byPath");
         pbir.Should().Contain("../CorporatePerformance.SemanticModel");
 
+        var reportJson = fileTree.GetContent("definition/report.json");
+        reportJson.Should().Contain("\"$schema\": \"https://developer.microsoft.com/json-schemas/fabric/item/report/definition/report/1.0.0/schema.json\"");
+        reportJson.Should().NotContain("\"schema\":");
+
+        var pagesJson = fileTree.GetContent("definition/pages/pages.json");
+        pagesJson.Should().Contain("\"$schema\": \"https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.0.0/schema.json\"");
+        pagesJson.Should().NotContain("\"schema\":");
+
+        var pageJson = fileTree.GetContent("definition/pages/RevenueSummary/page.json");
+        pageJson.Should().Contain("\"$schema\": \"https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/1.1.0/schema.json\"");
+        pageJson.Should().NotContain("\"schema\":");
+        pageJson.Should().Contain("displayName");
+        pageJson.Should().Contain("displayOption");
+
         var visual = fileTree.GetContent("definition/pages/RevenueSummary/visuals/RegionalRevenueBar/visual.json");
+        visual.Should().Contain("\"$schema\": \"https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.2.0/schema.json\"");
+        visual.Should().NotContain("\"schema\":");
         visual.Should().Contain(VisualTypes.BarChart);
         visual.Should().Contain("queryState");
         visual.Should().Contain("Category");
@@ -76,6 +100,10 @@ public class PbirGenerationRegressionTests
         fileTree.ContainsFile("definition.pbism").Should().BeTrue();
         fileTree.ContainsFile("definition/model.tmdl").Should().BeTrue();
         fileTree.ContainsFile("definition/tables/FactSales.tmdl").Should().BeTrue();
+
+        var pbismContent = fileTree.GetContent("definition.pbism");
+        pbismContent.Should().Contain("\"$schema\": \"https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json\"");
+        pbismContent.Should().NotContain("\"schema\":");
 
         var modelContent = fileTree.GetContent("definition/model.tmdl");
         modelContent.Should().Contain("ref table 'FactSales'");

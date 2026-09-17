@@ -233,9 +233,9 @@ export const DataQualityDashboardPage: React.FC = () => {
             Run ID: <code style={{ color: "var(--primary)" }}>{runResult.runId}</code> | Source: {runResult.sourceReference}
           </p>
           <div style={{ display: "flex", gap: "var(--space-6)", marginTop: "var(--space-3)" }}>
-            {runResult.stageSummaries.map((stage, idx) => (
+            {runResult.stageSummaries?.map((stage, idx) => (
               <div key={idx} style={{ fontSize: "0.75rem" }}>
-                <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{stage.stageName}</span>: {stage.outputRowCount} rows
+                <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{stage?.stageName}</span>: {stage?.outputRowCount} rows
               </div>
             ))}
           </div>

@@ -19,6 +19,14 @@ public static class AnalyticsEndpoints
                 : Results.BadRequest(result.Errors);
         });
 
+        group.MapGet("/models", async (ISender sender) =>
+        {
+            var result = await sender.Send(new AnalyticsPlatform.Application.Features.Analytics.Queries.GetAnalyticsModels.GetAnalyticsModelsQuery());
+            return result.IsSuccess && result.Value != null
+                ? Results.Ok(result.Value)
+                : Results.BadRequest(result.Errors);
+        });
+
         group.MapGet("/models/{id:guid}", async (Guid id, ISender sender) =>
         {
             var result = await sender.Send(new GetAnalyticsModelQuery(id));

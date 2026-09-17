@@ -17,5 +17,8 @@ public sealed record ColumnSchema(
     string Name,
     ColumnDataType InferredType,
     bool IsNullable,
-    IReadOnlyList<string> SampleValues);
+    IReadOnlyList<string> SampleValues)
+{
+    public ColumnDataType DataType => InferredType;
+}
 

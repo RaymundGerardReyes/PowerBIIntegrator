@@ -39,6 +39,7 @@ public static class DependencyInjection
         
         services.AddScoped<IPbipCompiler, PbipCompiler>();
         services.AddScoped<PbipPackager>();
+        services.AddScoped<ILocalPowerBiDesktopService, LocalPowerBiDesktopService>();
 
         services.AddKeyedScoped<IDataSourceReader, ExcelDataSourceReader>("excel");
         services.AddKeyedScoped<IDataSourceReader, CsvDataSourceReader>("csv");

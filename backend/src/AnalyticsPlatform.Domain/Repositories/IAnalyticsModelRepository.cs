@@ -5,5 +5,6 @@ namespace AnalyticsPlatform.Domain.Repositories;
 public interface IAnalyticsModelRepository
 {
     Task<AnalyticsModel?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<AnalyticsModel>> GetAllAsync(CancellationToken ct = default);
     Task AddAsync(AnalyticsModel model, CancellationToken ct = default);
 }

@@ -6,8 +6,10 @@
 export type DataSourceType = "excel" | "csv" | "sqlserver" | "postgresql" | "mysql";
 
 export interface ColumnSchemaDto {
+  ordinal?: number;
   name: string;
-  dataType: string;
+  dataType?: string;
+  inferredType?: string;
   isNullable: boolean;
   sampleValues?: string[];
 }
@@ -51,6 +53,15 @@ export interface ReportDocumentModel {
   sections: ReportSectionDto[];
 }
 
+export interface AnalyticsModelDto {
+  id: string;
+  name: string;
+  culture: string;
+  tables: string[];
+  measures: string[];
+  relationshipsCount: number;
+}
+
 export interface CreateMeasureRequest {
   name: string;
   expression: string;
@@ -66,6 +77,7 @@ export interface CreateMeasureResponse {
 
 export interface CompilePbirRequest {
   dashboardDefinitionId: string;
+  analyticsModelId?: string;
   semanticModelRelativePath?: string;
 }
 
@@ -116,6 +128,36 @@ export interface ImportPowerBiArtifactResponseDto {
   reportId?: string;
   displayName: string;
   importState: string;
+}
+
+export interface LocalPowerBiStatusDto {
+  isInstalled: boolean;
+  desktopExecutablePath?: string | null;
+  isRunning: boolean;
+  processId?: number | null;
+  analysisServicesPort?: number | null;
+  defaultOutputDirectory: string;
+  installationType: string;
+}
+
+export interface LaunchLocalPowerBiRequest {
+  dashboardDefinitionId: string;
+  analyticsModelId: string;
+  projectName?: string;
+  outputDirectory?: string;
+}
+
+export interface LaunchProjectResultDto {
+  success: boolean;
+  projectName: string;
+  pbipFilePath: string;
+  projectDirectory: string;
+  launchedInDesktop: boolean;
+  message?: string;
+}
+
+export interface OpenLocalPowerBiFolderRequest {
+  folderPath?: string;
 }
 
 export interface EmbedConfigDto {

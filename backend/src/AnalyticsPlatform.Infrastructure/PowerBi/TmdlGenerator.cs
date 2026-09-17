@@ -14,10 +14,11 @@ public class TmdlGenerator : ITmdlGenerator
         var fileTree = new VirtualFileTree();
 
         // 1. definition.pbism
-        var pbism = new
+        var pbism = new Dictionary<string, object>
         {
-            schema = "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definition/pbism/1.0.0/schema.json",
-            version = "4.0"
+            ["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json",
+            ["version"] = "4.0",
+            ["settings"] = new { }
         };
         fileTree.AddTextFile("definition.pbism", JsonSerializer.Serialize(pbism, JsonOptions));
 

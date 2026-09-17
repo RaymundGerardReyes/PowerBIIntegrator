@@ -65,6 +65,7 @@ public class PbipCompilationPathTests
         fileTree.Files.Should().NotBeEmpty();
         fileTree.ContainsFile("GlobalSalesDashboard.pbip").Should().BeTrue();
         fileTree.ContainsFile("GlobalSalesDashboard.Report/definition.pbir").Should().BeTrue();
+        fileTree.ContainsFile("GlobalSalesDashboard.Report/definition/version.json").Should().BeTrue();
         fileTree.ContainsFile("GlobalSalesDashboard.Report/definition/report.json").Should().BeTrue();
         fileTree.ContainsFile("GlobalSalesDashboard.Report/definition/pages/pages.json").Should().BeTrue();
         fileTree.ContainsFile("GlobalSalesDashboard.Report/definition/pages/SummaryPage/page.json").Should().BeTrue();
@@ -88,13 +89,34 @@ public class PbipCompilationPathTests
 
         archive.Entries.Should().Contain(e => e.FullName == "GlobalSalesDashboard.pbip");
         archive.Entries.Should().Contain(e => e.FullName == "GlobalSalesDashboard.Report/definition.pbir");
+        archive.Entries.Should().Contain(e => e.FullName == "GlobalSalesDashboard.Report/definition/version.json");
         archive.Entries.Should().Contain(e => e.FullName == "GlobalSalesDashboard.SemanticModel/definition/tables/Orders.tmdl");
 
         var pbipEntry = archive.GetEntry("GlobalSalesDashboard.pbip");
         pbipEntry.Should().NotBeNull();
         using var reader = new StreamReader(pbipEntry!.Open(), Encoding.UTF8);
         var content = reader.ReadToEnd();
+        content.Should().Contain("\"$schema\": \"https://developer.microsoft.com/json-schemas/fabric/pbip/pbipProperties/1.0.0/schema.json\"");
+        content.Should().NotContain("\"schema\":");
         content.Should().Contain("GlobalSalesDashboard.Report");
+    }
+
+    [Fact]
+    public void CompileProject_WithDataFileExtensionInName_StripsExtensionCleanly()
+    {
+        var model = new AnalyticsModel("TitanicModel");
+        var dashboard = new DashboardDefinition("TitanicDashboard", Guid.NewGuid());
+        var compiler = new PbipCompiler(new PbirGenerator(), new TmdlGenerator());
+
+        var fileTree = compiler.CompileProject("6 titanic.xls", dashboard, model);
+
+        // Should be "6 titanic.pbip", not "6 titanicxls.pbip"
+        fileTree.ContainsFile("6 titanic.pbip").Should().BeTrue();
+        fileTree.ContainsFile("6 titanic.Report/definition.pbir").Should().BeTrue();
+        fileTree.ContainsFile("6 titanic.SemanticModel/definition.pbism").Should().BeTrue();
+
+        var pbir = fileTree.GetContent("6 titanic.Report/definition.pbir");
+        pbir.Should().Contain("../6 titanic.SemanticModel");
     }
 }
 
