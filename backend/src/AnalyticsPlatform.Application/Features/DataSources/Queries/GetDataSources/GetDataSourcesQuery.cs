@@ -30,3 +30,4 @@ public class GetDataSourcesQueryHandler : IRequestHandler<GetDataSourcesQuery, R
         return Result<IReadOnlyList<DataSourceResponse>>.Success(responses);
     }
 }
+

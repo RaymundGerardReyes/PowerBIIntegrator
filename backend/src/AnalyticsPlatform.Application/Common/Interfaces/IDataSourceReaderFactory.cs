@@ -6,3 +6,4 @@ public interface IDataSourceReaderFactory
 {
     IDataSourceReader GetReader(DataSourceType type);
 }
+
