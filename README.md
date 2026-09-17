@@ -5,7 +5,7 @@
 [![TypeScript 5.8](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Power BI PBIR](https://img.shields.io/badge/Power%20BI-PBIP%20%2F%20PBIR%202026-F2C811?logo=powerbi&logoColor=black)](https://learn.microsoft.com/power-bi/developer/projects/projects-overview)
 [![Clean Architecture](https://img.shields.io/badge/Architecture-Clean%20%26%20FSD-brightgreen)](#system-architecture)
-[![Backend Tests](https://img.shields.io/badge/Tests%20(Backend)-229%2F229%20Passed-success)](#backend-test-taxonomy)
+[![Backend Tests](https://img.shields.io/badge/Tests%20(Backend)-230%2F230%20Passed-success)](#backend-test-taxonomy)
 [![Frontend Tests](https://img.shields.io/badge/Tests%20(Frontend)-67%2F67%20Passed-success)](#frontend-test-taxonomy)
 
 A high-performance, enterprise-grade analytics framework that treats Power BI reports and semantic models as **compiled software artifacts**. Built on .NET 10 LTS and React 19, the platform generates valid 2026 Power BI Enhanced Report Format (`PBIR`), Tabular Model Definition Language (`TMDL`), and complete `.pbip` project packages directly from a canonical C# Intermediate Representation (IR), accompanied by an enterprise Model Context Protocol (MCP) server for autonomous AI agents.
@@ -301,8 +301,8 @@ dotnet test backend/AnalyticsPlatform.slnx
 | **Integration** | `AnalyticsPlatform.IntegrationTests` | 29 | `WebApplicationFactory` endpoint round-trips, AI Advisory API, MCP JSON-RPC & OpenXml |
 | **Path** | `AnalyticsPlatform.PathTests` | 8 | In-memory PBIP compile, ingestion, Advisory explain duplicate cluster path tests |
 | **Security** | `AnalyticsPlatform.SecurityTests` | 35 | NetArchTest layer boundaries, sensitivity ceilings, MCP auth & traversal guards |
-| **E2E** | `AnalyticsPlatform.E2ETests` | 6 | Full HTTP round-trip workflows & Reqnroll BDD Gherkin scenario executions |
-| **Total** | **All 6 Test Projects** | **229 / 229 Passed** | **100% Green, 0 Failures** |
+| **E2E** | `AnalyticsPlatform.E2ETests` | 7 | Full HTTP round-trip workflows & Reqnroll BDD Gherkin scenario executions |
+| **Total** | **All 6 Test Projects** | **230 / 230 Passed** | **100% Green, 0 Failures** |
 
 ### Frontend Test Taxonomy
 

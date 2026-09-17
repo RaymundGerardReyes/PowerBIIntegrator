@@ -25,6 +25,8 @@ public class AdvisoryContextAssembler
         _toolRegistry = toolRegistry ?? throw new ArgumentNullException(nameof(toolRegistry));
     }
 
+    private static readonly JsonSerializerOptions s_jsonOptions = new() { WriteIndented = true };
+
     public virtual async Task<AssembledAdvisoryContext> AssembleAsync(
         AdvisoryQueryRequest request,
         CancellationToken ct = default)
@@ -109,7 +111,7 @@ public class AdvisoryContextAssembler
             toolExecutionResults = toolOutputs
         };
 
-        var json = JsonSerializer.Serialize(structuredContext, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(structuredContext, s_jsonOptions);
 
         return new AssembledAdvisoryContext(
             json,
