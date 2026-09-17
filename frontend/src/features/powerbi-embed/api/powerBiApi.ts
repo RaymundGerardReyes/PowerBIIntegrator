@@ -48,8 +48,6 @@ export async function importArtifact(
   formData.append("workspaceId", workspaceId);
   formData.append("datasetDisplayName", datasetDisplayName);
 
-  const { data } = await apiClient.post<ImportPowerBiArtifactResponseDto>("/api/powerbi/import", formData, {
-    headers: { "Content-Type": undefined }
-  });
+  const { data } = await apiClient.post<ImportPowerBiArtifactResponseDto>("/api/powerbi/import", formData);
   return data;
 }

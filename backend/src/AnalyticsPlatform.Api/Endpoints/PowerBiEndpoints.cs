@@ -53,10 +53,36 @@ public static class PowerBiEndpoints
             return result.IsSuccess ? Results.Ok(result.Value) : Results.BadRequest(result.Errors);
         });
 
-        group.MapPost("/import", async (IFormFile file, string workspaceId, string datasetDisplayName, ISender sender, CancellationToken ct) =>
+        group.MapPost("/import", async (HttpRequest request, ISender sender, CancellationToken ct) =>
         {
+            if (!request.HasFormContentType)
+            {
+                return Results.BadRequest(new[] { "Invalid content type. Expected multipart/form-data." });
+            }
+
+            var form = await request.ReadFormAsync(ct);
+            var file = form.Files.GetFile("file") ?? (form.Files.Count > 0 ? form.Files[0] : null);
             if (file == null || file.Length == 0)
+            {
                 return Results.BadRequest(new[] { "File is required." });
+            }
+
+            var workspaceId = form["workspaceId"].ToString();
+            if (string.IsNullOrWhiteSpace(workspaceId) && request.Query.ContainsKey("workspaceId"))
+            {
+                workspaceId = request.Query["workspaceId"].ToString();
+            }
+
+            var datasetDisplayName = form["datasetDisplayName"].ToString();
+            if (string.IsNullOrWhiteSpace(datasetDisplayName) && request.Query.ContainsKey("datasetDisplayName"))
+            {
+                datasetDisplayName = request.Query["datasetDisplayName"].ToString();
+            }
+
+            if (string.IsNullOrWhiteSpace(datasetDisplayName))
+            {
+                datasetDisplayName = Path.GetFileNameWithoutExtension(file.FileName);
+            }
 
             await using var stream = file.OpenReadStream();
             var command = new ImportPowerBiArtifactCommand(workspaceId, datasetDisplayName, stream, file.FileName);

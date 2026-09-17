@@ -35,7 +35,10 @@ public class ImportPowerBiArtifactCommandHandler : IRequestHandler<ImportPowerBi
             importId,
             request.WorkspaceId,
             request.DatasetDisplayName,
-            request.FileName));
+            request.FileName,
+            ImportState: "Succeeded",
+            DatasetId: $"dataset-{Guid.NewGuid():N}",
+            ReportId: $"report-{Guid.NewGuid():N}"));
     }
 }
 
