@@ -42,7 +42,24 @@ export const ExcelUploadForm: React.FC = () => {
     { key: "sampleValues" as const, header: "Sample Values" }
   ];
 
-  const errorMessage = error ? (error instanceof Error ? error.message : "Upload failed") : null;
+  const getErrorMessage = (err: unknown): string | null => {
+    if (!err) return null;
+    if (typeof err === "object" && err !== null && "response" in err) {
+      const response = (err as { response?: { data?: unknown } }).response;
+      if (Array.isArray(response?.data) && response.data.length > 0) {
+        return response.data.join(", ");
+      }
+      if (typeof response?.data === "string") {
+        return response.data;
+      }
+      if (typeof response?.data === "object" && response?.data !== null && "title" in response.data) {
+        return String((response.data as { title: unknown }).title);
+      }
+    }
+    return err instanceof Error ? err.message : "Upload failed";
+  };
+
+  const errorMessage = getErrorMessage(error);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>

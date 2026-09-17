@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Core -->
+    <PackageVersion Include="ExcelDataReader" Version="3.9.0" />
     <PackageVersion Include="MediatR" Version="12.4.1" />
     <PackageVersion Include="FluentValidation" Version="11.10.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" />

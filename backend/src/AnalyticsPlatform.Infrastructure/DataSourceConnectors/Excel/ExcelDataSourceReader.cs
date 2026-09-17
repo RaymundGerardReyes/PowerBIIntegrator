@@ -1,5 +1,8 @@
+using System.Data;
+using System.Globalization;
 using System.Runtime.CompilerServices;
-using ClosedXML.Excel;
+using System.Text;
+using ExcelDataReader;
 using AnalyticsPlatform.Application.Common.Interfaces;
 using AnalyticsPlatform.Domain.Features.DataSources.Entities;
 
@@ -9,6 +12,11 @@ public class ExcelDataSourceReader : IDataSourceReader, IDataSourceSchemaExtract
 {
     private const int SchemaInferenceSampleRows = 200;
 
+    static ExcelDataSourceReader()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+    }
+
     public Task<IReadOnlyList<IDictionary<string, object?>>> ReadAsync(string connectionOrPath, CancellationToken ct = default)
     {
         ValidatePath(connectionOrPath);
@@ -16,21 +24,25 @@ public class ExcelDataSourceReader : IDataSourceReader, IDataSourceSchemaExtract
         if (!File.Exists(connectionOrPath))
             return Task.FromResult<IReadOnlyList<IDictionary<string, object?>>>(new List<IDictionary<string, object?>>());
 
-        using var workbook = new XLWorkbook(connectionOrPath);
-        var worksheet = workbook.Worksheets.FirstOrDefault();
-        if (worksheet == null)
-            return Task.FromResult<IReadOnlyList<IDictionary<string, object?>>>(new List<IDictionary<string, object?>>());
+        using var stream = File.Open(connectionOrPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        using var reader = ExcelReaderFactory.CreateReader(stream);
 
-        var headers = GetHeaders(worksheet);
         var rows = new List<IDictionary<string, object?>>();
+        if (!reader.Read())
+            return Task.FromResult<IReadOnlyList<IDictionary<string, object?>>>(rows);
 
-        foreach (var row in worksheet.RowsUsed().Skip(1))
+        var headers = GetHeaders(reader);
+        if (headers.Count == 0)
+            return Task.FromResult<IReadOnlyList<IDictionary<string, object?>>>(rows);
+
+        while (reader.Read())
         {
             ct.ThrowIfCancellationRequested();
             var record = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < headers.Count; i++)
             {
-                record[headers[i]] = ExtractCellValue(row.Cell(i + 1));
+                var val = i < reader.FieldCount ? reader.GetValue(i) : null;
+                record[headers[i]] = NormalizeCellValue(val);
             }
             rows.Add(record);
         }
@@ -48,21 +60,26 @@ public class ExcelDataSourceReader : IDataSourceReader, IDataSourceSchemaExtract
         if (!File.Exists(connectionOrPath))
             yield break;
 
-        using var workbook = new XLWorkbook(connectionOrPath);
-        var worksheet = workbook.Worksheets.FirstOrDefault();
-        if (worksheet == null)
+        using var stream = File.Open(connectionOrPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        using var reader = ExcelReaderFactory.CreateReader(stream);
+
+        if (!reader.Read())
             yield break;
 
-        var headers = GetHeaders(worksheet);
+        var headers = GetHeaders(reader);
+        if (headers.Count == 0)
+            yield break;
+
         var currentBatch = new List<IDictionary<string, object?>>(batchSize);
 
-        foreach (var row in worksheet.RowsUsed().Skip(1))
+        while (reader.Read())
         {
             ct.ThrowIfCancellationRequested();
             var record = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < headers.Count; i++)
             {
-                record[headers[i]] = ExtractCellValue(row.Cell(i + 1));
+                var val = i < reader.FieldCount ? reader.GetValue(i) : null;
+                record[headers[i]] = NormalizeCellValue(val);
             }
             currentBatch.Add(record);
 
@@ -88,22 +105,38 @@ public class ExcelDataSourceReader : IDataSourceReader, IDataSourceSchemaExtract
         if (!File.Exists(connectionOrPath))
             return Task.FromResult<IReadOnlyList<ColumnSchema>>(new List<ColumnSchema>());
 
-        using var workbook = new XLWorkbook(connectionOrPath);
-        var worksheet = workbook.Worksheets.FirstOrDefault();
-        if (worksheet == null)
+        using var stream = File.Open(connectionOrPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        using var reader = ExcelReaderFactory.CreateReader(stream);
+
+        if (!reader.Read())
             return Task.FromResult<IReadOnlyList<ColumnSchema>>(new List<ColumnSchema>());
 
-        var headers = GetHeaders(worksheet);
-        var sampleRows = worksheet.RowsUsed().Skip(1).Take(SchemaInferenceSampleRows).ToList();
+        var headers = GetHeaders(reader);
+        if (headers.Count == 0)
+            return Task.FromResult<IReadOnlyList<ColumnSchema>>(new List<ColumnSchema>());
 
-        var schemaList = new List<ColumnSchema>(headers.Count);
-
+        var columnValues = new List<List<object?>>(headers.Count);
         for (int i = 0; i < headers.Count; i++)
         {
+            columnValues.Add(new List<object?>());
+        }
+
+        int sampledRowCount = 0;
+        while (reader.Read() && sampledRowCount < SchemaInferenceSampleRows)
+        {
             ct.ThrowIfCancellationRequested();
-            var colIndex = i + 1;
-            var values = sampleRows.Select(r => ExtractCellValue(r.Cell(colIndex))).ToList();
-            var inference = TypeInferenceEngine.InferColumn(i, headers[i], values);
+            sampledRowCount++;
+            for (int i = 0; i < headers.Count; i++)
+            {
+                var val = i < reader.FieldCount ? reader.GetValue(i) : null;
+                columnValues[i].Add(NormalizeCellValue(val));
+            }
+        }
+
+        var schemaList = new List<ColumnSchema>(headers.Count);
+        for (int i = 0; i < headers.Count; i++)
+        {
+            var inference = TypeInferenceEngine.InferColumn(i, headers[i], columnValues[i]);
             schemaList.Add(inference.Schema);
         }
 
@@ -119,23 +152,22 @@ public class ExcelDataSourceReader : IDataSourceReader, IDataSourceSchemaExtract
             throw new InvalidOperationException($"Potential directory traversal detected in path: '{connectionOrPath}'.");
     }
 
-    private static List<string> GetHeaders(IXLWorksheet worksheet)
+    private static List<string> GetHeaders(IExcelDataReader reader)
     {
-        var headerRow = worksheet.Row(1);
-        return headerRow.CellsUsed().Select(c => c.GetString().Trim()).Where(h => !string.IsNullOrEmpty(h)).ToList();
+        var headers = new List<string>();
+        for (int i = 0; i < reader.FieldCount; i++)
+        {
+            var raw = reader.GetValue(i)?.ToString()?.Trim();
+            var headerName = !string.IsNullOrWhiteSpace(raw) ? raw : $"Column{i + 1}";
+            headers.Add(headerName);
+        }
+        return headers;
     }
 
-    private static object? ExtractCellValue(IXLCell cell)
+    private static object? NormalizeCellValue(object? val)
     {
-        if (cell.IsEmpty()) return null;
-        var val = cell.Value;
-        return val.Type switch
-        {
-            XLDataType.Boolean => val.GetBoolean(),
-            XLDataType.Number => val.GetNumber(),
-            XLDataType.DateTime => val.GetDateTime(),
-            XLDataType.Text => val.GetText(),
-            _ => val.ToString()
-        };
+        if (val == null || val is DBNull) return null;
+        if (val is string s && string.IsNullOrWhiteSpace(s)) return null;
+        return val;
     }
 }

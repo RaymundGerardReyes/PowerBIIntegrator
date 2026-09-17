@@ -7,6 +7,7 @@
     <ProjectReference Include="../AnalyticsPlatform.Application/AnalyticsPlatform.Application.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="ExcelDataReader" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
