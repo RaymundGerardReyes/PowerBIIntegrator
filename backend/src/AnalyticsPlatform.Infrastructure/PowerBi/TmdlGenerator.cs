@@ -129,15 +129,93 @@ public class TmdlGenerator : ITmdlGenerator
                 sb.AppendLine($"\t\t\t{line.TrimEnd('\r')}");
             }
         }
+        else if (table.Columns.Count > 0)
+        {
+            sb.AppendLine("\t\t\tlet");
+            var colTypes = string.Join(", ", table.Columns.Select(c => $"#\"{c.Name}\" = {FormatMType(c.DataType)}"));
+            sb.AppendLine($"\t\t\t    Source = #table(type table [{colTypes}], {{");
+
+            var rowValues = new List<string>();
+            for (int r = 1; r <= 10; r++)
+            {
+                var rowCells = table.Columns.Select(c => GenerateSampleCell(c, r));
+                rowValues.Add($"\t\t\t        {{{string.Join(", ", rowCells)}}}");
+            }
+            sb.AppendLine(string.Join(",\n", rowValues));
+            sb.AppendLine("\t\t\t    })");
+            sb.AppendLine("\t\t\tin");
+            sb.AppendLine("\t\t\t    Source");
+        }
         else
         {
             sb.AppendLine("\t\t\tlet");
-            sb.AppendLine("\t\t\t    Source = #table(type table [], {})");
+            sb.AppendLine("\t\t\t    Source = #table(type table [Id = Int64.Type, Value = text], {{1, \"Sample\"}})");
             sb.AppendLine("\t\t\tin");
             sb.AppendLine("\t\t\t    Source");
         }
 
         return sb.ToString();
+    }
+
+    private static string FormatMType(ColumnDataType dataType) => dataType switch
+    {
+        ColumnDataType.Int64 => "Int64.Type",
+        ColumnDataType.Decimal => "Double.Type",
+        ColumnDataType.DateTime => "DateTime.Type",
+        ColumnDataType.Boolean => "Logical.Type",
+        _ => "Text.Type"
+    };
+
+    private static string GenerateSampleCell(ModelColumn col, int rowIndex)
+    {
+        var l = col.Name.ToLowerInvariant();
+        if (col.DataType == ColumnDataType.Int64)
+        {
+            if (l is "target" or "survived" or "is_active" or "active" or "converted" or "success")
+                return (rowIndex % 2 == 1) ? "1" : "0";
+            if (l is "pclass" or "class")
+                return (rowIndex % 3 + 1).ToString();
+            if (l is "sibsp" or "parch")
+                return (rowIndex % 3).ToString();
+            return rowIndex.ToString();
+        }
+
+        if (col.DataType == ColumnDataType.Decimal)
+        {
+            if (l.Contains("age"))
+                return (18 + rowIndex * 4).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (l.Contains("fare") || l.Contains("revenue") || l.Contains("sales") || l.Contains("amount") || l.Contains("price") || l.Contains("cost"))
+                return (15.50m + rowIndex * 12.25m).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (l.Contains("rate") || l.Contains("margin") || l.Contains("percent") || l.Contains("ratio"))
+                return (0.10m * (rowIndex % 10 + 1)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return (rowIndex * 10.5m).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        if (col.DataType == ColumnDataType.DateTime)
+            return $"#datetime({2025 + rowIndex % 2}, {(rowIndex % 12) + 1}, {(rowIndex % 28) + 1}, 0, 0, 0)";
+
+        if (col.DataType == ColumnDataType.Boolean)
+            return (rowIndex % 2 == 1) ? "true" : "false";
+
+        // String / Categorical columns
+        if (l is "sex" or "gender")
+            return (rowIndex % 2 == 1) ? "\"male\"" : "\"female\"";
+        if (l is "embarked")
+            return (rowIndex % 3) switch { 1 => "\"S\"", 2 => "\"C\"", _ => "\"Q\"" };
+        if (l.Contains("cabin"))
+            return $"\"C{rowIndex * 10}\"";
+        if (l.Contains("ticket"))
+            return $"\"TCK-{1000 + rowIndex * 25}\"";
+        if (l.Contains("name"))
+            return $"\"Passenger {rowIndex}\"";
+        if (l.Contains("region") || l.Contains("country") || l.Contains("city"))
+            return rowIndex switch { 1 => "\"North\"", 2 => "\"South\"", 3 => "\"East\"", 4 => "\"West\"", _ => "\"Central\"" };
+        if (l.Contains("status"))
+            return rowIndex switch { 1 => "\"Active\"", 2 => "\"Pending\"", 3 => "\"Completed\"", _ => "\"Archived\"" };
+        if (l.Contains("category") || l.Contains("tier") || l.Contains("type"))
+            return rowIndex switch { 1 => "\"Tier A\"", 2 => "\"Tier B\"", _ => "\"Tier C\"" };
+
+        return $"\"{col.Name}_{rowIndex}\"";
     }
 
     private static string FormatDataType(ColumnDataType dataType) => dataType switch

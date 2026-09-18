@@ -1,4 +1,5 @@
 using AnalyticsPlatform.Domain.Features.Analytics.Entities;
+using AnalyticsPlatform.Domain.Features.Analytics.ValueObjects;
 using AnalyticsPlatform.Domain.Features.Dashboards.Entities;
 
 namespace AnalyticsPlatform.Application.Features.Dashboards.Services;
@@ -25,6 +26,19 @@ public static class DashboardFactory
         // Collect available columns & measures
         var columns = primaryTable?.Columns.ToList() ?? new List<ModelColumn>();
         var measures = primaryTable?.Measures.ToList() ?? model.Measures.ToList();
+
+        // Ensure TotalRows measure exists on primary table and model if missing
+        if (!measures.Any(m => m.Name == "TotalRows") && primaryTable != null)
+        {
+            var countExpr = new MeasureExpression($"COUNTROWS('{tableName}')", "integer");
+            var countMeasure = Measure.Create("TotalRows", countExpr, tableName);
+            if (countMeasure.IsSuccess && countMeasure.Value != null)
+            {
+                primaryTable.AddMeasure(countMeasure.Value);
+                model.AddMeasure(countMeasure.Value);
+                measures.Add(countMeasure.Value);
+            }
+        }
 
         // Filter for meaningful categorical dimensions (avoid high-cardinality unique names/tickets)
         var categoryCols = columns
@@ -56,14 +70,16 @@ public static class DashboardFactory
         // Search for rate/percentage measure (e.g. survived_Rate, target_Rate)
         var rateMeasure = measures.FirstOrDefault(m => m.Name.EndsWith("_Rate", StringComparison.OrdinalIgnoreCase));
 
-        // Search for financial/summary measure (e.g. Total_fare, Total_revenue)
-        var financialMeasure = measures.FirstOrDefault(m => m.Name.StartsWith("Total_", StringComparison.OrdinalIgnoreCase) && m.Name != "TotalRows");
+        // Search for financial/summary measure (e.g. Total_fare, Total_revenue, TotalRevenue, TotalSales)
+        var financialMeasure = measures.FirstOrDefault(m =>
+            (m.Name.StartsWith("Total", StringComparison.OrdinalIgnoreCase) || m.Name.StartsWith("Sum", StringComparison.OrdinalIgnoreCase)) &&
+            !m.Name.Equals("TotalRows", StringComparison.OrdinalIgnoreCase));
 
-        // Search for average measurement (e.g. Average_age, Average_fare)
-        var averageMeasure = measures.FirstOrDefault(m => m.Name.StartsWith("Average_", StringComparison.OrdinalIgnoreCase));
+        // Search for average measurement (e.g. Average_age, Average_fare, AverageRevenue)
+        var averageMeasure = measures.FirstOrDefault(m => m.Name.StartsWith("Average", StringComparison.OrdinalIgnoreCase));
 
         var card2Measure = rateMeasure?.Name ?? (financialMeasure?.Name ?? (averageMeasure?.Name ?? primaryMeasure));
-        var card3Measure = averageMeasure?.Name ?? (financialMeasure?.Name ?? (categoryCols.FirstOrDefault()?.Name ?? "Status"));
+        var card3Measure = averageMeasure?.Name ?? (financialMeasure?.Name ?? primaryMeasure);
 
         // ==========================================
         // Page 1: Overview & Analytics

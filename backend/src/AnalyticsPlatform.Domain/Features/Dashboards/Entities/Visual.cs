@@ -63,9 +63,9 @@ public class Visual : Entity
 
             if (col.StartsWith("Total", StringComparison.OrdinalIgnoreCase) ||
                 col.StartsWith("Sum", StringComparison.OrdinalIgnoreCase) ||
-                col.EndsWith("Amount", StringComparison.OrdinalIgnoreCase) ||
-                col.EndsWith("Revenue", StringComparison.OrdinalIgnoreCase) ||
-                col.EndsWith("Count", StringComparison.OrdinalIgnoreCase))
+                col.StartsWith("Average", StringComparison.OrdinalIgnoreCase) ||
+                col.EndsWith("_Rate", StringComparison.OrdinalIgnoreCase) ||
+                col.Equals("TotalRows", StringComparison.OrdinalIgnoreCase))
             {
                 values.Add(new VisualFieldBinding(table, col, IsMeasure: true));
             }

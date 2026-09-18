@@ -17,33 +17,29 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   const navItems = [
-    { label: "Dashboards & PBIP", path: routePaths.dashboards },
-    { label: "Data Sources", path: routePaths.dataSources },
-    { label: "Data Quality & Advisory", path: routePaths.dataQuality },
-    { label: "Executive Reports", path: routePaths.reports }
+    { label: "Dashboards & PBIP", path: routePaths.dashboards, icon: "📊" },
+    { label: "Data Sources", path: routePaths.dataSources, icon: "🔌" },
+    { label: "Data Quality & Advisory", path: routePaths.dataQuality, icon: "✓" },
+    { label: "Executive Reports", path: routePaths.reports, icon: "📈" }
   ];
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "var(--bg-primary)" }}>
-      {/* Enterprise Top Navigation Bar */}
+      {/* Unified Top Navigation Header */}
       <header
         style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
+          height: "56px",
           backgroundColor: "var(--bg-surface)",
           borderBottom: "1px solid var(--border-color)",
-          padding: "0 1.5rem",
-          height: "64px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          boxShadow: "var(--shadow-sm)"
+          padding: "0 1.5rem",
+          flexShrink: 0
         }}
-        role="banner"
       >
         <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
-          {/* Brand Logo */}
+          {/* Product Identity */}
           <Link
             to={routePaths.dashboards}
             style={{
@@ -52,34 +48,31 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               gap: "0.5rem",
               textDecoration: "none",
               color: "var(--text-primary)",
-              fontWeight: 700,
-              fontSize: "1.125rem"
+              fontWeight: 600,
+              fontSize: "0.95rem"
             }}
           >
             <div
               style={{
-                width: "28px",
-                height: "28px",
-                borderRadius: "6px",
+                width: "24px",
+                height: "24px",
+                borderRadius: "4px",
                 backgroundColor: "#f59e0b",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 color: "#111827",
                 fontWeight: 900,
-                fontSize: "0.875rem"
+                fontSize: "0.75rem"
               }}
             >
               PB
             </div>
             <span>PowerBI Enhanced</span>
-            <span className="badge badge-info" style={{ fontSize: "0.65rem", textTransform: "uppercase" }}>
-              2026 LTS
-            </span>
           </Link>
 
-          {/* Navigation Links */}
-          <nav style={{ display: "flex", gap: "0.5rem" }} aria-label="Main Navigation">
+          {/* Primary Modules */}
+          <nav style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             {navItems.map((item) => {
               const isActive = location.pathname.startsWith(item.path);
               return (
@@ -87,17 +80,20 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   key={item.path}
                   to={item.path}
                   style={{
-                    padding: "0.5rem 0.875rem",
+                    padding: "0.4rem 0.75rem",
                     borderRadius: "var(--radius-sm)",
                     textDecoration: "none",
-                    fontSize: "0.875rem",
-                    fontWeight: isActive ? 600 : 500,
+                    fontSize: "0.85rem",
+                    fontWeight: isActive ? 500 : 400,
                     color: isActive ? "var(--primary)" : "var(--text-secondary)",
-                    backgroundColor: isActive ? "rgba(37, 99, 235, 0.08)" : "transparent",
+                    backgroundColor: isActive ? "var(--primary-tint)" : "transparent",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.4rem",
                     transition: "all 0.15s ease"
                   }}
-                  aria-current={isActive ? "page" : undefined}
                 >
+                  <span style={{ fontSize: "0.9rem" }}>{item.icon}</span>
                   {item.label}
                 </Link>
               );
@@ -105,31 +101,18 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </nav>
         </div>
 
-        {/* Global Action Bar */}
+        {/* User / System Controls */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          {/* Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="btn btn-secondary btn-sm"
-            aria-label="toggle-theme-button"
-            title={`Switch to ${theme === "light" ? "Dark" : "Light"} Mode`}
-          >
-            {theme === "light" ? "🌙 Dark" : "☀️ Light"}
+          <button onClick={toggleTheme} className="btn btn-ghost btn-sm">
+            {theme === "light" ? "🌙" : "☀️"}
           </button>
 
-          {/* User Profile / Auth Status */}
           {isAuthenticated && user ? (
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <span style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>
                 {user.displayName || user.email}
               </span>
-              <button
-                onClick={logout}
-                className="btn btn-secondary btn-sm"
-                aria-label="logout-button"
-              >
-                Sign out
-              </button>
+              <button onClick={logout} className="btn btn-ghost btn-sm">Sign out</button>
             </div>
           ) : (
             <Link to={routePaths.login} style={{ textDecoration: "none" }}>
@@ -137,86 +120,48 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             </Link>
           )}
 
-          {/* LLM Copilot Trigger Button */}
           <Button
             onClick={() => setIsAssistantOpen((prev) => !prev)}
             variant={isAssistantOpen ? "primary" : "secondary"}
-            aria-label="toggle-ai-assistant"
-            style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+            className="btn-sm"
+            style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
           >
-            <span style={{ fontSize: "1rem" }}>✨</span>
-            <span>AI Copilot</span>
-            <span
-              style={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                backgroundColor: isAssistantOpen ? "#10b981" : "var(--text-muted)",
-                display: "inline-block"
-              }}
-            />
+            <span>✨</span> Advisory Copilot
           </Button>
         </div>
       </header>
 
-      {/* Main Body Viewport */}
-      <div style={{ display: "flex", flex: 1, position: "relative", overflow: "hidden" }}>
-        {/* Main Content */}
+      {/* Main Viewport */}
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <main
           style={{
             flex: 1,
             padding: "1.5rem",
-            maxWidth: "1600px",
+            overflowY: "auto",
+            maxWidth: "1400px",
             margin: "0 auto",
-            width: "100%",
-            transition: "all 0.2s ease"
+            width: "100%"
           }}
-          role="main"
         >
           {children}
         </main>
 
-        {/* Docked AI Assistant Drawer */}
         {isAssistantOpen && (
           <aside
             style={{
-              width: "420px",
+              width: "400px",
               borderLeft: "1px solid var(--border-color)",
               backgroundColor: "var(--bg-surface)",
-              boxShadow: "var(--shadow-lg)",
-              height: "calc(100vh - 64px)",
-              position: "sticky",
-              top: "64px",
-              overflowY: "auto",
-              zIndex: 40,
               display: "flex",
-              flexDirection: "column"
+              flexDirection: "column",
+              flexShrink: 0
             }}
-            aria-label="AI Copilot Assistant Panel"
           >
-            <div
-              style={{
-                padding: "0.75rem 1rem",
-                borderBottom: "1px solid var(--border-color)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                backgroundColor: "var(--bg-card)"
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <span style={{ fontSize: "1.1rem" }}>✨</span>
-                <strong style={{ fontSize: "0.95rem" }}>Model Context Protocol Agent</strong>
-              </div>
-              <button
-                onClick={() => setIsAssistantOpen(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.25rem", color: "var(--text-secondary)" }}
-                aria-label="close-assistant-panel"
-              >
-                ×
-              </button>
+            <div style={{ padding: "0.75rem", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: "0.875rem", fontWeight: 600 }}>Advisory Copilot</div>
+              <button onClick={() => setIsAssistantOpen(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>×</button>
             </div>
-            <div style={{ padding: "1rem", flex: 1 }}>
+            <div style={{ padding: "1rem", flex: 1, overflowY: "auto" }}>
               <AssistantPanel />
             </div>
           </aside>

@@ -62,7 +62,11 @@ public class RegisterDataSourceCommandHandler : IRequestHandler<RegisterDataSour
 
         if (_modelRepository != null)
         {
-            var model = AnalyticsPlatform.Application.Features.Analytics.Services.AnalyticsModelFactory.CreateFromDataSource(entity.Name, entity.Schema);
+            var model = AnalyticsPlatform.Application.Features.Analytics.Services.AnalyticsModelFactory.CreateFromDataSource(
+                entity.Name,
+                entity.Schema,
+                connectionOrPath: entity.ConnectionOrPath,
+                sourceType: entity.Type);
             await _modelRepository.AddAsync(model, cancellationToken);
         }
 

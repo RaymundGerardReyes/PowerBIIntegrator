@@ -50,6 +50,7 @@ dist/
 dist-ssr/
 build/
 .vite/
+*.tsbuildinfo
 *.local
 npm-debug.log*
 yarn-debug.log*
@@ -94,6 +95,8 @@ Thumbs.db
 *.pbir.zip
 *.pbix
 *.pbit
+output/
+**/output/
 temp_*
 *.tmp
 *.temp

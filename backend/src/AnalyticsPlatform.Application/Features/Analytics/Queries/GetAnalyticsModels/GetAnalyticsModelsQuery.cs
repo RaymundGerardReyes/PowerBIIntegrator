@@ -32,7 +32,12 @@ public class GetAnalyticsModelsQueryHandler : IRequestHandler<GetAnalyticsModels
             var expectedModelId = AnalyticsModelFactory.GenerateDeterministicGuid(ds.Name);
             if (!existingModels.Any(m => m.Id == expectedModelId || m.Name.StartsWith(ds.Name, StringComparison.OrdinalIgnoreCase)))
             {
-                var generatedModel = AnalyticsModelFactory.CreateFromDataSource(ds.Name, ds.Schema, expectedModelId);
+                var generatedModel = AnalyticsModelFactory.CreateFromDataSource(
+                    ds.Name,
+                    ds.Schema,
+                    expectedModelId,
+                    connectionOrPath: ds.ConnectionOrPath,
+                    sourceType: ds.Type);
                 await _modelRepository.AddAsync(generatedModel, cancellationToken);
             }
         }
@@ -40,7 +45,7 @@ public class GetAnalyticsModelsQueryHandler : IRequestHandler<GetAnalyticsModels
         // 2. Fetch updated models list
         var allModels = await _modelRepository.GetAllAsync(cancellationToken);
 
-        var dtos = allModels.Select(model => new AnalyticsModelDto(
+        var dtos = allModels.Reverse().Select(model => new AnalyticsModelDto(
             model.Id,
             model.Name,
             model.Culture,

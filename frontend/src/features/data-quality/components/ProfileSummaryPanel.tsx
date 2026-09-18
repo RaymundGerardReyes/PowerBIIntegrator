@@ -2,6 +2,8 @@ import React from "react";
 import type { DatasetProfileDto } from "@shared/types/api-contracts";
 import { Badge } from "@shared/ui/Badge/Badge";
 
+import { EmptyState } from "@shared/ui";
+
 interface ProfileSummaryPanelProps {
   profile: DatasetProfileDto | null;
   isLoading?: boolean;
@@ -10,17 +12,20 @@ interface ProfileSummaryPanelProps {
 export const ProfileSummaryPanel: React.FC<ProfileSummaryPanelProps> = ({ profile, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="card" style={{ padding: "var(--space-6)", textAlign: "center", color: "var(--text-muted)" }}>
-        Profiling dataset deterministically...
+      <div className="card" style={{ padding: "3rem", display: "flex", justifyContent: "center", color: "var(--text-muted)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span className="spinner"></span> Profiling dataset deterministically...
+        </div>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="card" style={{ padding: "var(--space-6)", textAlign: "center", color: "var(--text-muted)" }}>
-        No dataset profile available. Please select a source.
-      </div>
+      <EmptyState
+        title="No Dataset Profile Available"
+        description="Data profiling becomes available after a source has been selected and the profiling engine has been run."
+      />
     );
   }
 

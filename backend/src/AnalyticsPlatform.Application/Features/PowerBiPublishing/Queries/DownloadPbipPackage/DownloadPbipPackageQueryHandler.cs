@@ -28,6 +28,16 @@ public class DownloadPbipPackageQueryHandler : IRequestHandler<DownloadPbipPacka
     {
         var dashboard = await _dashboardRepository.GetByIdAsync(request.DashboardDefinitionId, cancellationToken);
         var model = await _modelRepository.GetByIdAsync(request.AnalyticsModelId, cancellationToken);
+
+        if (model == null && !string.IsNullOrWhiteSpace(request.ProjectName))
+        {
+            var cleanProject = request.ProjectName.Replace(" Semantic Model", "", StringComparison.OrdinalIgnoreCase).Trim();
+            var allModels = await _modelRepository.GetAllAsync(cancellationToken);
+            model = allModels.FirstOrDefault(m =>
+                m.Name.Equals(request.ProjectName, StringComparison.OrdinalIgnoreCase) ||
+                m.Name.StartsWith(cleanProject, StringComparison.OrdinalIgnoreCase));
+        }
+
         model ??= CreateDefaultModel(request.AnalyticsModelId);
         dashboard ??= Dashboards.Services.DashboardFactory.CreateFromModel(model, request.DashboardDefinitionId);
 
@@ -63,6 +73,14 @@ public class DownloadPbipPackageQueryHandler : IRequestHandler<DownloadPbipPacka
         table.AddColumn(new ModelColumn("Id", ColumnDataType.Int64, "Id"));
         table.AddColumn(new ModelColumn("Region", ColumnDataType.String, "Region"));
         table.AddColumn(new ModelColumn("Revenue", ColumnDataType.Decimal, "Revenue"));
+
+        var countExpr = new MeasureExpression("COUNTROWS('Sales')", "integer");
+        var countMeasure = Measure.Create("TotalRows", countExpr, "Sales");
+        if (countMeasure.IsSuccess && countMeasure.Value != null)
+        {
+            table.AddMeasure(countMeasure.Value);
+            model.AddMeasure(countMeasure.Value);
+        }
 
         var measureExpr = new MeasureExpression("SUM(Sales[Revenue])", "decimal");
         var measureResult = Measure.Create("TotalRevenue", measureExpr, "Sales");

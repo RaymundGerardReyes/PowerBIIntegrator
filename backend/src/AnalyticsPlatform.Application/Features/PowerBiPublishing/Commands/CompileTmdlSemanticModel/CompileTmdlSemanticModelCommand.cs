@@ -45,6 +45,14 @@ public class CompileTmdlSemanticModelCommandHandler : IRequestHandler<CompileTmd
         table.AddColumn(new ModelColumn("Region", ColumnDataType.String, "Region"));
         table.AddColumn(new ModelColumn("Revenue", ColumnDataType.Decimal, "Revenue"));
 
+        var countExpr = new MeasureExpression("COUNTROWS('Sales')", "integer");
+        var countMeasure = Measure.Create("TotalRows", countExpr, "Sales");
+        if (countMeasure.IsSuccess && countMeasure.Value != null)
+        {
+            table.AddMeasure(countMeasure.Value);
+            model.AddMeasure(countMeasure.Value);
+        }
+
         var measureExpr = new MeasureExpression("SUM(Sales[Revenue])", "decimal");
         var measureResult = Measure.Create("TotalRevenue", measureExpr, "Sales");
         if (measureResult.IsSuccess && measureResult.Value != null)

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Button, DataTable } from "@shared/ui";
 
 export interface TransformationStepItem {
   order: number;
@@ -17,56 +18,63 @@ export const TransformationPlanBuilder: React.FC<TransformationPlanBuilderProps>
     { order: 2, operationType: "DeriveColumn", targetColumn: "NetRevenue", expressionOrSource: "GrossRevenue - DiscountAmount" }
   ]);
 
-  const addStep = () => {
-    setSteps([
-      ...steps,
-      { order: steps.length + 1, operationType: "DeriveColumn", targetColumn: "", expressionOrSource: "" }
-    ]);
-  };
+  const columns = [
+    { key: "order" as const, header: "Step" },
+    { key: "operationType" as const, header: "Operation" },
+    { key: "targetColumn" as const, header: "Target" },
+    { key: "expressionOrSource" as const, header: "Expression / Source" },
+    { key: "actions" as const, header: "Actions" }
+  ];
+
+  const rows = steps.map((step, idx) => ({
+    order: `#${step.order}`,
+    operationType: <span style={{ fontWeight: 600, color: "var(--primary)" }}>{step.operationType}</span>,
+    targetColumn: step.targetColumn,
+    expressionOrSource: <code style={{ backgroundColor: "var(--bg-card)", padding: "0.1rem 0.3rem", borderRadius: "var(--radius-sm)" }}>{step.expressionOrSource}</code>,
+    actions: <button onClick={() => setSteps(steps.filter((_, i) => i !== idx))} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>✕</button>
+  }));
 
   return (
-    <div className="bg-white border rounded-lg p-5 space-y-4">
-      <div className="flex justify-between items-center border-b pb-3">
+    <div className="card" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "1px solid var(--border-color)", paddingBottom: "1rem" }}>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Transformation Plan Builder</h3>
-          <p className="text-xs text-gray-500">Construct Silver-to-Gold deterministic transformation DAG</p>
+          <h3 style={{ margin: 0, fontSize: "1rem" }}>Silver → Gold Transformation</h3>
+          <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
+            Construct the deterministic transformation DAG for analytics-ready modeling.
+          </p>
         </div>
-        <button
-          onClick={addStep}
-          className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-        >
+        <Button variant="secondary" className="btn-sm" onClick={() => setSteps([...steps, { order: steps.length + 1, operationType: "DeriveColumn", targetColumn: "NewColumn", expressionOrSource: "" }])}>
           + Add Step
-        </button>
+        </Button>
       </div>
 
-      <div className="space-y-3">
-        {steps.map((step, idx) => (
-          <div key={idx} className="border rounded p-3 bg-gray-50 flex items-center gap-3">
-            <span className="font-mono text-xs font-semibold text-gray-400">#{step.order}</span>
-            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded font-medium">
-              {step.operationType}
-            </span>
-            <div className="flex-1 text-xs">
-              <span className="font-semibold text-gray-800">{step.targetColumn}</span>:{" "}
-              <code className="text-gray-600 bg-white px-1.5 py-0.5 rounded border">{step.expressionOrSource}</code>
-            </div>
-            <button
-              onClick={() => setSteps(steps.filter((_, i) => i !== idx))}
-              className="text-red-500 hover:text-red-700 text-xs"
-            >
-              Remove
-            </button>
-          </div>
-        ))}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem" }}>
+        <div style={{ padding: "1rem", backgroundColor: "var(--bg-subtle)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-color)", textAlign: "center" }}>
+          <h4 style={{ margin: "0 0 0.5rem 0", fontSize: "0.875rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>BRONZE</h4>
+          <p style={{ margin: 0, fontSize: "0.875rem", fontWeight: 600 }}>Raw Source</p>
+          <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-muted)" }}>124,320 Rows</p>
+        </div>
+        <div style={{ padding: "1rem", backgroundColor: "var(--bg-subtle)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-color)", textAlign: "center" }}>
+          <h4 style={{ margin: "0 0 0.5rem 0", fontSize: "0.875rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>SILVER</h4>
+          <p style={{ margin: 0, fontSize: "0.875rem", fontWeight: 600 }}>Cleaned / Standardized</p>
+          <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-muted)" }}>122,104 Rows</p>
+        </div>
+        <div style={{ padding: "1rem", backgroundColor: "var(--primary-tint)", borderRadius: "var(--radius-md)", border: "1px solid var(--primary)", textAlign: "center" }}>
+          <h4 style={{ margin: "0 0 0.5rem 0", fontSize: "0.875rem", color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>GOLD</h4>
+          <p style={{ margin: 0, fontSize: "0.875rem", fontWeight: 600 }}>Analytics-Ready</p>
+          <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-secondary)" }}>Fact / Dimension Models</p>
+        </div>
       </div>
 
-      <div className="flex justify-end pt-3">
-        <button
-          onClick={() => onPlanSubmit?.(steps)}
-          className="px-4 py-1.5 bg-green-600 text-white text-xs rounded hover:bg-green-700"
-        >
+      <div>
+        <h4 style={{ margin: "0 0 0.75rem 0", fontSize: "0.875rem" }}>Transformation Steps</h4>
+        <DataTable columns={columns} rows={rows} />
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--border-color)", paddingTop: "1rem" }}>
+        <Button variant="primary" onClick={() => onPlanSubmit?.(steps)}>
           Execute Transformation Plan
-        </button>
+        </Button>
       </div>
     </div>
   );

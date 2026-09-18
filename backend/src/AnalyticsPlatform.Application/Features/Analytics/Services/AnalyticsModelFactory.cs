@@ -12,7 +12,9 @@ public static class AnalyticsModelFactory
     public static AnalyticsModel CreateFromDataSource(
         string datasetName,
         IReadOnlyList<ColumnSchema>? schema,
-        Guid? modelId = null)
+        Guid? modelId = null,
+        string? connectionOrPath = null,
+        DataSourceType? sourceType = null)
     {
         var sanitizedName = SanitizeIdentifier(datasetName);
         var id = modelId ?? GenerateDeterministicGuid(datasetName);
@@ -41,6 +43,44 @@ public static class AnalyticsModelFactory
         {
             table.AddColumn(new ModelColumn("Id", AnalyticsDataType.Int64, "Id"));
             table.AddColumn(new ModelColumn("Value", AnalyticsDataType.String, "Value"));
+        }
+
+        // Attach Power Query M Partition if valid local file exists
+        if (!string.IsNullOrWhiteSpace(connectionOrPath) && File.Exists(connectionOrPath))
+        {
+            var escapedPath = connectionOrPath.Replace("\\", "\\\\");
+            var colTransforms = string.Join(", ", table.Columns.Select(c => $"{{\"{c.Name}\", {FormatPowerQueryType(c.DataType)}}}"));
+            var isExcel = sourceType == DataSourceType.Excel ||
+                          connectionOrPath.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) ||
+                          connectionOrPath.EndsWith(".xls", StringComparison.OrdinalIgnoreCase);
+
+            string mQuery;
+            if (isExcel)
+            {
+                mQuery = string.Join("\n", new[]
+                {
+                    "let",
+                    $"    Source = Excel.Workbook(File.Contents(\"{escapedPath}\"), null, true),",
+                    "    DataSheet = Source{0}[Data],",
+                    "    #\"Promoted Headers\" = Table.PromoteHeaders(DataSheet, [PromoteAllScalars=true]),",
+                    $"    #\"Changed Type\" = Table.TransformColumnTypes(#\"Promoted Headers\", {{{colTransforms}}})",
+                    "in",
+                    "    #\"Changed Type\""
+                });
+            }
+            else
+            {
+                mQuery = string.Join("\n", new[]
+                {
+                    "let",
+                    $"    Source = Csv.Document(File.Contents(\"{escapedPath}\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.None]),",
+                    "    #\"Promoted Headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
+                    $"    #\"Changed Type\" = Table.TransformColumnTypes(#\"Promoted Headers\", {{{colTransforms}}})",
+                    "in",
+                    "    #\"Changed Type\""
+                });
+            }
+            table.SetMQueryPartition($"{tableName}-Partition", mQuery);
         }
 
         // 1. Primary Row Count Measure (Standard across all tabular models)
@@ -151,6 +191,15 @@ public static class AnalyticsModelFactory
         SourceDataType.Boolean => AnalyticsDataType.Boolean,
         SourceDataType.DateTime => AnalyticsDataType.DateTime,
         _ => AnalyticsDataType.String
+    };
+
+    private static string FormatPowerQueryType(AnalyticsDataType dataType) => dataType switch
+    {
+        AnalyticsDataType.Int64 => "Int64.Type",
+        AnalyticsDataType.Decimal => "type number",
+        AnalyticsDataType.DateTime => "type datetime",
+        AnalyticsDataType.Boolean => "type logical",
+        _ => "type text"
     };
 
     public static string SanitizeIdentifier(string input)

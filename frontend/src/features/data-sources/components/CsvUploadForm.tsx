@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useUploadFile } from "../hooks/useDataSources";
 import { Button } from "@shared/ui/Button/Button";
 import { DataTable } from "@shared/ui/DataTable/DataTable";
@@ -18,6 +19,12 @@ export const CsvUploadForm: React.FC = () => {
           onSuccess: (result) => {
             if (result.schema && result.schema.length > 0) {
               setExtractedSchema(result.schema);
+            }
+            if (result.name) {
+              localStorage.setItem("powerbi_active_model_name", result.name);
+            }
+            if (result.id) {
+              localStorage.setItem("powerbi_active_dataset_id", result.id);
             }
           }
         }
@@ -48,6 +55,38 @@ export const CsvUploadForm: React.FC = () => {
           {isPending ? "Uploading..." : "Upload CSV"}
         </Button>
       </div>
+
+      {data && (
+        <div
+          style={{
+            padding: "0.85rem 1rem",
+            backgroundColor: "var(--primary-tint)",
+            border: "1px solid var(--primary)",
+            borderRadius: "var(--radius-sm)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "0.75rem"
+          }}
+        >
+          <div>
+            <div style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.9rem" }}>
+              ✅ Successfully registered: {data.name}
+            </div>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+              Data source processed and semantic model ready for Power BI Desktop compilation.
+            </div>
+          </div>
+          <Link
+            to={`/dashboards?dataset=${encodeURIComponent(data.name)}`}
+            className="btn btn-primary btn-sm"
+            style={{ textDecoration: "none" }}
+          >
+            Open in Dashboards & Launch Power BI →
+          </Link>
+        </div>
+      )}
 
       {schemaRows.length > 0 && (
         <div style={{ marginTop: "12px" }}>

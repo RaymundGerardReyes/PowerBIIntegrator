@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { PdfReportViewer } from "./PdfReportViewer";
 import { ExcelReportPreview } from "./ExcelReportPreview";
 import { WordReportViewer } from "./WordReportViewer";
-import { Button } from "@shared/ui/Button/Button";
+import { Button, ContextBar, WorkflowStepper } from "@shared/ui";
 import { useDataSources, type DataSourceDefinition } from "@features/data-sources";
 import { generateReportBlob, downloadBlob, type ReportFormat } from "../api/reportsApi";
 import type { ReportDocumentModel, ColumnSchemaDto } from "@shared/types/api-contracts";
@@ -10,10 +10,10 @@ import type { ReportDocumentModel, ColumnSchemaDto } from "@shared/types/api-con
 export const ReportsHubPage: React.FC = () => {
   const [selectedFormat, setSelectedFormat] = useState<ReportFormat>("pdf");
   const [isExporting, setIsExporting] = useState(false);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const { data: dataSources = [] } = useDataSources();
   const [selectedSourceId, setSelectedSourceId] = useState<string>("");
 
-  // Editable report document model
   const [model, setModel] = useState<ReportDocumentModel>({
     title: "Executive Revenue & Analytics Report",
     subtitle: "Consolidated enterprise KPI & dataset performance summary",
@@ -87,113 +87,103 @@ export const ReportsHubPage: React.FC = () => {
     }
   };
 
+  const activeSource = dataSources.find((ds: DataSourceDefinition) => ds.id === selectedSourceId) || null;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
-        <div>
-          <h2 style={{ marginBottom: "0.25rem" }}>Executive Report Generation Hub</h2>
-          <p style={{ margin: 0, color: "var(--text-secondary)" }}>
-            Synthesize high-fidelity reports across PDF (QuestPDF), Excel (ClosedXML), and Word (DocumentFormat.OpenXml) directly from canonical analytical models.
-          </p>
-        </div>
+      <ContextBar
+        title="Executive Report Generation Hub"
+        metadata={[
+          { label: "Data Source", value: activeSource ? activeSource.name : "None" },
+          { label: "Target Format", value: selectedFormat.toUpperCase() }
+        ]}
+        secondaryAction={
+          <select
+            className="form-input"
+            style={{ padding: "0.3rem 0.5rem", fontSize: "0.8rem", width: "160px", height: "30px" }}
+            value={selectedSourceId}
+            onChange={(e) => setSelectedSourceId(e.target.value)}
+          >
+            <option value="" disabled>Switch dataset...</option>
+            {dataSources.map((ds: DataSourceDefinition) => (
+              <option key={ds.id} value={ds.id}>{ds.name}</option>
+            ))}
+          </select>
+        }
+        primaryAction={
+          <Button
+            variant="primary"
+            className="btn-sm"
+            onClick={() => handleDownloadDirect(selectedFormat)}
+            disabled={isExporting}
+          >
+            {isExporting ? "Generating..." : `Export ${selectedFormat.toUpperCase()}`}
+          </Button>
+        }
+      />
 
-        {dataSources.length > 0 && (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <label htmlFor="report-source-select" style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--text-secondary)" }}>
-              Data Source:
-            </label>
-            <select
-              id="report-source-select"
-              className="form-input"
-              style={{ minWidth: "180px", padding: "0.375rem 0.75rem", fontSize: "0.8125rem" }}
-              value={selectedSourceId}
-              onChange={(e) => setSelectedSourceId(e.target.value)}
-            >
-              {dataSources.map((ds: DataSourceDefinition) => (
-                <option key={ds.id} value={ds.id}>
-                  {ds.name} ({ds.type.toUpperCase()})
-                </option>
-              ))}
-            </select>
+      <WorkflowStepper
+        steps={[
+          { id: "pdf", label: "PDF Document", status: selectedFormat === "pdf" ? "active" : "pending" },
+          { id: "excel", label: "Excel Workbook (.xlsx)", status: selectedFormat === "excel" ? "active" : "pending" },
+          { id: "word", label: "Word Document (.docx)", status: selectedFormat === "word" ? "active" : "pending" }
+        ]}
+        onStepClick={(id) => setSelectedFormat(id as ReportFormat)}
+      />
+
+      {/* Metadata Configuration */}
+      <div className="card">
+        <div 
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", userSelect: "none" }}
+          onClick={() => setIsConfigOpen(!isConfigOpen)}
+        >
+          <h4 style={{ margin: 0, fontSize: "0.95rem" }}>Report Metadata Configuration</h4>
+          <span style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>
+            {isConfigOpen ? "Collapse ▴" : "Expand ▾"}
+          </span>
+        </div>
+        
+        {isConfigOpen && (
+          <div style={{ marginTop: "1rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", borderTop: "1px solid var(--border-color)", paddingTop: "1rem" }}>
+            <div className="form-group">
+              <label className="form-label">Report Title</label>
+              <input
+                className="form-input"
+                value={model.title}
+                onChange={(e) => setModel({ ...model, title: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Report Subtitle</label>
+              <input
+                className="form-input"
+                value={model.subtitle ?? ""}
+                onChange={(e) => setModel({ ...model, subtitle: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Author</label>
+              <input
+                className="form-input"
+                value={model.author ?? ""}
+                onChange={(e) => setModel({ ...model, author: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Organization</label>
+              <input
+                className="form-input"
+                value={model.organization ?? ""}
+                onChange={(e) => setModel({ ...model, organization: e.target.value })}
+              />
+            </div>
           </div>
         )}
       </div>
 
-      {/* Format Selector Pills & Export Action Bar */}
-      <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-        <div style={{ display: "flex", gap: "0.5rem" }} role="group" aria-label="report-format-selector">
-          {(["pdf", "excel", "word"] as const).map((fmt) => (
-            <button
-              key={fmt}
-              onClick={() => setSelectedFormat(fmt)}
-              className={`tab-item ${selectedFormat === fmt ? "tab-item-active" : ""}`}
-              style={{ padding: "0.5rem 1.25rem", borderRadius: "9999px", textTransform: "uppercase", fontSize: "0.75rem", letterSpacing: "0.05em" }}
-              aria-pressed={selectedFormat === fmt}
-            >
-              {fmt === "pdf" ? "PDF Document" : fmt === "excel" ? "Excel Workbook (.xlsx)" : "Word Document (.docx)"}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <Button
-            onClick={() => handleDownloadDirect(selectedFormat)}
-            disabled={isExporting}
-            aria-label="download-current-report"
-          >
-            {isExporting ? "Generating..." : `Download ${selectedFormat.toUpperCase()}`}
-          </Button>
-        </div>
-      </div>
-
-      {/* Metadata Configuration Drawer / Card */}
-      <details className="card" style={{ cursor: "pointer" }}>
-        <summary style={{ fontWeight: 600, color: "var(--primary)", userSelect: "none" }}>
-          Customize Report Title & Organization Metadata
-        </summary>
-        <div style={{ marginTop: "1rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
-          <div className="form-group">
-            <label className="form-label">Report Title</label>
-            <input
-              className="form-input"
-              value={model.title}
-              onChange={(e) => setModel({ ...model, title: e.target.value })}
-              aria-label="report-title-input"
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Report Subtitle</label>
-            <input
-              className="form-input"
-              value={model.subtitle ?? ""}
-              onChange={(e) => setModel({ ...model, subtitle: e.target.value })}
-              aria-label="report-subtitle-input"
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Author</label>
-            <input
-              className="form-input"
-              value={model.author ?? ""}
-              onChange={(e) => setModel({ ...model, author: e.target.value })}
-              aria-label="report-author-input"
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Organization</label>
-            <input
-              className="form-input"
-              value={model.organization ?? ""}
-              onChange={(e) => setModel({ ...model, organization: e.target.value })}
-              aria-label="report-organization-input"
-            />
-          </div>
-        </div>
-      </details>
-
       {/* Live Preview Pane */}
-      <div className="card">
-        <h3 style={{ fontSize: "1.125rem", marginBottom: "1rem" }}>
+      <div className="card" style={{ minHeight: "500px" }}>
+        <h3 style={{ fontSize: "1rem", marginBottom: "1rem" }}>
           Live {selectedFormat.toUpperCase()} Preview
         </h3>
 

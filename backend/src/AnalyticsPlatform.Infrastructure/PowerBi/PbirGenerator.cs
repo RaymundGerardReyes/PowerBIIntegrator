@@ -30,6 +30,10 @@ public class PbirGenerator : IPbirGenerator
         fileTree.AddTextFile("definition/version.json", JsonSerializer.Serialize(versionMetadata, JsonOptions));
 
         // 3. definition/report.json
+        var pagesToGenerate = dashboard.Pages.Count > 0 ? dashboard.Pages : new List<Page> { new Page("Page1", 1280, 720) };
+        var pageOrder = pagesToGenerate.Select(p => SanitizePageName(p.Name)).ToList();
+        var activePage = pageOrder.First();
+
         var reportJson = new Dictionary<string, object>
         {
             ["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/report/1.0.0/schema.json",
@@ -38,17 +42,15 @@ public class PbirGenerator : IPbirGenerator
                 baseTheme = new
                 {
                     name = "CY24SU02",
-                    version = "5.56",
+                    reportVersionAtImport = "5.56",
                     type = "SharedResources"
                 }
             },
-            ["activePageIndex"] = 0
+            ["layoutOptimization"] = "None"
         };
         fileTree.AddTextFile("definition/report.json", JsonSerializer.Serialize(reportJson, JsonOptions));
 
         // 4. definition/pages/pages.json
-        var pageOrder = dashboard.Pages.Select(p => p.Name).ToList();
-        var activePage = pageOrder.FirstOrDefault() ?? "Page1";
         var pagesMetadata = new Dictionary<string, object>
         {
             ["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.0.0/schema.json",
@@ -58,15 +60,16 @@ public class PbirGenerator : IPbirGenerator
         fileTree.AddTextFile("definition/pages/pages.json", JsonSerializer.Serialize(pagesMetadata, JsonOptions));
 
         // 5. Each page and its visuals
-        foreach (var page in dashboard.Pages)
+        foreach (var page in pagesToGenerate)
         {
-            var pageDir = $"definition/pages/{page.Name}";
+            var pageIdentifier = SanitizePageName(page.Name);
+            var pageDir = $"definition/pages/{pageIdentifier}";
             
             // page.json (strictly compliant with PBIR page schema)
             var pageJson = new Dictionary<string, object>
             {
                 ["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/1.1.0/schema.json",
-                ["name"] = page.Name,
+                ["name"] = pageIdentifier,
                 ["displayName"] = page.Name,
                 ["displayOption"] = "FitToPage",
                 ["width"] = page.CanvasWidth,
@@ -84,6 +87,16 @@ public class PbirGenerator : IPbirGenerator
         }
 
         return fileTree;
+    }
+
+    private static string SanitizePageName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "Page1";
+
+        var chars = name.Where(c => char.IsLetterOrDigit(c) || c == '_').ToArray();
+        var sanitized = new string(chars);
+        return string.IsNullOrWhiteSpace(sanitized) ? "Page1" : sanitized;
     }
 
     private static string BuildVisualDefinitionJson(Visual visual)

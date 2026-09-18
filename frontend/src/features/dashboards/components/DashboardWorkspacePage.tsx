@@ -3,6 +3,7 @@ import { DashboardCanvas } from "./DashboardCanvas";
 import { useDashboardStore } from "../model/dashboardSlice";
 import { Button } from "@shared/ui/Button/Button";
 import { Modal } from "@shared/ui/Modal/Modal";
+import { EmptyState } from "@shared/ui";
 import { ModelValidationModal } from "@features/analytics/components/ModelValidationModal";
 import { getAnalyticsModels } from "@features/analytics/api/analyticsApi";
 import { LocalDesktopOrchestrator } from "@features/powerbi-embed/components/LocalDesktopOrchestrator";
@@ -46,6 +47,30 @@ export const DashboardWorkspacePage: React.FC = () => {
         if (models && models.length > 0) {
           setAvailableModels(models);
           setSelectedModelId((prev) => {
+            // 1. Check URL query params (?modelId=... or ?dataset=...)
+            const searchParams = new URLSearchParams(window.location.search);
+            const queryModelId = searchParams.get("modelId");
+            const queryDataset = searchParams.get("dataset");
+            if (queryModelId && models.some((m) => m.id === queryModelId)) {
+              return queryModelId;
+            }
+            if (queryDataset) {
+              const matched = models.find((m) => m.name.toLowerCase().includes(queryDataset.toLowerCase()));
+              if (matched) return matched.id;
+            }
+
+            // 2. Check localStorage
+            const savedModelId = localStorage.getItem("powerbi_active_model_id");
+            if (savedModelId && models.some((m) => m.id === savedModelId)) {
+              return savedModelId;
+            }
+
+            const savedModelName = localStorage.getItem("powerbi_active_model_name");
+            if (savedModelName) {
+              const matched = models.find((m) => m.name.toLowerCase().includes(savedModelName.toLowerCase()));
+              if (matched) return matched.id;
+            }
+
             const exists = models.some((m) => m.id === prev);
             return exists ? prev : models[0].id;
           });
@@ -206,7 +231,10 @@ export const DashboardWorkspacePage: React.FC = () => {
                 className="form-input"
                 style={{ padding: "0.35rem 0.5rem", fontSize: "0.875rem", minWidth: "220px" }}
                 value={activeModelId}
-                onChange={(e) => setSelectedModelId(e.target.value)}
+                onChange={(e) => {
+                  setSelectedModelId(e.target.value);
+                  localStorage.setItem("powerbi_active_model_id", e.target.value);
+                }}
                 aria-label="semantic-model-select"
               >
                 {availableModels.map((m) => (
@@ -288,28 +316,15 @@ export const DashboardWorkspacePage: React.FC = () => {
         </div>
       )}
 
-      {/* Main Viewport */}
       {availableModels.length === 0 && !current ? (
-        <div
-          className="card"
-          style={{
-            padding: "3rem 2rem",
-            textAlign: "center",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "1rem"
+        <EmptyState
+          title="No Semantic Models Available"
+          description="Upload or register a dataset (Excel, CSV, or SQL Server) to automatically synthesize your DAX measures, TMDL model, and PBIR dashboard visuals."
+          primaryAction={{
+            label: "Go to Data Sources & Ingestion",
+            onClick: () => { window.location.href = "/data-sources"; }
           }}
-        >
-          <div style={{ fontSize: "2.5rem" }}>📊</div>
-          <h3 style={{ margin: 0, fontSize: "1.25rem" }}>No Semantic Models Available</h3>
-          <p style={{ margin: 0, color: "var(--text-secondary)", maxWidth: "500px" }}>
-            Upload or register a dataset (Excel, CSV, or SQL Server) to automatically synthesize your DAX measures, TMDL model, and PBIR dashboard visuals.
-          </p>
-          <Button variant="primary" onClick={() => { window.location.href = "/data-sources"; }}>
-            Go to Data Sources & Ingestion
-          </Button>
-        </div>
+        />
       ) : (
         <div className="card" style={{ padding: "1rem", minHeight: "650px", overflow: "auto" }}>
           {viewMode === "canvas" ? (
