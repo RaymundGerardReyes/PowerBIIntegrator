@@ -10,7 +10,7 @@ import type { ColumnSchemaDto } from "@shared/types/api-contracts";
 type Tab = "excel" | "csv" | "sql" | "catalog" | null;
 
 export const DataSourcesPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<Tab>(null);
+  const [activeTab, setActiveTab] = useState<Tab>("excel");
   const [inspectedSchema, setInspectedSchema] = useState<ColumnSchemaDto[] | null>(null);
 
   const { data: realSources } = useDataSources();
@@ -33,7 +33,8 @@ export const DataSourcesPage: React.FC = () => {
       }))
     : [
         { id: "ds-1", name: "Global_Sales_2026.xlsx", type: "Excel", status: "Active", tablesCount: 3, action: null },
-        { id: "ds-2", name: "Customer_Churn_Monthly.csv", type: "CSV", status: "Active", tablesCount: 1, action: null }
+        { id: "ds-2", name: "Customer_Churn_Monthly.csv", type: "CSV", status: "Active", tablesCount: 1, action: null },
+        { id: "ds-3", name: "TelemetryDb@sql-cluster-01", type: "SQL", status: "Active", tablesCount: 2, action: null }
       ];
 
   const schemaColumns = [
@@ -51,10 +52,10 @@ export const DataSourcesPage: React.FC = () => {
   }));
 
   const sourceTypes = [
-    { id: "excel" as Tab, label: "Excel (.xlsx)", icon: "📊", desc: "Local spreadsheet files" },
-    { id: "csv" as Tab, label: "CSV (.csv)", icon: "📄", desc: "Delimited text data" },
-    { id: "sql" as Tab, label: "SQL Server", icon: "🗄️", desc: "Relational DB connection" },
-    { id: "catalog" as Tab, label: "Registered", icon: "📁", desc: "Existing connections" }
+    { id: "excel" as Tab, label: "Excel Spreadsheets (.xlsx)", icon: "📊", desc: "Local spreadsheet files" },
+    { id: "csv" as Tab, label: "Delimited CSV (.csv)", icon: "📄", desc: "Delimited text data" },
+    { id: "sql" as Tab, label: "Relational Database", icon: "🗄️", desc: "Relational DB connection" },
+    { id: "catalog" as Tab, label: "Registered Catalog", icon: "📁", desc: "Existing connections" }
   ];
 
   return (
@@ -66,10 +67,13 @@ export const DataSourcesPage: React.FC = () => {
         </p>
       </div>
 
-      <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+      <div role="tablist" style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
         {sourceTypes.map(source => (
           <div
             key={source.id}
+            role="tab"
+            aria-selected={activeTab === source.id}
+            aria-label={source.label}
             onClick={() => setActiveTab(source.id)}
             style={{
               flex: "1 1 200px",
@@ -115,7 +119,7 @@ export const DataSourcesPage: React.FC = () => {
             <div>
               <h3 style={{ fontSize: "1rem", marginBottom: "0.25rem" }}>Configure CSV Source</h3>
               <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginBottom: "1.5rem" }}>
-                Upload delimited text data. The schema will be inferred via stream sampling.
+                Upload delimited text data. Infers column data types, delimiters, and generates TMDL semantic model tables.
               </p>
               <CsvUploadForm />
             </div>

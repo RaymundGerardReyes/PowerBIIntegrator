@@ -18,6 +18,10 @@ public class LocalPowerBiDesktopService : ILocalPowerBiDesktopService
         @"C:\Program Files (x86)\Microsoft Power BI Desktop\bin\PBIDesktop.exe"
     ];
 
+    private static string? _cachedStoreExePath;
+    private static bool _storePathChecked;
+    private static readonly object _storePathLock = new();
+
     public LocalPowerBiDesktopService(
         PbipPackager packager,
         IConfiguration configuration,
@@ -172,25 +176,75 @@ public class LocalPowerBiDesktopService : ILocalPowerBiDesktopService
     private (bool IsInstalled, string? ExecutablePath, string InstallationType) DetectDesktopInstallation()
     {
         // 1. Check Store / WindowsApps package
-        try
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            const string windowsApps = @"C:\Program Files\WindowsApps";
-            if (Directory.Exists(windowsApps))
+            lock (_storePathLock)
             {
-                var storeDirs = Directory.GetDirectories(windowsApps, "Microsoft.MicrosoftPowerBIDesktop*");
-                foreach (var dir in storeDirs)
+                if (!_storePathChecked)
                 {
-                    var exe = Path.Combine(dir, "bin", "PBIDesktop.exe");
-                    if (File.Exists(exe))
+                    _storePathChecked = true;
+                    try
                     {
-                        return (true, exe, "Microsoft Store (WindowsApps)");
+                        const string windowsApps = @"C:\Program Files\WindowsApps";
+                        if (Directory.Exists(windowsApps))
+                        {
+                            var storeDirs = Directory.GetDirectories(windowsApps, "Microsoft.MicrosoftPowerBIDesktop*");
+                            foreach (var dir in storeDirs)
+                            {
+                                var exe = Path.Combine(dir, "bin", "PBIDesktop.exe");
+                                if (File.Exists(exe))
+                                {
+                                    _cachedStoreExePath = exe;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Direct WindowsApps folder enumeration requires elevated privileges
+                    }
+
+                    if (string.IsNullOrWhiteSpace(_cachedStoreExePath))
+                    {
+                        try
+                        {
+                            var psi = new ProcessStartInfo
+                            {
+                                FileName = "powershell.exe",
+                                Arguments = "-NoProfile -NonInteractive -Command \"(Get-AppxPackage -Name *PowerBI* -ErrorAction SilentlyContinue).InstallLocation\"",
+                                RedirectStandardOutput = true,
+                                RedirectStandardError = true,
+                                UseShellExecute = false,
+                                CreateNoWindow = true
+                            };
+                            using var proc = Process.Start(psi);
+                            if (proc != null)
+                            {
+                                var loc = proc.StandardOutput.ReadToEnd().Trim();
+                                proc.WaitForExit(4000);
+                                if (!string.IsNullOrWhiteSpace(loc))
+                                {
+                                    var exe = Path.Combine(loc, "bin", "PBIDesktop.exe");
+                                    if (File.Exists(exe))
+                                    {
+                                        _cachedStoreExePath = exe;
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogDebug(ex, "AppX package query failed for Power BI Desktop.");
+                        }
                     }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "WindowsApps permission check failed for Power BI Desktop.");
+
+            if (!string.IsNullOrWhiteSpace(_cachedStoreExePath) && File.Exists(_cachedStoreExePath))
+            {
+                return (true, _cachedStoreExePath, "Microsoft Store (WindowsApps)");
+            }
         }
 
         // 2. Check standard MSI/standalone installer paths

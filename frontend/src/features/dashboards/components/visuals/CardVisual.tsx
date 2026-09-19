@@ -1,5 +1,6 @@
 import React from "react";
 import type { Visual } from "@entities/visual/types";
+import { cleanFieldLabel, isValidMeasureName } from "@entities/measure";
 
 interface CardVisualProps {
   visual: Visual;
@@ -59,6 +60,36 @@ export const CardVisual: React.FC<CardVisualProps> = ({ visual }) => {
   if (boundField.includes("[")) {
     tableName = boundField.substring(0, boundField.indexOf("[")).trim();
     fieldName = boundField.substring(boundField.indexOf("[") + 1).replace("]", "").trim();
+  }
+
+  // Validate Semantic Model Measure Parity: KPI Cards MUST strictly bind to valid DAX measures
+  if (!isValidMeasureName(fieldName)) {
+    return (
+      <div
+        data-testid={`card-error-${visual.name}`}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+          padding: "1rem",
+          backgroundColor: "var(--danger-bg, #fef2f2)",
+          border: "1px dashed var(--danger, #ef4444)",
+          borderRadius: "var(--radius-sm, 6px)",
+          boxSizing: "border-box",
+          textAlign: "center"
+        }}
+      >
+        <span style={{ fontSize: "1.25rem", color: "var(--danger, #ef4444)" }}>⚠️</span>
+        <div style={{ fontWeight: 700, fontSize: "0.8rem", color: "var(--danger, #b91c1c)", marginTop: "0.25rem" }}>
+          Invalid Measure Binding
+        </div>
+        <p style={{ fontSize: "0.7rem", color: "var(--text-secondary, #6b7280)", margin: "0.25rem 0 0 0" }}>
+          Raw unaggregated column <code>{fieldName}</code> cannot be used in a KPI Card. Please bind to a DAX measure (e.g. <code>Total_{fieldName}</code> or <code>TotalRows</code>).
+        </p>
+      </div>
+    );
   }
 
   const lowerName = fieldName.toLowerCase();

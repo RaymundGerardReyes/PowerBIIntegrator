@@ -39,7 +39,6 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({ steps, onStepC
           <button
             key={step.id}
             onClick={() => onStepClick(step.id)}
-            role="tab"
             aria-selected={isActive}
             style={{
               display: "flex",

@@ -103,8 +103,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
         {/* User / System Controls */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <button onClick={toggleTheme} className="btn btn-ghost btn-sm">
-            {theme === "light" ? "🌙" : "☀️"}
+          <button onClick={toggleTheme} className="btn btn-ghost btn-sm" aria-label="toggle-theme-button">
+            {theme === "light" ? "🌙 Dark" : "☀️ Light"}
           </button>
 
           {isAuthenticated && user ? (
@@ -124,6 +124,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             onClick={() => setIsAssistantOpen((prev) => !prev)}
             variant={isAssistantOpen ? "primary" : "secondary"}
             className="btn-sm"
+            aria-label="toggle-ai-assistant"
             style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
           >
             <span>✨</span> Advisory Copilot
@@ -148,6 +149,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
         {isAssistantOpen && (
           <aside
+            aria-label="AI Copilot Assistant Panel"
             style={{
               width: "400px",
               borderLeft: "1px solid var(--border-color)",
@@ -158,8 +160,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             }}
           >
             <div style={{ padding: "0.75rem", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ fontSize: "0.875rem", fontWeight: 600 }}>Advisory Copilot</div>
-              <button onClick={() => setIsAssistantOpen(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>×</button>
+              <div style={{ fontSize: "0.875rem", fontWeight: 600 }}>Model Context Protocol Agent</div>
+              <button onClick={() => setIsAssistantOpen(false)} aria-label="close-assistant-panel" style={{ background: "none", border: "none", cursor: "pointer" }}>×</button>
             </div>
             <div style={{ padding: "1rem", flex: 1, overflowY: "auto" }}>
               <AssistantPanel />

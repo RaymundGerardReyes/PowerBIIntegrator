@@ -10,7 +10,7 @@ import type { ReportDocumentModel, ColumnSchemaDto } from "@shared/types/api-con
 export const ReportsHubPage: React.FC = () => {
   const [selectedFormat, setSelectedFormat] = useState<ReportFormat>("pdf");
   const [isExporting, setIsExporting] = useState(false);
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isConfigOpen, setIsConfigOpen] = useState(true);
   const { data: dataSources = [] } = useDataSources();
   const [selectedSourceId, setSelectedSourceId] = useState<string>("");
 
@@ -146,8 +146,10 @@ export const ReportsHubPage: React.FC = () => {
         {isConfigOpen && (
           <div style={{ marginTop: "1rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", borderTop: "1px solid var(--border-color)", paddingTop: "1rem" }}>
             <div className="form-group">
-              <label className="form-label">Report Title</label>
+              <label className="form-label" htmlFor="report-title-input">Report Title</label>
               <input
+                id="report-title-input"
+                aria-label="report-title-input"
                 className="form-input"
                 value={model.title}
                 onChange={(e) => setModel({ ...model, title: e.target.value })}
