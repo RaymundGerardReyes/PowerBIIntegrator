@@ -8,6 +8,7 @@ interface DashboardState {
   updateVisualType: (pageName: string, visualName: string, visualType: string) => void;
   updateVisualTitle: (pageName: string, visualName: string, title: string) => void;
   updateVisualBoundField: (pageName: string, visualName: string, fieldIndex: number, newField: string) => void;
+  addVisual: (pageName: string, visual: import("@entities/visual/types").Visual) => void;
 }
 
 export const useDashboardStore = create<DashboardState>((set) => ({
@@ -76,6 +77,19 @@ export const useDashboardStore = create<DashboardState>((set) => ({
                 }
                 return { ...v, boundFields: updated };
               })
+            }
+      );
+      return { current: { ...state.current, pages } };
+    }),
+  addVisual: (pageName, visual) =>
+    set((state) => {
+      if (!state.current) return state;
+      const pages = state.current.pages.map((page) =>
+        page.name !== pageName
+          ? page
+          : {
+              ...page,
+              visuals: [...page.visuals, visual]
             }
       );
       return { current: { ...state.current, pages } };

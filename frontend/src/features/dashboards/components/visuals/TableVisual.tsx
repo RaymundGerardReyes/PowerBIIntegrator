@@ -1,5 +1,6 @@
 import React from "react";
 import type { Visual } from "@entities/visual/types";
+import { cleanFieldLabel, isValidMeasureName } from "@entities/measure";
 
 interface TableVisualProps {
   visual: Visual;
@@ -94,9 +95,7 @@ function getSampleCellValue(header: string, rowIndex: number): string {
 }
 
 export const TableVisual: React.FC<TableVisualProps> = ({ visual }) => {
-  const fields = visual.boundFields.map((f) => {
-    return f.includes("[") ? f.substring(f.indexOf("[") + 1).replace("]", "") : f;
-  });
+  const fields = visual.boundFields.map((f) => cleanFieldLabel(f));
 
   const sampleHeaders = fields.length > 0 ? fields.slice(0, 8) : ["Column1", "Column2", "Column3", "Measure"];
 
@@ -130,11 +129,15 @@ export const TableVisual: React.FC<TableVisualProps> = ({ visual }) => {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem" }}>
           <thead>
             <tr style={{ backgroundColor: "var(--bg-subtle, #f8fafc)", borderBottom: "1px solid var(--border-color, #e2e8f0)" }}>
-              {sampleHeaders.map((h, i) => (
-                <th key={i} style={{ padding: "5px 8px", textAlign: "left", fontWeight: 600, color: "var(--text-secondary, #475569)", whiteSpace: "nowrap" }}>
-                  {h}
-                </th>
-              ))}
+              {sampleHeaders.map((h, i) => {
+                const isMeasure = isValidMeasureName(h);
+                return (
+                  <th key={i} style={{ padding: "5px 8px", textAlign: "left", fontWeight: 600, color: "var(--text-secondary, #475569)", whiteSpace: "nowrap" }}>
+                    {isMeasure && <span style={{ marginRight: "3px", color: "var(--color-primary, #2563eb)", fontSize: "0.65rem", fontWeight: 700 }}>[fx]</span>}
+                    {h}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>

@@ -1,17 +1,49 @@
 import React from "react";
 import type { Visual } from "@entities/visual/types";
+import { cleanFieldLabel, validateVisualRoles } from "@entities/measure";
 
 interface LineChartVisualProps {
   visual: Visual;
 }
 
 export const LineChartVisual: React.FC<LineChartVisualProps> = ({ visual }) => {
+  const roleValidation = validateVisualRoles(visual.visualType, visual.boundFields);
+
+  if (!roleValidation.isValid) {
+    return (
+      <div
+        data-testid={`linechart-error-${visual.name}`}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+          padding: "1rem",
+          backgroundColor: "var(--danger-bg, #fef2f2)",
+          border: "1px dashed var(--danger, #ef4444)",
+          borderRadius: "var(--radius-sm, 6px)",
+          boxSizing: "border-box",
+          textAlign: "center"
+        }}
+      >
+        <span style={{ fontSize: "1.25rem", color: "var(--danger, #ef4444)" }}>⚠️</span>
+        <div style={{ fontWeight: 700, fontSize: "0.8rem", color: "var(--danger, #b91c1c)", marginTop: "0.25rem" }}>
+          Invalid Trendline Measure Binding
+        </div>
+        <p style={{ fontSize: "0.7rem", color: "var(--text-secondary, #6b7280)", margin: "0.25rem 0 0 0" }}>
+          {roleValidation.error}
+        </p>
+      </div>
+    );
+  }
+
   const boundFields = visual.boundFields;
   const xField = boundFields[0] ?? "Timeline";
   const yField = boundFields[1] ?? "Metric";
 
-  const cleanX = xField.includes("[") ? xField.substring(xField.indexOf("[") + 1).replace("]", "") : xField;
-  const cleanY = yField.includes("[") ? yField.substring(yField.indexOf("[") + 1).replace("]", "") : yField;
+  const cleanX = cleanFieldLabel(xField);
+  const cleanY = cleanFieldLabel(yField);
 
   // Sample data points for trend/distribution
   const points = [

@@ -1,5 +1,6 @@
 import React from "react";
 import type { Visual } from "@entities/visual/types";
+import { cleanFieldLabel, validateVisualRoles } from "@entities/measure";
 
 interface DonutChartVisualProps {
   visual: Visual;
@@ -85,10 +86,39 @@ function getDonutSegments(category: string): DonutSegment[] {
 }
 
 export const DonutChartVisual: React.FC<DonutChartVisualProps> = ({ visual }) => {
+  const roleValidation = validateVisualRoles(visual.visualType, visual.boundFields);
+
+  if (!roleValidation.isValid) {
+    return (
+      <div
+        data-testid={`donutchart-error-${visual.name}`}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+          padding: "1rem",
+          backgroundColor: "var(--danger-bg, #fef2f2)",
+          border: "1px dashed var(--danger, #ef4444)",
+          borderRadius: "var(--radius-sm, 6px)",
+          boxSizing: "border-box",
+          textAlign: "center"
+        }}
+      >
+        <span style={{ fontSize: "1.25rem", color: "var(--danger, #ef4444)" }}>⚠️</span>
+        <div style={{ fontWeight: 700, fontSize: "0.8rem", color: "var(--danger, #b91c1c)", marginTop: "0.25rem" }}>
+          Invalid Slice Measure Binding
+        </div>
+        <p style={{ fontSize: "0.7rem", color: "var(--text-secondary, #6b7280)", margin: "0.25rem 0 0 0" }}>
+          {roleValidation.error}
+        </p>
+      </div>
+    );
+  }
+
   const categoryField = visual.boundFields[0] ?? "Proportions";
-  const cleanCategory = categoryField.includes("[")
-    ? categoryField.substring(categoryField.indexOf("[") + 1).replace("]", "")
-    : categoryField;
+  const cleanCategory = cleanFieldLabel(categoryField);
 
   const friendlyCategory = cleanCategory.charAt(0).toUpperCase() + cleanCategory.slice(1);
   const segments = getDonutSegments(cleanCategory);

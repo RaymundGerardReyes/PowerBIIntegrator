@@ -1,5 +1,6 @@
 import React from "react";
 import type { Visual } from "@entities/visual/types";
+import { cleanFieldLabel, isValidMeasureName } from "@entities/measure";
 import { useDashboardStore } from "../model/dashboardSlice";
 import { useLayoutEditor } from "../hooks/useLayoutEditor";
 import { CardVisual } from "./visuals/CardVisual";
@@ -24,12 +25,19 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName
     return unique.length > 0 ? unique : visual.boundFields;
   }, [currentDashboard, visual.boundFields]);
 
-  const cleanFieldLabel = (f: string) => {
-    if (f.includes("[")) {
-      return f.substring(f.indexOf("[") + 1).replace("]", "").trim();
+  const { measures, dimensions } = React.useMemo(() => {
+    const meas: string[] = [];
+    const dims: string[] = [];
+    for (const f of availableFields) {
+      const clean = cleanFieldLabel(f);
+      if (isValidMeasureName(clean)) {
+        meas.push(f);
+      } else {
+        dims.push(f);
+      }
     }
-    return f;
-  };
+    return { measures: meas, dimensions: dims };
+  }, [availableFields]);
 
   const getVisualTypeIcon = (type: string) => {
     switch (type) {
@@ -121,7 +129,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", flexShrink: 0 }}>
-          {/* Live Column / Field Selector */}
+          {/* Primary Field Selector (Slot 0) */}
           {availableFields.length > 0 && visual.visualType !== "table" && (
             <select
               value={visual.boundFields[0] ?? ""}
@@ -138,15 +146,95 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName
                 maxWidth: "105px",
                 textOverflow: "ellipsis"
               }}
-              title="Select column / measure in realtime"
+              title={visual.visualType === "card" ? "Select DAX Measure" : "Select Category / Dimension"}
             >
-              {availableFields.map((f) => (
-                <option key={f} value={f}>
-                  {cleanFieldLabel(f)}
-                </option>
-              ))}
+              {visual.visualType === "card" ? (
+                <>
+                  <optgroup label="DAX Measures (Valid)">
+                    {measures.map((f) => (
+                      <option key={f} value={f}>
+                        {cleanFieldLabel(f)}
+                      </option>
+                    ))}
+                  </optgroup>
+                  {dimensions.length > 0 && (
+                    <optgroup label="Raw Columns (Invalid)">
+                      {dimensions.map((f) => (
+                        <option key={f} value={f}>
+                          {cleanFieldLabel(f)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </>
+              ) : (
+                <>
+                  {dimensions.length > 0 && (
+                    <optgroup label="Dimensions (Category)">
+                      {dimensions.map((f) => (
+                        <option key={f} value={f}>
+                          {cleanFieldLabel(f)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {measures.length > 0 && (
+                    <optgroup label="Measures">
+                      {measures.map((f) => (
+                        <option key={f} value={f}>
+                          {cleanFieldLabel(f)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </>
+              )}
             </select>
           )}
+
+          {/* Secondary Metric/Measure Selector for 2-Slot Charts (Slot 1) */}
+          {availableFields.length > 0 &&
+            visual.visualType !== "table" &&
+            visual.visualType !== "tableEx" &&
+            visual.visualType !== "card" && (
+              <select
+                value={visual.boundFields[1] ?? ""}
+                onChange={(e) => updateVisualBoundField(pageName, visual.name, 1, e.target.value)}
+                aria-label={`select-measure-${visual.name}`}
+                style={{
+                  fontSize: "0.6875rem",
+                  padding: "2px 4px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--border-color, #d1d5db)",
+                  backgroundColor: "var(--bg-subtle, #f9fafb)",
+                  color: "var(--text-secondary, #374151)",
+                  cursor: "pointer",
+                  maxWidth: "95px",
+                  textOverflow: "ellipsis"
+                }}
+                title="Select DAX Measure (Y / Value axis)"
+              >
+                <option value="" disabled>Select metric...</option>
+                {measures.length > 0 && (
+                  <optgroup label="DAX Measures">
+                    {measures.map((f) => (
+                      <option key={f} value={f}>
+                        {cleanFieldLabel(f)}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {dimensions.length > 0 && (
+                  <optgroup label="Raw Columns (Invalid)">
+                    {dimensions.map((f) => (
+                      <option key={f} value={f}>
+                        {cleanFieldLabel(f)}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+            )}
 
           {/* Live Type Customization Dropdown */}
           <select

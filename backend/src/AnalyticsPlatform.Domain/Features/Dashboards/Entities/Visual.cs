@@ -44,16 +44,43 @@ public class Visual : Entity
         Name = name;
         Layout = layout;
         BoundFields = boundFields;
-        QueryBinding = queryBinding ?? CreateDefaultBinding(boundFields);
+        QueryBinding = queryBinding ?? CreateDefaultBinding(boundFields, visualType);
     }
 
     public void UpdateLayout(VisualLayout newLayout) => Layout = newLayout;
     public void SetQueryBinding(VisualQueryBinding queryBinding) => QueryBinding = queryBinding;
 
-    private static VisualQueryBinding CreateDefaultBinding(IReadOnlyList<string> boundFields)
+    public static bool IsMeasureName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return false;
+
+        var lower = name.ToLowerInvariant();
+
+        if (lower == "totalrows" || lower == "total_rows" || lower.StartsWith("totalrows_", StringComparison.Ordinal))
+            return true;
+
+        if (lower.StartsWith("total_", StringComparison.Ordinal) || lower.StartsWith("total", StringComparison.Ordinal) ||
+            lower.StartsWith("sum_", StringComparison.Ordinal) || lower.StartsWith("sum", StringComparison.Ordinal) ||
+            lower.StartsWith("average_", StringComparison.Ordinal) || lower.StartsWith("average", StringComparison.Ordinal) ||
+            lower.StartsWith("avg_", StringComparison.Ordinal) || lower.StartsWith("avg", StringComparison.Ordinal))
+            return true;
+
+        if (lower.EndsWith("_rate", StringComparison.Ordinal) || lower.EndsWith("rate", StringComparison.Ordinal) ||
+            lower.EndsWith("_pct", StringComparison.Ordinal) || lower.EndsWith("_percent", StringComparison.Ordinal) ||
+            lower.EndsWith("percentage", StringComparison.Ordinal))
+            return true;
+
+        return false;
+    }
+
+    private static VisualQueryBinding CreateDefaultBinding(IReadOnlyList<string> boundFields, string visualType = "")
     {
         var categories = new List<VisualFieldBinding>();
         var values = new List<VisualFieldBinding>();
+
+        var isTable = visualType.Equals(VisualTypes.Table, StringComparison.OrdinalIgnoreCase) ||
+                      visualType.Equals("table", StringComparison.OrdinalIgnoreCase);
+        var isCard = visualType.Equals(VisualTypes.Card, StringComparison.OrdinalIgnoreCase);
 
         foreach (var field in boundFields)
         {
@@ -61,11 +88,14 @@ public class Visual : Entity
             var table = parts.Length > 0 ? parts[0] : "Data";
             var col = parts.Length > 1 ? parts[1] : field;
 
-            if (col.StartsWith("Total", StringComparison.OrdinalIgnoreCase) ||
-                col.StartsWith("Sum", StringComparison.OrdinalIgnoreCase) ||
-                col.StartsWith("Average", StringComparison.OrdinalIgnoreCase) ||
-                col.EndsWith("_Rate", StringComparison.OrdinalIgnoreCase) ||
-                col.Equals("TotalRows", StringComparison.OrdinalIgnoreCase))
+            var isMeasure = IsMeasureName(col);
+
+            if (isTable || isCard)
+            {
+                // For tables (tableEx) and cards, all projections map to Values role per ADR 0005
+                values.Add(new VisualFieldBinding(table, col, IsMeasure: isMeasure));
+            }
+            else if (isMeasure)
             {
                 values.Add(new VisualFieldBinding(table, col, IsMeasure: true));
             }

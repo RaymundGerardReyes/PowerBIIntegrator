@@ -83,6 +83,81 @@ public class PbirGenerationRegressionTests
     }
 
     [Fact]
+    public void GenerateReportDefinition_WithTableVisual_MapsQueryStateToValuesRoleOnlyPerAdr0005()
+    {
+        var dashboard = new DashboardDefinition("TableReport", Guid.NewGuid());
+        var page = new Page("Details", 1280, 720);
+        page.AddVisual(new Visual(
+            VisualTypes.Table,
+            "DetailedGrid",
+            new VisualLayout(20, 20, 1000, 600, 1, true),
+            new[] { "Sales[OrderId]", "Sales[CustomerName]", "Sales[TotalRevenue]" }));
+        dashboard.AddPage(page);
+
+        var generator = new PbirGenerator();
+        var fileTree = generator.GenerateReportDefinition(dashboard, "../TableReport.SemanticModel");
+
+        var visual = fileTree.GetContent("definition/pages/Details/visuals/DetailedGrid/visual.json");
+        visual.Should().Contain(VisualTypes.Table);
+        visual.Should().Contain("\"Values\"");
+        visual.Should().NotContain("\"Category\"");
+        visual.Should().NotContain("\"Y\"");
+    }
+
+    [Fact]
+    public void GenerateReportDefinition_WithCardVisual_MapsQueryStateToValuesRoleOnlyPerAdr0005()
+    {
+        var dashboard = new DashboardDefinition("KpiReport", Guid.NewGuid());
+        var page = new Page("Overview", 1280, 720);
+        page.AddVisual(new Visual(
+            VisualTypes.Card,
+            "TotalRevenueKpi",
+            new VisualLayout(20, 20, 300, 160, 1, true),
+            new[] { "Sales[TotalRevenue]" }));
+        dashboard.AddPage(page);
+
+        var generator = new PbirGenerator();
+        var fileTree = generator.GenerateReportDefinition(dashboard, "../KpiReport.SemanticModel");
+
+        var visual = fileTree.GetContent("definition/pages/Overview/visuals/TotalRevenueKpi/visual.json");
+        visual.Should().Contain(VisualTypes.Card);
+        visual.Should().Contain("\"Values\"");
+        visual.Should().NotContain("\"Category\"");
+        visual.Should().NotContain("\"Y\"");
+    }
+
+    [Fact]
+    public void GenerateReportDefinition_WithLineAndDonutCharts_MapsQueryStateToCategoryAndYRoles()
+    {
+        var dashboard = new DashboardDefinition("MultiChartReport", Guid.NewGuid());
+        var page = new Page("Charts", 1280, 720);
+        page.AddVisual(new Visual(
+            VisualTypes.LineChart,
+            "SalesTrend",
+            new VisualLayout(20, 20, 500, 300, 1, true),
+            new[] { "Sales[OrderDate]", "Sales[TotalSales]" }));
+        page.AddVisual(new Visual(
+            VisualTypes.DonutChart,
+            "ChannelSplit",
+            new VisualLayout(540, 20, 400, 300, 1, true),
+            new[] { "Sales[Channel]", "Sales[TotalRows]" }));
+        dashboard.AddPage(page);
+
+        var generator = new PbirGenerator();
+        var fileTree = generator.GenerateReportDefinition(dashboard, "../MultiChartReport.SemanticModel");
+
+        var lineVisual = fileTree.GetContent("definition/pages/Charts/visuals/SalesTrend/visual.json");
+        lineVisual.Should().Contain(VisualTypes.LineChart);
+        lineVisual.Should().Contain("\"Category\"");
+        lineVisual.Should().Contain("\"Y\"");
+
+        var donutVisual = fileTree.GetContent("definition/pages/Charts/visuals/ChannelSplit/visual.json");
+        donutVisual.Should().Contain(VisualTypes.DonutChart);
+        donutVisual.Should().Contain("\"Category\"");
+        donutVisual.Should().Contain("\"Y\"");
+    }
+
+    [Fact]
     public void GenerateSemanticModel_ProducesValidTmdlStructureAndPartitions()
     {
         var model = new AnalyticsModel("SalesModel", "en-US");

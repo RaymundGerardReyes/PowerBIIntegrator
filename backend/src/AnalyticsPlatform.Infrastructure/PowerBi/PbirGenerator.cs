@@ -136,6 +136,39 @@ public class PbirGenerator : IPbirGenerator
             }
         }
 
+        Dictionary<string, object> queryState;
+        var visualType = visual.VisualType;
+
+        if (visualType.Equals(VisualTypes.Table, StringComparison.OrdinalIgnoreCase) ||
+            visualType.Equals("table", StringComparison.OrdinalIgnoreCase))
+        {
+            // ADR 0005: Native Table (tableEx) strictly accepts "Values" role for all projections
+            var allProjections = new List<object>(categoryProjections);
+            allProjections.AddRange(valueProjections);
+            queryState = new Dictionary<string, object>
+            {
+                ["Values"] = new { projections = allProjections }
+            };
+        }
+        else if (visualType.Equals(VisualTypes.Card, StringComparison.OrdinalIgnoreCase))
+        {
+            // ADR 0005: Native Card strictly accepts "Values" role for scalar measure projections
+            var cardProjections = valueProjections.Count > 0 ? valueProjections : categoryProjections;
+            queryState = new Dictionary<string, object>
+            {
+                ["Values"] = new { projections = cardProjections }
+            };
+        }
+        else
+        {
+            // Standard Cartesian / Categorical visuals (barChart, columnChart, lineChart, areaChart, donutChart, pieChart)
+            queryState = new Dictionary<string, object>
+            {
+                ["Category"] = new { projections = categoryProjections },
+                ["Y"] = new { projections = valueProjections }
+            };
+        }
+
         var visualContainer = new Dictionary<string, object>
         {
             ["$schema"] = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.2.0/schema.json",
@@ -153,11 +186,7 @@ public class PbirGenerator : IPbirGenerator
                 visualType = visual.VisualType,
                 query = new
                 {
-                    queryState = new Dictionary<string, object>
-                    {
-                        ["Category"] = new { projections = categoryProjections },
-                        ["Y"] = new { projections = valueProjections }
-                    }
+                    queryState
                 }
             }
         };

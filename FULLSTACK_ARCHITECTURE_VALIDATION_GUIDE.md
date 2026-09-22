@@ -70,15 +70,30 @@ This document consolidates the **frontend** and **backend** architecture validat
 - Add integration tests per stage verifying the correct HTTP call (`GET profile`, `POST deduplicate`, `POST clean`, `POST transform`, `GET suggest-visuals`) fires when "Next" is triggered.
 - Add one full E2E run of the wizard against a fixture dataset, verifying the terminal advisory panel reflects expected risk output.
 
-### 5. Dashboard Canvas & Semantic Measure Parity
+### 5. Dashboard Canvas, Chart Validation & ADR 0005 Data-Role Parity
 
-**Rule:** KPI cards must bind only to valid DAX measures (`Total*`, `Sum_*`, `Average_*`, `*_Rate`, or default `TotalRows`). Raw unaggregated columns are rejected.
+**Rule 1: Visual Role & Semantic Measure Parity Across All Visual Types**
+- KPI single-value visuals (`card`) and chart metric slots (`barChart` Y-axis, `lineChart` Y-axis, `donutChart` slice metric) **must strictly bind to valid DAX measures** (`Total*`, `Sum_*`, `Average_*`, `Avg_*`, `*_Rate`, `*_Pct`, or default `TotalRows`).
+- Raw unaggregated columns (e.g., `Revenue`, `Amount`, `Price`, `CustomerId`, `OrderDate`) are rejected from metric slots. If bound, components must render an accessible error state (`data-testid="{visualType}-error-{visual.name}"`) and explain why an aggregated measure is required.
+- Category slots in bar and column charts expect dimension columns; if a measure is assigned to a category slot, an advisory warning badge (`data-testid="barchart-warning-{name}"`) is rendered.
+
+**Rule 2: ADR 0005 PBIR Data-Role Schema Compliance**
+- In backend `PbirGenerator.cs`, `queryState` projections must conform to the target visual's native capabilities:
+  - `tableEx`: Role is strictly `["Values"] = new { projections = allProjections }` (both columns and measures). Never emit `Category` or `Y`.
+  - `card`: Role is strictly `["Values"] = new { projections = valueProjections }`. Never emit `Category` or `Y`.
+  - `barChart`, `columnChart`, `lineChart`, `areaChart`, `donutChart`, `pieChart`: Roles are `["Category"]` (grouping/timeline) and `["Y"]` (DAX metric).
+  - `matrix`: Roles are `["Rows"]`, `["Columns"]`, `["Values"]`.
+
+**Rule 3: Visual Layout Editor Guardrails**
+- `VisualLayoutEditor` groups available fields in selection dropdowns into `<optgroup label="Measures">` and `<optgroup label="Dimensions">`.
+- Multi-axis visuals provide secondary selectors for metric slots, alerting users when raw columns are selected.
 
 **Corrections:**
-- Extract and unit-test a pure function `isValidMeasureName(name: string): boolean` covering all valid prefixes/suffixes and rejecting raw columns (e.g., `CustomerName`, `OrderId`).
-- Unit test `cleanFieldLabel("Table[Column]") === "Column"`.
-- Component test: mounting `CardVisual` with a raw-column binding must render an error state, not silently pass through.
-- Regression/snapshot test: `dashboardSlice` initial state must always include the default `TotalRows` measure; a failing snapshot signals an accidental removal.
+- Unit test `BarChartVisual`, `LineChartVisual`, `DonutChartVisual`, `TableVisual`, `CardVisual`, and `VisualLayoutEditor`.
+- Codify `validateVisualRoles(visualType, boundFields)` and `isDimensionCandidate(field)`.
+- Backend regression test `PbirGenerationRegressionTests.cs` asserting `tableEx` and `card` emit `Values` role and never `Category`/`Y`.
+- Backend domain unit test `VisualTests.cs` testing `Visual.CreateDefaultBinding` and `Visual.IsMeasureName`.
+- Regression snapshot `DashboardCanvas.regression.test.tsx` verifying stable canvas rendering across all 5 visual types.
 
 ### 6. Pre-Flight Model Validation Engine
 

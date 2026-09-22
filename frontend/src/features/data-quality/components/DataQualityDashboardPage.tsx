@@ -5,6 +5,7 @@ import { CleaningRuleEditor } from "./CleaningRuleEditor";
 import { TransformationPlanBuilder } from "./TransformationPlanBuilder";
 import { ChartSuggestionPanel } from "./ChartSuggestionPanel";
 import { AdvisoryPanel } from "@features/ai-advisory";
+import { useDashboardStore } from "@features/dashboards";
 import { usePipelineRun } from "../hooks/usePipelineRun";
 import { useDataSources, type DataSourceDefinition } from "@features/data-sources";
 import { Button, Badge, Card, ContextBar, WorkflowStepper } from "@shared/ui";
@@ -65,6 +66,47 @@ export const DataQualityDashboardPage: React.FC = () => {
     } else {
       executeFullPipeline("DefaultSource", "DefaultDataset", "Gold_Fact_Sales");
     }
+  };
+
+  const [addedNotification, setAddedNotification] = useState<string | null>(null);
+
+  const handleSelectSuggestion = (visualType: string) => {
+    const store = useDashboardStore.getState();
+    const current = store.current;
+    if (!current || !current.pages.length) return;
+
+    const page = current.pages[0];
+    const visualCount = page.visuals.length;
+    const newVisualName = `visual-${visualType}-${visualCount + 1}`;
+
+    const primaryTable = activeSource?.name ? activeSource.name.replace(/[^a-zA-Z0-9_]/g, "") : "Data";
+    let boundFields: string[] = [];
+
+    if (visualType === "card") {
+      boundFields = [`${primaryTable}[TotalRows]`];
+    } else if (visualType === "table" || visualType === "tableEx") {
+      boundFields = profile?.columnProfiles.slice(0, 5).map((c) => `${primaryTable}[${c.columnName}]`) ?? [`${primaryTable}[TotalRows]`];
+    } else {
+      const categoryCol = profile?.columnProfiles.find((c) => c.inferredType === "String" || c.cardinalityClass === "Low")?.columnName ?? "Category";
+      boundFields = [`${primaryTable}[${categoryCol}]`, `${primaryTable}[TotalRows]`];
+    }
+
+    const newVisual = {
+      name: newVisualName,
+      visualType,
+      layout: {
+        x: (visualCount % 3) * 400 + 40,
+        y: Math.floor(visualCount / 3) * 260 + 40,
+        width: 380,
+        height: 240,
+        visible: true
+      },
+      boundFields
+    };
+
+    store.addVisual(page.name, newVisual);
+    setAddedNotification(`Added ${visualType} (${newVisualName}) to dashboard '${current.name}'.`);
+    setTimeout(() => setAddedNotification(null), 4000);
   };
 
   const stages = [
@@ -145,7 +187,25 @@ export const DataQualityDashboardPage: React.FC = () => {
         )}
 
         {activeStage === "visuals" && (
-          <ChartSuggestionPanel suggestions={suggestions} />
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            {addedNotification && (
+              <div
+                data-testid="chart-added-notification"
+                style={{
+                  padding: "0.5rem 1rem",
+                  backgroundColor: "var(--success-bg, #f0fdf4)",
+                  border: "1px solid var(--success-border, #bbf7d0)",
+                  borderRadius: "var(--radius-sm, 6px)",
+                  color: "var(--success, #16a34a)",
+                  fontSize: "0.8125rem",
+                  fontWeight: 500
+                }}
+              >
+                ✓ {addedNotification}
+              </div>
+            )}
+            <ChartSuggestionPanel suggestions={suggestions} onSelectSuggestion={handleSelectSuggestion} />
+          </div>
         )}
 
         {activeStage === "advisory" && (

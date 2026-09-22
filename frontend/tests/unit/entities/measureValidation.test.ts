@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isValidMeasureName, cleanFieldLabel } from "@entities/measure";
+import { isValidMeasureName, cleanFieldLabel, isDimensionCandidate, validateVisualRoles } from "@entities/measure";
 
 describe("Measure Validation Utilities", () => {
   describe("cleanFieldLabel", () => {
@@ -55,5 +55,60 @@ describe("Measure Validation Utilities", () => {
       expect(isValidMeasureName("Sales[Revenue]")).toBe(false);
     });
   });
-});
 
+  describe("isDimensionCandidate", () => {
+    it("identifies raw column names as dimension candidates", () => {
+      expect(isDimensionCandidate("Category")).toBe(true);
+      expect(isDimensionCandidate("Region")).toBe(true);
+      expect(isDimensionCandidate("CustomerName")).toBe(true);
+      expect(isDimensionCandidate("OrderDate")).toBe(true);
+    });
+
+    it("rejects DAX measures as dimensions", () => {
+      expect(isDimensionCandidate("TotalRevenue")).toBe(false);
+      expect(isDimensionCandidate("SumQuantity")).toBe(false);
+      expect(isDimensionCandidate("TotalRows")).toBe(false);
+    });
+  });
+
+  describe("validateVisualRoles", () => {
+    it("validates card visuals requiring valid DAX measures", () => {
+      expect(validateVisualRoles("card", ["Sales[TotalRevenue]"]).isValid).toBe(true);
+      const invalid = validateVisualRoles("card", ["Sales[Revenue]"]);
+      expect(invalid.isValid).toBe(false);
+      expect(invalid.error).toContain("Raw unaggregated column 'Revenue' cannot be used in a KPI Card");
+    });
+
+    it("validates bar chart visuals with category and measure slots", () => {
+      const valid = validateVisualRoles("barChart", ["Sales[Region]", "Sales[TotalRevenue]"]);
+      expect(valid.isValid).toBe(true);
+      expect(valid.warning).toBeUndefined();
+
+      const invalidMeasure = validateVisualRoles("barChart", ["Sales[Region]", "Sales[Revenue]"]);
+      expect(invalidMeasure.isValid).toBe(false);
+      expect(invalidMeasure.error).toContain("cannot be bound to the Value (Y) axis");
+
+      const measureAsCategory = validateVisualRoles("barChart", ["Sales[TotalSales]", "Sales[TotalRevenue]"]);
+      expect(measureAsCategory.isValid).toBe(true);
+      expect(measureAsCategory.warning).toContain("Dimension Expected");
+    });
+
+    it("validates line chart visuals requiring measures for Y-axis", () => {
+      expect(validateVisualRoles("lineChart", ["Orders[OrderDate]", "Orders[TotalSales]"]).isValid).toBe(true);
+      const invalid = validateVisualRoles("lineChart", ["Orders[OrderDate]", "Orders[Amount]"]);
+      expect(invalid.isValid).toBe(false);
+      expect(invalid.error).toContain("cannot be bound to the Y axis");
+    });
+
+    it("validates donut chart visuals requiring measures for slice values", () => {
+      expect(validateVisualRoles("donutChart", ["Data[Category]", "Data[TotalRows]"]).isValid).toBe(true);
+      const invalid = validateVisualRoles("donutChart", ["Data[Category]", "Data[CountRaw]"]);
+      expect(invalid.isValid).toBe(false);
+      expect(invalid.error).toContain("cannot be bound to the slice value");
+    });
+
+    it("accepts table visuals with any column or measure combination", () => {
+      expect(validateVisualRoles("table", ["Data[Id]", "Data[Name]", "Data[TotalSales]"]).isValid).toBe(true);
+    });
+  });
+});

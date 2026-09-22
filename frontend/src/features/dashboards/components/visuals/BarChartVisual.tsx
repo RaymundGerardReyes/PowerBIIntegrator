@@ -1,5 +1,6 @@
 import React from "react";
 import type { Visual } from "@entities/visual/types";
+import { cleanFieldLabel, validateVisualRoles } from "@entities/measure";
 
 interface BarChartVisualProps {
   visual: Visual;
@@ -86,16 +87,42 @@ function getDistributionData(category: string): BarItem[] {
 }
 
 export const BarChartVisual: React.FC<BarChartVisualProps> = ({ visual }) => {
+  const roleValidation = validateVisualRoles(visual.visualType, visual.boundFields);
+
+  if (!roleValidation.isValid) {
+    return (
+      <div
+        data-testid={`barchart-error-${visual.name}`}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+          padding: "1rem",
+          backgroundColor: "var(--danger-bg, #fef2f2)",
+          border: "1px dashed var(--danger, #ef4444)",
+          borderRadius: "var(--radius-sm, 6px)",
+          boxSizing: "border-box",
+          textAlign: "center"
+        }}
+      >
+        <span style={{ fontSize: "1.25rem", color: "var(--danger, #ef4444)" }}>⚠️</span>
+        <div style={{ fontWeight: 700, fontSize: "0.8rem", color: "var(--danger, #b91c1c)", marginTop: "0.25rem" }}>
+          Invalid Chart Measure Binding
+        </div>
+        <p style={{ fontSize: "0.7rem", color: "var(--text-secondary, #6b7280)", margin: "0.25rem 0 0 0" }}>
+          {roleValidation.error}
+        </p>
+      </div>
+    );
+  }
+
   const categoryField = visual.boundFields[0] ?? "Category";
   const measureField = visual.boundFields[1] ?? "Count";
 
-  const cleanCategory = categoryField.includes("[")
-    ? categoryField.substring(categoryField.indexOf("[") + 1).replace("]", "")
-    : categoryField;
-
-  const cleanMeasure = measureField.includes("[")
-    ? measureField.substring(measureField.indexOf("[") + 1).replace("]", "")
-    : measureField;
+  const cleanCategory = cleanFieldLabel(categoryField);
+  const cleanMeasure = cleanFieldLabel(measureField);
 
   const friendlyCategory = cleanCategory.charAt(0).toUpperCase() + cleanCategory.slice(1);
   const friendlyMeasure = cleanMeasure.replace(/_/g, " ");
@@ -124,6 +151,23 @@ export const BarChartVisual: React.FC<BarChartVisualProps> = ({ visual }) => {
           </p>
         </div>
       </div>
+
+      {roleValidation.warning && (
+        <div
+          data-testid={`barchart-warning-${visual.name}`}
+          style={{
+            fontSize: "0.65rem",
+            backgroundColor: "var(--warning-bg, #fefce8)",
+            color: "var(--warning-text, #a16207)",
+            border: "1px solid var(--warning-border, #fef08a)",
+            borderRadius: "4px",
+            padding: "2px 6px",
+            marginBottom: "0.35rem"
+          }}
+        >
+          ⚠️ {roleValidation.warning}
+        </div>
+      )}
 
       {isColumnChart ? (
         /* Vertical Column Chart */
