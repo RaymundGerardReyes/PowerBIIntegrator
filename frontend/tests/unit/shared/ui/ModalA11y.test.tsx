@@ -83,3 +83,4 @@ describe("Modal Accessibility & Interaction Tests", () => {
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 });
+

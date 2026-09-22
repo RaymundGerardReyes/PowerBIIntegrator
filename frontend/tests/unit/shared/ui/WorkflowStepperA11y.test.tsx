@@ -65,3 +65,4 @@ describe("WorkflowStepper Accessibility & Interaction Tests", () => {
     expect(screen.getByText("3")).toBeInTheDocument();
   });
 });
+
