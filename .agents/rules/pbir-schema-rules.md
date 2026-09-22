@@ -14,3 +14,4 @@ When generating or modifying `.pbip` or PBIR definition files (specifically `rep
 - `definition/pages/pages.json` must contain both `pageOrder` (array of page names) AND `activePageName` (string name of default active page).
 - A PBIR report must always contain at least one page. If the underlying data structure has no pages, you must generate a default `Page1`.
 - Page folder names and `page.json` `name` properties must be clean alphanumeric identifiers (e.g. `OverviewAnalytics`), using `displayName` for human-readable labels (e.g. `Overview & Analytics`).
+- Frontend test fixtures located under `frontend/tests/fixtures/pbir/` must mirror the exact Fabric schema invariants enforced by `PbirGenerator.cs`, verified by automated contract tests (`pbirSchemaFixture.test.ts`).
