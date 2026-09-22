@@ -164,7 +164,25 @@ if ($Tag) {
     Write-Info "Using overridden tag: $nextTag"
 } else {
     if ($DryRun -and $commitSha -eq "DRY_RUN_COMMIT_SHA") {
-        $nextTag = "v1.1.0"
+        $latestTag = (git tag -l "v[0-9]*.[0-9]*.[0-9]*" --sort=-v:refname 2>$null | Select-Object -First 1)
+        if ($latestTag -and ($latestTag.Trim() -match '^v(\d+)\.(\d+)\.(\d+)$')) {
+            $major = [int]$Matches[1]
+            $minor = [int]$Matches[2]
+            $patch = [int]$Matches[3]
+            $bump = "patch"
+            if ($Message -match '(?m)(BREAKING CHANGE:|BREAKING-CHANGE:|^[a-zA-Z]+(\([^\)]+\))?!:)') {
+                $bump = "major"
+            } elseif ($Message -match '(?m)^feat(\([^\)]+\))?:') {
+                $bump = "minor"
+            }
+            switch ($bump) {
+                "major" { $nextTag = "v$($major + 1).0.0" }
+                "minor" { $nextTag = "v$($major).$($minor + 1).0" }
+                "patch" { $nextTag = "v$($major).$($minor).$($patch + 1)" }
+            }
+        } else {
+            $nextTag = "v1.0.0"
+        }
         Write-Info "[DRY-RUN] Calculated SemVer tag: $nextTag"
     } else {
         $nextTag = Get-NextSemVer $commitSha

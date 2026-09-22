@@ -47,6 +47,27 @@ describe("ExposureUnlockDialog Component", () => {
     expect(handleConfirm).toHaveBeenCalledWith("Auditing suspicious duplicate cluster row values");
   });
 
+  it("rejects submission and displays error when justification is empty", async () => {
+    const handleConfirm = vi.fn();
+    renderWithProviders(
+      <ExposureUnlockDialog
+        isOpen={true}
+        runId="run-demo-002"
+        userRole="DataSteward"
+        onClose={vi.fn()}
+        onConfirmUnlock={handleConfirm}
+      />
+    );
+
+    const submitBtn = screen.getByText(/Unlock & Force Local Execution/i);
+    await act(async () => {
+      fireEvent.click(submitBtn);
+    });
+
+    expect(screen.getByText(/Please provide a business justification for unlocking sample rows/i)).toBeInTheDocument();
+    expect(handleConfirm).not.toHaveBeenCalled();
+  });
+
   it("does not render when isOpen is false", () => {
     const { container } = renderWithProviders(
       <ExposureUnlockDialog

@@ -40,6 +40,7 @@ export const WorkflowStepper: React.FC<WorkflowStepperProps> = ({ steps, onStepC
             key={step.id}
             onClick={() => onStepClick(step.id)}
             aria-selected={isActive}
+            aria-current={isActive ? "step" : undefined}
             style={{
               display: "flex",
               alignItems: "center",

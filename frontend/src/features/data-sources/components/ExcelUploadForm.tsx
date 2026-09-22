@@ -27,6 +27,7 @@ export const ExcelUploadForm: React.FC = () => {
             }
             if (result.id) {
               localStorage.setItem("powerbi_active_dataset_id", result.id);
+              localStorage.setItem("powerbi_active_model_id", result.id);
             }
           }
         }

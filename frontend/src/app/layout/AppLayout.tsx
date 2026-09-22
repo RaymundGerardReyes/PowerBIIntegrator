@@ -148,7 +148,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </main>
 
         {isAssistantOpen && (
-          <aside
+          <section
             aria-label="AI Copilot Assistant Panel"
             style={{
               width: "400px",
@@ -166,7 +166,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <div style={{ padding: "1rem", flex: 1, overflowY: "auto" }}>
               <AssistantPanel />
             </div>
-          </aside>
+          </section>
         )}
       </div>
     </div>

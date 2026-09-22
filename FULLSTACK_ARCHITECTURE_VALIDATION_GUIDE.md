@@ -275,18 +275,18 @@ Use this as a tracked backlog (e.g., GitHub issues or a project board):
 
 ### Frontend
 - [ ] Add `eslint-plugin-boundaries` config enforcing FSD layering.
-- [ ] Add `<aside>`-forbidden test + nav link test for `AppLayout`.
-- [ ] Add `apiClient` unit tests (FormData boundary, correlation ID header).
-- [ ] Add `localStorage` sync tests for dataset upload success/failure paths.
-- [ ] Implement explicit pipeline state machine + illegal-transition tests for data-quality wizard.
-- [ ] Extract and unit-test `isValidMeasureName` and `cleanFieldLabel`.
-- [ ] Add `CardVisual` raw-column rejection component test.
-- [ ] Add `dashboardSlice` default-measure regression snapshot.
-- [ ] Add `ModelValidationModal` success/failure integration tests.
-- [ ] Add PBIR fixture-based schema tests (frontend-side preview/consumption).
-- [ ] Add `ExposureUnlockDialog` justification-required test.
-- [ ] Add `AuthProvider` login/logout unit tests + `AppLayout` auth-state tests.
-- [ ] Add formatter edge-case tests and `Modal`/`WorkflowStepper` accessibility tests.
+- [x] Add `<aside>`-forbidden test + nav link test for `AppLayout`.
+- [x] Add `apiClient` unit tests (FormData boundary, correlation ID header).
+- [x] Add `localStorage` sync tests for dataset upload success/failure paths.
+- [x] Implement explicit pipeline state machine + illegal-transition tests for data-quality wizard.
+- [x] Extract and unit-test `isValidMeasureName` and `cleanFieldLabel`.
+- [x] Add `CardVisual` raw-column rejection component test.
+- [x] Add `dashboardSlice` default-measure regression snapshot.
+- [x] Add `ModelValidationModal` success/failure integration tests.
+- [x] Add PBIR fixture-based schema tests (frontend-side preview/consumption).
+- [x] Add `ExposureUnlockDialog` justification-required test.
+- [x] Add `AuthProvider` login/logout unit tests + `AppLayout` auth-state tests.
+- [x] Add formatter edge-case tests and `Modal`/`WorkflowStepper` accessibility tests.
 
 ### Backend
 - [ ] Create `AnalyticsPlatform.Tests.Architecture` project with `NetArchTest` layer rules.
