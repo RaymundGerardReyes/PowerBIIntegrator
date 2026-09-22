@@ -159,7 +159,14 @@ export const DonutChartVisual: React.FC<DonutChartVisualProps> = ({ visual }) =>
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "1rem" }}>
         {/* SVG Donut / Pie */}
         <div style={{ position: "relative", width: "110px", height: "110px", flexShrink: 0 }}>
-          <svg width="110" height="110" viewBox="0 0 110 110" style={{ transform: "rotate(-90deg)" }}>
+          <svg
+            data-testid="donutchart-svg"
+            width="110"
+            height="110"
+            viewBox="0 0 110 110"
+            preserveAspectRatio="xMidYMid meet"
+            style={{ transform: "rotate(-90deg)" }}
+          >
             <circle
               cx="55"
               cy="55"

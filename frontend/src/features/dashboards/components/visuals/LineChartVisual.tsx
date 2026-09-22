@@ -81,7 +81,14 @@ export const LineChartVisual: React.FC<LineChartVisualProps> = ({ visual }) => {
       </div>
 
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 0 }}>
-        <svg width="100%" height="90" viewBox="0 0 240 120" style={{ overflow: "visible" }}>
+        <svg
+          data-testid="linechart-svg"
+          width="100%"
+          height="90"
+          viewBox="0 0 240 120"
+          preserveAspectRatio="xMidYMid meet"
+          style={{ overflow: "visible" }}
+        >
           <defs>
             <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />

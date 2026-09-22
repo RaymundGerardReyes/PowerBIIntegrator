@@ -225,7 +225,7 @@ export const CardVisual: React.FC<CardVisualProps> = ({ visual }) => {
       <div style={{ margin: "0.25rem 0" }}>
         <div
           style={{
-            fontSize: "2rem",
+            fontSize: "clamp(1.25rem, 8cqi, 2.25rem)",
             fontWeight: 800,
             color: "var(--text-primary, #111827)",
             letterSpacing: "-0.02em",

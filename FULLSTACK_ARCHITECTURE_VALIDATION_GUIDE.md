@@ -88,8 +88,29 @@ This document consolidates the **frontend** and **backend** architecture validat
 - `VisualLayoutEditor` groups available fields in selection dropdowns into `<optgroup label="Measures">` and `<optgroup label="Dimensions">`.
 - Multi-axis visuals provide secondary selectors for metric slots, alerting users when raw columns are selected.
 
+**Rule 4: Modern Size-Aware Styling & CSS Container Queries**
+- In accordance with `modern-web-guidance`, every visual card root element declares `container-type: inline-size` and `container-name: visual-card`.
+- Cards adapt typography, headers, and element arrangements based on their own container width, NOT viewport media queries:
+  - Micro (< 240px): Compact icon headers, stacked field selectors.
+  - Compact (240px - 380px): Truncated title with ellipsis, fluid font scaling via `clamp()`.
+  - Standard (380px - 600px): Standard side-by-side dropdown selectors.
+  - Expanded (> 600px): Multi-column layouts with data labels.
+- CardVisual KPI metric headline scales fluidly via `clamp(1.25rem, 8cqi, 2.25rem)`.
+- Chart SVGs implement fluid viewBox scaling (`preserveAspectRatio="xMidYMid meet"`).
+- Table visuals contain internal scrolling (`overflow: auto`) preventing canvas blowout.
+
+**Rule 5: Responsive Canvas Display Modes & 40 UI Automated Verification Test Standard**
+- `DashboardCanvas` provides Power BI Desktop-compliant display modes:
+  - `FitToPage`: Automatically computes uniform CSS scale factor via `ResizeObserver` without horizontal scroll.
+  - `FitToWidth`: Scales canvas width to 100% of container width.
+  - `ActualSize`: 1:1 pixel rendering with native scrollbars.
+  - Interactive zoom toolbar (+, -, Reset, percentage indicator).
+- The 40 UI automated test cases in `CanvasLayoutResponsive.test.tsx` and Playwright `canvas-layout-responsive.spec.ts` act as permanent release gates for layout stability, dynamic type switching, container queries, measure validation, and boundary clamping.
+
 **Corrections:**
 - Unit test `BarChartVisual`, `LineChartVisual`, `DonutChartVisual`, `TableVisual`, `CardVisual`, and `VisualLayoutEditor`.
+- Implement `CanvasLayoutResponsive.test.tsx` covering all 40 UI verification test cases.
+- Add Playwright E2E spec `canvas-layout-responsive.spec.ts`.
 - Codify `validateVisualRoles(visualType, boundFields)` and `isDimensionCandidate(field)`.
 - Backend regression test `PbirGenerationRegressionTests.cs` asserting `tableEx` and `card` emit `Values` role and never `Category`/`Y`.
 - Backend domain unit test `VisualTests.cs` testing `Visual.CreateDefaultBinding` and `Visual.IsMeasureName`.

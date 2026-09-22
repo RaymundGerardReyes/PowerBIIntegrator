@@ -125,7 +125,10 @@ export const TableVisual: React.FC<TableVisualProps> = ({ visual }) => {
         </p>
       </div>
 
-      <div style={{ flex: 1, overflow: "auto", border: "1px solid var(--border-color, #e5e7eb)", borderRadius: "4px" }}>
+      <div
+        data-testid="table-visual-container"
+        style={{ flex: 1, overflow: "auto", border: "1px solid var(--border-color, #e5e7eb)", borderRadius: "4px" }}
+      >
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem" }}>
           <thead>
             <tr style={{ backgroundColor: "var(--bg-subtle, #f8fafc)", borderBottom: "1px solid var(--border-color, #e2e8f0)" }}>

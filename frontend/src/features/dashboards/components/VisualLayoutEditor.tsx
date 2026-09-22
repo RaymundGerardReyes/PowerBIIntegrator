@@ -12,9 +12,20 @@ import { TableVisual } from "./visuals/TableVisual";
 interface VisualLayoutEditorProps {
   pageName: string;
   visual: Visual;
+  canvasWidth?: number;
+  canvasHeight?: number;
+  isActive?: boolean;
+  onActivate?: () => void;
 }
 
-export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName, visual }) => {
+export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
+  pageName,
+  visual,
+  canvasWidth = 1280,
+  canvasHeight = 720,
+  isActive = false,
+  onActivate
+}) => {
   const { updateVisualLayout, updateVisualType, updateVisualBoundField } = useLayoutEditor();
   const currentDashboard = useDashboardStore((s) => s.current);
 
@@ -38,6 +49,14 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName
     }
     return { measures: meas, dimensions: dims };
   }, [availableFields]);
+
+  // Modern size-aware classification based on inline width
+  const isMicro = visual.layout.width < 240;
+  const isCompact = visual.layout.width >= 240 && visual.layout.width < 380;
+  const isMultiAxis =
+    visual.visualType !== "table" &&
+    visual.visualType !== "tableEx" &&
+    visual.visualType !== "card";
 
   const getVisualTypeIcon = (type: string) => {
     switch (type) {
@@ -77,20 +96,33 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName
     }
   };
 
+  const handleNudgePosition = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const maxX = Math.max(0, canvasWidth - visual.layout.width);
+    const newX = Math.min(maxX, visual.layout.x + 10);
+    updateVisualLayout(pageName, visual.name, { x: newX });
+  };
+
   return (
     <div
       data-testid={`visual-${visual.name}`}
+      onClick={onActivate}
       style={{
         position: "absolute",
         left: visual.layout.x,
         top: visual.layout.y,
-        width: visual.layout.width,
-        height: visual.layout.height,
+        width: Math.max(180, visual.layout.width),
+        height: Math.max(120, visual.layout.height),
+        zIndex: isActive ? 20 : (visual.layout.z ?? 1),
+        containerType: "inline-size",
+        containerName: "visual-card",
         backgroundColor: "var(--bg-card, #ffffff)",
-        border: "1px solid var(--border-color, #e5e7eb)",
+        border: isActive ? "2px solid #2563eb" : "1px solid var(--border-color, #e5e7eb)",
         borderRadius: "var(--radius-md, 8px)",
-        boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05))",
-        padding: "0.625rem",
+        boxShadow: isActive
+          ? "0 4px 12px rgba(37, 99, 235, 0.2)"
+          : "var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05))",
+        padding: isMicro ? "0.4rem" : "0.625rem",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
@@ -99,16 +131,18 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName
         overflow: "hidden"
       }}
     >
-      {/* Visual Header & Controls */}
+      {/* Visual Header & Controls with Size-Aware Responsive Adaptations */}
       <div
+        data-testid={`visual-header-${visual.name}`}
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           borderBottom: "1px solid var(--border-color, #f3f4f6)",
-          paddingBottom: "0.35rem",
-          marginBottom: "0.35rem",
-          gap: "0.4rem"
+          paddingBottom: isMicro ? "0.2rem" : "0.35rem",
+          marginBottom: isMicro ? "0.2rem" : "0.35rem",
+          gap: "0.35rem",
+          flexWrap: isMicro ? "wrap" : "nowrap"
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", minWidth: 0, flex: 1 }}>
@@ -116,11 +150,12 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName
           <span
             style={{
               fontWeight: 600,
-              fontSize: "0.8125rem",
+              fontSize: isMicro ? "0.75rem" : "0.8125rem",
               color: "var(--text-primary, #111827)",
               whiteSpace: "nowrap",
               overflow: "hidden",
-              textOverflow: "ellipsis"
+              textOverflow: "ellipsis",
+              maxWidth: isMicro ? "90px" : isCompact ? "120px" : "200px"
             }}
             title={visual.name}
           >
@@ -128,7 +163,15 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName
           </span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", flexShrink: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.25rem",
+            flexShrink: 0,
+            flexWrap: isMicro ? "wrap" : "nowrap"
+          }}
+        >
           {/* Primary Field Selector (Slot 0) */}
           {availableFields.length > 0 && visual.visualType !== "table" && (
             <select
@@ -143,7 +186,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName
                 backgroundColor: "var(--bg-subtle, #f9fafb)",
                 color: "var(--text-secondary, #374151)",
                 cursor: "pointer",
-                maxWidth: "105px",
+                maxWidth: isMicro ? "80px" : "105px",
                 textOverflow: "ellipsis"
               }}
               title={visual.visualType === "card" ? "Select DAX Measure" : "Select Category / Dimension"}
@@ -193,48 +236,45 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName
           )}
 
           {/* Secondary Metric/Measure Selector for 2-Slot Charts (Slot 1) */}
-          {availableFields.length > 0 &&
-            visual.visualType !== "table" &&
-            visual.visualType !== "tableEx" &&
-            visual.visualType !== "card" && (
-              <select
-                value={visual.boundFields[1] ?? ""}
-                onChange={(e) => updateVisualBoundField(pageName, visual.name, 1, e.target.value)}
-                aria-label={`select-measure-${visual.name}`}
-                style={{
-                  fontSize: "0.6875rem",
-                  padding: "2px 4px",
-                  borderRadius: "4px",
-                  border: "1px solid var(--border-color, #d1d5db)",
-                  backgroundColor: "var(--bg-subtle, #f9fafb)",
-                  color: "var(--text-secondary, #374151)",
-                  cursor: "pointer",
-                  maxWidth: "95px",
-                  textOverflow: "ellipsis"
-                }}
-                title="Select DAX Measure (Y / Value axis)"
-              >
-                <option value="" disabled>Select metric...</option>
-                {measures.length > 0 && (
-                  <optgroup label="DAX Measures">
-                    {measures.map((f) => (
-                      <option key={f} value={f}>
-                        {cleanFieldLabel(f)}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {dimensions.length > 0 && (
-                  <optgroup label="Raw Columns (Invalid)">
-                    {dimensions.map((f) => (
-                      <option key={f} value={f}>
-                        {cleanFieldLabel(f)}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
-            )}
+          {availableFields.length > 0 && isMultiAxis && (
+            <select
+              value={visual.boundFields[1] ?? ""}
+              onChange={(e) => updateVisualBoundField(pageName, visual.name, 1, e.target.value)}
+              aria-label={`select-measure-${visual.name}`}
+              style={{
+                fontSize: "0.6875rem",
+                padding: "2px 4px",
+                borderRadius: "4px",
+                border: "1px solid var(--border-color, #d1d5db)",
+                backgroundColor: "var(--bg-subtle, #f9fafb)",
+                color: "var(--text-secondary, #374151)",
+                cursor: "pointer",
+                maxWidth: isMicro ? "75px" : "95px",
+                textOverflow: "ellipsis"
+              }}
+              title="Select DAX Measure (Y / Value axis)"
+            >
+              <option value="" disabled>Select metric...</option>
+              {measures.length > 0 && (
+                <optgroup label="DAX Measures">
+                  {measures.map((f) => (
+                    <option key={f} value={f}>
+                      {cleanFieldLabel(f)}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {dimensions.length > 0 && (
+                <optgroup label="Raw Columns (Invalid)">
+                  {dimensions.map((f) => (
+                    <option key={f} value={f}>
+                      {cleanFieldLabel(f)}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          )}
 
           {/* Live Type Customization Dropdown */}
           <select
@@ -263,7 +303,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName
         </div>
       </div>
 
-      {/* Main Graphical Chart Body */}
+      {/* Main Graphical Chart Body with Overflow Guard */}
       <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
         {renderVisualContent()}
       </div>
@@ -297,7 +337,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
-                maxWidth: "180px"
+                maxWidth: isMicro ? "80px" : isCompact ? "120px" : "180px"
               }}
               title={visual.boundFields[0]}
             >
@@ -307,7 +347,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName
         </div>
 
         <button
-          onClick={() => updateVisualLayout(pageName, visual.name, { x: visual.layout.x + 10 })}
+          onClick={handleNudgePosition}
           aria-label={`move-${visual.name}`}
           className="btn btn-secondary btn-sm"
           style={{
@@ -317,7 +357,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({ pageName
             borderRadius: "3px",
             color: "var(--text-secondary, #64748b)"
           }}
-          title="Nudge visual position by +10px X"
+          title="Nudge visual position by +10px X (clamped at canvas border)"
         >
           ⇄ Move
         </button>
