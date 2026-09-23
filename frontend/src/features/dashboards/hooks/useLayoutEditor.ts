@@ -5,5 +5,12 @@ export function useLayoutEditor() {
   const updateVisualType = useDashboardStore((s) => s.updateVisualType);
   const updateVisualTitle = useDashboardStore((s) => s.updateVisualTitle);
   const updateVisualBoundField = useDashboardStore((s) => s.updateVisualBoundField);
-  return { updateVisualLayout, updateVisualType, updateVisualTitle, updateVisualBoundField };
+  const updateVisualBoundFields = useDashboardStore((s) => s.updateVisualBoundFields);
+  return {
+    updateVisualLayout,
+    updateVisualType,
+    updateVisualTitle,
+    updateVisualBoundField,
+    updateVisualBoundFields
+  };
 }

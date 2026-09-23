@@ -41,7 +41,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
   isActive = false,
   onActivate
 }) => {
-  const { updateVisualLayout, updateVisualType, updateVisualBoundField } = useLayoutEditor();
+  const { updateVisualLayout, updateVisualType, updateVisualBoundField, updateVisualBoundFields } = useLayoutEditor();
   const currentDashboard = useDashboardStore((s) => s.current);
   const moveVisualToPage = useDashboardStore((s) => s.moveVisualToPage);
 
@@ -58,10 +58,15 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
   });
 
   const availableFields = React.useMemo<string[]>(() => {
-    if (!currentDashboard) return visual.boundFields;
-    const all: string[] = currentDashboard.pages.flatMap((p) => p.visuals.flatMap((v) => v.boundFields));
-    const unique: string[] = Array.from(new Set(all));
-    return unique.length > 0 ? unique : visual.boundFields;
+    const list = currentDashboard
+      ? currentDashboard.pages.flatMap((p) => p.visuals.flatMap((v) => v.boundFields))
+      : visual.boundFields;
+    const set = new Set<string>(list);
+    const tablePrefix = visual.boundFields[0]?.includes("[")
+      ? visual.boundFields[0].substring(0, visual.boundFields[0].indexOf("["))
+      : "titanic";
+    set.add(`${tablePrefix}[TotalRows]`);
+    return Array.from(set);
   }, [currentDashboard, visual.boundFields]);
 
   const { measures, dimensions } = React.useMemo(() => {
@@ -126,6 +131,44 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
 
   const handleTypeChange = (newType: string) => {
     updateVisualType(pageName, visual.name, newType);
+
+    // Auto-heal bound fields to strictly maintain valid data roles for the new visual type
+    const isTargetCard = newType === "card";
+    const isTargetTable = newType === "table" || newType === "tableEx" || newType === "matrix";
+    const isTargetMultiAxis = !isTargetCard && !isTargetTable;
+
+    const defaultMeasure = measures[0] ?? "titanic[TotalRows]";
+    const defaultDimension = dimensions[0] ?? "titanic[pclass]";
+
+    if (isTargetCard) {
+      // KPI Card strictly requires 1 DAX measure slot
+      let targetMeasure = defaultMeasure;
+      if (visual.boundFields[1] && isValidMeasureName(cleanFieldLabel(visual.boundFields[1]))) {
+        targetMeasure = visual.boundFields[1];
+      } else if (visual.boundFields[0] && isValidMeasureName(cleanFieldLabel(visual.boundFields[0]))) {
+        targetMeasure = visual.boundFields[0];
+      }
+      updateVisualBoundFields(pageName, visual.name, [targetMeasure]);
+    } else if (isTargetMultiAxis) {
+      // Multi-Axis chart requires Slot 0 = Dimension, Slot 1 = Measure
+      let targetDim = defaultDimension;
+      let targetMeas = defaultMeasure;
+
+      // Extract existing measure if present in either slot
+      if (visual.boundFields[0] && isValidMeasureName(cleanFieldLabel(visual.boundFields[0]))) {
+        targetMeas = visual.boundFields[0];
+      } else if (visual.boundFields[1] && isValidMeasureName(cleanFieldLabel(visual.boundFields[1]))) {
+        targetMeas = visual.boundFields[1];
+      }
+
+      // Extract existing dimension if present
+      if (visual.boundFields[0] && !isValidMeasureName(cleanFieldLabel(visual.boundFields[0]))) {
+        targetDim = visual.boundFields[0];
+      }
+
+      updateVisualBoundFields(pageName, visual.name, [targetDim, targetMeas]);
+    }
+
     const rec = RECOMMENDED_VISUAL_DIMENSIONS[newType];
     if (rec) {
       const currentW = visual.layout.width;
@@ -150,6 +193,18 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
           height: clampedH
         });
       }
+    }
+  };
+
+  const handleSlot0Change = (newVal: string) => {
+    if (isMultiAxis && isValidMeasureName(cleanFieldLabel(newVal))) {
+      // Auto-swap measure to Slot 1, retain or pick dimension for Slot 0
+      const currentDim = !isValidMeasureName(cleanFieldLabel(visual.boundFields[0]))
+        ? visual.boundFields[0]
+        : (dimensions[0] ?? "titanic[pclass]");
+      updateVisualBoundFields(pageName, visual.name, [currentDim, newVal]);
+    } else {
+      updateVisualBoundField(pageName, visual.name, 0, newVal);
     }
   };
 
@@ -347,7 +402,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
           {availableFields.length > 0 && visual.visualType !== "table" && (
             <select
               value={visual.boundFields[0] ?? ""}
-              onChange={(e) => updateVisualBoundField(pageName, visual.name, 0, e.target.value)}
+              onChange={(e) => handleSlot0Change(e.target.value)}
               aria-label={`select-field-${visual.name}`}
               style={{
                 fontSize: "0.6875rem",
@@ -393,7 +448,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
                     </optgroup>
                   )}
                   {measures.length > 0 && (
-                    <optgroup label="Measures">
+                    <optgroup label="Measures (Auto-Swap)">
                       {measures.map((f) => (
                         <option key={f} value={f}>
                           {cleanFieldLabel(f)}
@@ -429,15 +484,6 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
               {measures.length > 0 && (
                 <optgroup label="DAX Measures">
                   {measures.map((f) => (
-                    <option key={f} value={f}>
-                      {cleanFieldLabel(f)}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {dimensions.length > 0 && (
-                <optgroup label="Raw Columns (Invalid)">
-                  {dimensions.map((f) => (
                     <option key={f} value={f}>
                       {cleanFieldLabel(f)}
                     </option>

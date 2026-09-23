@@ -13,17 +13,28 @@ interface BarItem {
   color: string;
 }
 
-function getDistributionData(category: string): BarItem[] {
+function getDistributionData(category: string, measure?: string): BarItem[] {
   const cat = category.toLowerCase();
+  const meas = (measure ?? "").toLowerCase();
 
-  if (cat === "sex" || cat === "gender") {
-    return [
-      { label: "Male", count: "843", percent: 64, color: "#2563eb" },
-      { label: "Female", count: "466", percent: 36, color: "#ec4899" }
-    ];
-  }
+  const isRate = meas.includes("rate") || meas.includes("pct") || meas.includes("percent");
+  const isCurrency = meas.includes("fare") || meas.includes("price") || meas.includes("amount") || meas.includes("sales") || meas.includes("revenue");
 
   if (cat === "pclass" || cat === "class" || cat === "tier") {
+    if (isRate) {
+      return [
+        { label: "1st Class", count: "62.0%", percent: 62, color: "#2563eb" },
+        { label: "2nd Class", count: "47.3%", percent: 47, color: "#10b981" },
+        { label: "3rd Class", count: "24.2%", percent: 24, color: "#f59e0b" }
+      ];
+    }
+    if (isCurrency) {
+      return [
+        { label: "1st Class", count: "$28,262", percent: 65, color: "#2563eb" },
+        { label: "3rd Class", count: "$9,418", percent: 21, color: "#f59e0b" },
+        { label: "2nd Class", count: "$5,872", percent: 14, color: "#10b981" }
+      ];
+    }
     return [
       { label: "3rd Class", count: "709", percent: 54, color: "#f59e0b" },
       { label: "1st Class", count: "323", percent: 25, color: "#2563eb" },
@@ -31,7 +42,40 @@ function getDistributionData(category: string): BarItem[] {
     ];
   }
 
+  if (cat === "sex" || cat === "gender") {
+    if (isRate) {
+      return [
+        { label: "Female", count: "74.2%", percent: 74, color: "#ec4899" },
+        { label: "Male", count: "18.9%", percent: 19, color: "#2563eb" }
+      ];
+    }
+    if (isCurrency) {
+      return [
+        { label: "Male", count: "$22,015", percent: 51, color: "#2563eb" },
+        { label: "Female", count: "$21,537", percent: 49, color: "#ec4899" }
+      ];
+    }
+    return [
+      { label: "Male", count: "843", percent: 64, color: "#2563eb" },
+      { label: "Female", count: "466", percent: 36, color: "#ec4899" }
+    ];
+  }
+
   if (cat === "embarked" || cat === "port") {
+    if (isRate) {
+      return [
+        { label: "Cherbourg", count: "55.6%", percent: 56, color: "#10b981" },
+        { label: "Queenstown", count: "38.9%", percent: 39, color: "#f59e0b" },
+        { label: "Southampton", count: "33.7%", percent: 34, color: "#2563eb" }
+      ];
+    }
+    if (isCurrency) {
+      return [
+        { label: "Southampton", count: "$25,188", percent: 58, color: "#2563eb" },
+        { label: "Cherbourg", count: "$15,082", percent: 35, color: "#10b981" },
+        { label: "Queenstown", count: "$3,282", percent: 7, color: "#f59e0b" }
+      ];
+    }
     return [
       { label: "Southampton", count: "914", percent: 70, color: "#2563eb" },
       { label: "Cherbourg", count: "270", percent: 21, color: "#10b981" },
@@ -39,14 +83,15 @@ function getDistributionData(category: string): BarItem[] {
     ];
   }
 
-  if (cat === "survived" || cat === "target" || cat === "churn") {
-    return [
-      { label: "Did Not Survive (0)", count: "809", percent: 62, color: "#64748b" },
-      { label: "Survived (1)", count: "500", percent: 38, color: "#10b981" }
-    ];
-  }
-
   if (cat.includes("age")) {
+    if (isRate) {
+      return [
+        { label: "< 18 yrs", count: "54.0%", percent: 54, color: "#f59e0b" },
+        { label: "18-35 yrs", count: "38.0%", percent: 38, color: "#2563eb" },
+        { label: "36-50 yrs", count: "42.0%", percent: 42, color: "#10b981" },
+        { label: "50+ yrs", count: "36.0%", percent: 36, color: "#8b5cf6" }
+      ];
+    }
     return [
       { label: "18-35 yrs", count: "624", percent: 48, color: "#2563eb" },
       { label: "36-50 yrs", count: "338", percent: 26, color: "#10b981" },
@@ -55,27 +100,19 @@ function getDistributionData(category: string): BarItem[] {
     ];
   }
 
-  if (cat.includes("fare") || cat.includes("price") || cat.includes("amount") || cat.includes("revenue") || cat.includes("sales")) {
+  if (isRate) {
     return [
-      { label: "Standard (<$20)", count: "712", percent: 54, color: "#2563eb" },
-      { label: "Mid ($20-$60)", count: "389", percent: 30, color: "#10b981" },
-      { label: "Premium (>$60)", count: "208", percent: 16, color: "#f59e0b" }
+      { label: `${category} Alpha`, count: "65.0%", percent: 65, color: "#2563eb" },
+      { label: `${category} Beta`, count: "42.0%", percent: 42, color: "#10b981" },
+      { label: `${category} Gamma`, count: "28.0%", percent: 28, color: "#f59e0b" }
     ];
   }
 
-  if (cat === "region" || cat === "country") {
+  if (isCurrency) {
     return [
-      { label: "North America", count: "576", percent: 44, color: "#2563eb" },
-      { label: "Europe", count: "425", percent: 33, color: "#10b981" },
-      { label: "Asia-Pacific", count: "308", percent: 23, color: "#f59e0b" }
-    ];
-  }
-
-  if (cat === "status" || cat === "state") {
-    return [
-      { label: "Active", count: "733", percent: 56, color: "#10b981" },
-      { label: "Pending", count: "366", percent: 28, color: "#f59e0b" },
-      { label: "Closed", count: "210", percent: 16, color: "#64748b" }
+      { label: `${category} Alpha`, count: "$18,400", percent: 45, color: "#2563eb" },
+      { label: `${category} Beta`, count: "$13,100", percent: 32, color: "#10b981" },
+      { label: `${category} Gamma`, count: "$9,400", percent: 23, color: "#f59e0b" }
     ];
   }
 
@@ -128,7 +165,7 @@ export const BarChartVisual: React.FC<BarChartVisualProps> = ({ visual }) => {
   const friendlyMeasure = cleanMeasure.replace(/_/g, " ");
 
   const isColumnChart = visual.visualType === "columnChart";
-  const data = getDistributionData(cleanCategory);
+  const data = getDistributionData(cleanCategory, cleanMeasure);
 
   return (
     <div
@@ -197,7 +234,7 @@ export const BarChartVisual: React.FC<BarChartVisualProps> = ({ visual }) => {
               }}
             >
               <span style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--text-primary, #111827)", marginBottom: "3px" }}>
-                {item.percent}%
+                {item.count}
               </span>
               <div
                 style={{
@@ -219,8 +256,7 @@ export const BarChartVisual: React.FC<BarChartVisualProps> = ({ visual }) => {
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
-                  maxWidth: "100%",
-                  textAlign: "center"
+                  maxWidth: "85px"
                 }}
                 title={item.label}
               >

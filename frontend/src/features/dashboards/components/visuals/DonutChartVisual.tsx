@@ -12,10 +12,26 @@ interface DonutSegment {
   color: string;
 }
 
-function getDonutSegments(category: string): DonutSegment[] {
+function getDonutSegments(category: string, measure?: string): DonutSegment[] {
   const cat = category.toLowerCase();
+  const meas = (measure ?? "").toLowerCase();
+
+  const isRate = meas.includes("rate") || meas.includes("pct") || meas.includes("percent");
+  const isCurrency = meas.includes("fare") || meas.includes("price") || meas.includes("amount") || meas.includes("sales") || meas.includes("revenue");
 
   if (cat === "sex" || cat === "gender") {
+    if (isRate) {
+      return [
+        { label: "Female (74%)", percent: 74, color: "#ec4899" },
+        { label: "Male (19%)", percent: 26, color: "#2563eb" }
+      ];
+    }
+    if (isCurrency) {
+      return [
+        { label: "Male ($22k)", percent: 51, color: "#2563eb" },
+        { label: "Female ($21k)", percent: 49, color: "#ec4899" }
+      ];
+    }
     return [
       { label: "Male", percent: 64, color: "#2563eb" },
       { label: "Female", percent: 36, color: "#ec4899" }
@@ -23,6 +39,20 @@ function getDonutSegments(category: string): DonutSegment[] {
   }
 
   if (cat === "pclass" || cat === "class" || cat === "tier") {
+    if (isRate) {
+      return [
+        { label: "1st Class (62%)", percent: 46, color: "#2563eb" },
+        { label: "2nd Class (47%)", percent: 35, color: "#10b981" },
+        { label: "3rd Class (24%)", percent: 19, color: "#f59e0b" }
+      ];
+    }
+    if (isCurrency) {
+      return [
+        { label: "1st Class ($28k)", percent: 65, color: "#2563eb" },
+        { label: "3rd Class ($9.4k)", percent: 21, color: "#f59e0b" },
+        { label: "2nd Class ($5.8k)", percent: 14, color: "#10b981" }
+      ];
+    }
     return [
       { label: "3rd Class", percent: 54, color: "#f59e0b" },
       { label: "1st Class", percent: 25, color: "#2563eb" },
@@ -31,6 +61,20 @@ function getDonutSegments(category: string): DonutSegment[] {
   }
 
   if (cat === "embarked" || cat === "port") {
+    if (isRate) {
+      return [
+        { label: "Cherbourg (56%)", percent: 43, color: "#10b981" },
+        { label: "Queenstown (39%)", percent: 30, color: "#f59e0b" },
+        { label: "Southampton (34%)", percent: 27, color: "#2563eb" }
+      ];
+    }
+    if (isCurrency) {
+      return [
+        { label: "Southampton ($25k)", percent: 58, color: "#2563eb" },
+        { label: "Cherbourg ($15k)", percent: 35, color: "#10b981" },
+        { label: "Queenstown ($3.2k)", percent: 7, color: "#f59e0b" }
+      ];
+    }
     return [
       { label: "Southampton", percent: 70, color: "#2563eb" },
       { label: "Cherbourg", percent: 21, color: "#10b981" },
@@ -54,27 +98,11 @@ function getDonutSegments(category: string): DonutSegment[] {
     ];
   }
 
-  if (cat.includes("fare") || cat.includes("price") || cat.includes("amount")) {
+  if (isRate) {
     return [
-      { label: "Economy", percent: 54, color: "#2563eb" },
-      { label: "Business", percent: 30, color: "#10b981" },
-      { label: "First", percent: 16, color: "#f59e0b" }
-    ];
-  }
-
-  if (cat === "region" || cat === "country") {
-    return [
-      { label: "North America", percent: 44, color: "#2563eb" },
-      { label: "Europe", percent: 33, color: "#10b981" },
-      { label: "Asia-Pacific", percent: 23, color: "#f59e0b" }
-    ];
-  }
-
-  if (cat === "status" || cat === "state") {
-    return [
-      { label: "Active", percent: 56, color: "#10b981" },
-      { label: "Pending", percent: 28, color: "#f59e0b" },
-      { label: "Closed", percent: 16, color: "#64748b" }
+      { label: `${category} Alpha (65%)`, percent: 48, color: "#2563eb" },
+      { label: `${category} Beta (42%)`, percent: 31, color: "#10b981" },
+      { label: `${category} Gamma (28%)`, percent: 21, color: "#f59e0b" }
     ];
   }
 
@@ -118,10 +146,12 @@ export const DonutChartVisual: React.FC<DonutChartVisualProps> = ({ visual }) =>
   }
 
   const categoryField = visual.boundFields[0] ?? "Proportions";
+  const measureField = visual.boundFields[1];
   const cleanCategory = cleanFieldLabel(categoryField);
+  const cleanMeasure = measureField ? cleanFieldLabel(measureField) : undefined;
 
   const friendlyCategory = cleanCategory.charAt(0).toUpperCase() + cleanCategory.slice(1);
-  const segments = getDonutSegments(cleanCategory);
+  const segments = getDonutSegments(cleanCategory, cleanMeasure);
 
   const isPie = visual.visualType === "pieChart";
   const radius = isPie ? 25 : 42;
@@ -144,7 +174,7 @@ export const DonutChartVisual: React.FC<DonutChartVisualProps> = ({ visual }) =>
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        padding: isCompactHeight ? "0.25rem 0.4rem" : "0.5rem",
+        padding: "0.5rem",
         overflow: "hidden",
         boxSizing: "border-box"
       }}

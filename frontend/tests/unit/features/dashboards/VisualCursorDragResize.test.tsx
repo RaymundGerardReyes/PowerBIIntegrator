@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { VisualLayoutEditor } from "@features/dashboards/components/VisualLayoutEditor";
 import { useDashboardStore } from "@features/dashboards/model/dashboardSlice";
-import type { Dashboard } from "@entities/visual/types";
+import type { DashboardDefinition } from "@features/dashboards/model/types";
 
 describe("VisualLayoutEditor - Cursor Drag & Resize Control", () => {
-  const initialDashboard: Dashboard = {
+  const initialDashboard: DashboardDefinition = {
     id: "dash-1",
     name: "Interactive Dashboard",
     pages: [

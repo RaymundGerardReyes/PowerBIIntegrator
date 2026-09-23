@@ -148,6 +148,7 @@ interface DashboardState {
   updateVisualType: (pageName: string, visualName: string, visualType: string) => void;
   updateVisualTitle: (pageName: string, visualName: string, title: string) => void;
   updateVisualBoundField: (pageName: string, visualName: string, fieldIndex: number, newField: string) => void;
+  updateVisualBoundFields: (pageName: string, visualName: string, boundFields: string[]) => void;
   addVisual: (pageName: string, visual: Visual) => void;
   addPage: (pageName?: string) => string;
   removePage: (pageName: string) => void;
@@ -221,6 +222,21 @@ export const useDashboardStore = create<DashboardState>((set) => ({
                 }
                 return { ...v, boundFields: updated };
               })
+            }
+      );
+      return { current: { ...state.current, pages } };
+    }),
+  updateVisualBoundFields: (pageName, visualName, boundFields) =>
+    set((state) => {
+      if (!state.current) return state;
+      const pages = state.current.pages.map((page) =>
+        page.name !== pageName
+          ? page
+          : {
+              ...page,
+              visuals: page.visuals.map((v) =>
+                v.name !== visualName ? v : { ...v, boundFields: [...boundFields] }
+              )
             }
       );
       return { current: { ...state.current, pages } };
