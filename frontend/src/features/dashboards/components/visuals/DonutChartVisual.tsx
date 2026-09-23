@@ -166,7 +166,7 @@ export const DonutChartVisual: React.FC<DonutChartVisualProps> = ({ visual }) =>
           style={{
             position: "relative",
             height: "100%",
-            maxHeight: isCompactHeight ? "85px" : "110px",
+            maxHeight: isCompactHeight ? "85px" : "min(360px, 100%)",
             aspectRatio: "1 / 1",
             flexShrink: 0,
             display: "flex",

@@ -27,6 +27,7 @@ interface VisualLayoutEditorProps {
   visual: Visual;
   canvasWidth?: number;
   canvasHeight?: number;
+  scale?: number;
   isActive?: boolean;
   onActivate?: () => void;
 }
@@ -36,12 +37,25 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
   visual,
   canvasWidth = 1280,
   canvasHeight = 720,
+  scale = 1.0,
   isActive = false,
   onActivate
 }) => {
   const { updateVisualLayout, updateVisualType, updateVisualBoundField } = useLayoutEditor();
   const currentDashboard = useDashboardStore((s) => s.current);
   const moveVisualToPage = useDashboardStore((s) => s.moveVisualToPage);
+
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [isResizing, setIsResizing] = React.useState(false);
+
+  const dragRef = React.useRef({
+    startX: 0,
+    startY: 0,
+    initX: 0,
+    initY: 0,
+    initW: 0,
+    initH: 0
+  });
 
   const availableFields = React.useMemo<string[]>(() => {
     if (!currentDashboard) return visual.boundFields;
@@ -64,7 +78,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
     return { measures: meas, dimensions: dims };
   }, [availableFields]);
 
-  // Modern size-aware classification based on inline width
+  // Size-aware classification based on inline width
   const isMicro = visual.layout.width < 240;
   const isCompact = visual.layout.width >= 240 && visual.layout.width < 380;
   const isMultiAxis =
@@ -139,6 +153,112 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
     }
   };
 
+  // Cursor drag-to-move pointer/mouse handlers
+  const handleHeaderStart = (e: React.PointerEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("select") || target.closest("button") || target.closest("input")) {
+      return;
+    }
+
+    onActivate?.();
+    setIsDragging(true);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initX: visual.layout.x,
+      initY: visual.layout.y,
+      initW: visual.layout.width,
+      initH: visual.layout.height
+    };
+
+    const handleMove = (ev: MouseEvent | PointerEvent) => {
+      const effectiveScale = scale > 0 ? scale : 1.0;
+      const dx = (ev.clientX - dragRef.current.startX) / effectiveScale;
+      const dy = (ev.clientY - dragRef.current.startY) / effectiveScale;
+      const maxX = Math.max(0, canvasWidth - dragRef.current.initW);
+      const maxY = Math.max(0, canvasHeight - dragRef.current.initH);
+      const newX = Math.max(0, Math.min(maxX, Math.round(dragRef.current.initX + dx)));
+      const newY = Math.max(0, Math.min(maxY, Math.round(dragRef.current.initY + dy)));
+      updateVisualLayout(pageName, visual.name, { x: newX, y: newY });
+    };
+
+    const handleUp = () => {
+      setIsDragging(false);
+      window.removeEventListener("pointermove", handleMove as EventListener);
+      window.removeEventListener("pointerup", handleUp);
+      window.removeEventListener("mousemove", handleMove as EventListener);
+      window.removeEventListener("mouseup", handleUp);
+      document.removeEventListener("pointermove", handleMove as EventListener);
+      document.removeEventListener("pointerup", handleUp);
+      document.removeEventListener("mousemove", handleMove as EventListener);
+      document.removeEventListener("mouseup", handleUp);
+    };
+
+    window.addEventListener("pointermove", handleMove as EventListener);
+    window.addEventListener("pointerup", handleUp);
+    window.addEventListener("mousemove", handleMove as EventListener);
+    window.addEventListener("mouseup", handleUp);
+    document.addEventListener("pointermove", handleMove as EventListener);
+    document.addEventListener("pointerup", handleUp);
+    document.addEventListener("mousemove", handleMove as EventListener);
+    document.addEventListener("mouseup", handleUp);
+  };
+
+  // Cursor drag-to-resize pointer/mouse handlers
+  const handleResizeStart = (e: React.PointerEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    e.preventDefault();
+
+    onActivate?.();
+    setIsResizing(true);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initX: visual.layout.x,
+      initY: visual.layout.y,
+      initW: visual.layout.width,
+      initH: visual.layout.height
+    };
+
+    const rec = RECOMMENDED_VISUAL_DIMENSIONS[visual.visualType] || { minW: 180, minH: 120 };
+    const minW = rec.minW || 180;
+    const minH = rec.minH || 120;
+
+    const handleMove = (ev: MouseEvent | PointerEvent) => {
+      const effectiveScale = scale > 0 ? scale : 1.0;
+      const dx = (ev.clientX - dragRef.current.startX) / effectiveScale;
+      const dy = (ev.clientY - dragRef.current.startY) / effectiveScale;
+      const maxW = canvasWidth - dragRef.current.initX;
+      const maxH = canvasHeight - dragRef.current.initY;
+      const newW = Math.max(minW, Math.min(maxW, Math.round(dragRef.current.initW + dx)));
+      const newH = Math.max(minH, Math.min(maxH, Math.round(dragRef.current.initH + dy)));
+      updateVisualLayout(pageName, visual.name, { width: newW, height: newH });
+    };
+
+    const handleUp = () => {
+      setIsResizing(false);
+      window.removeEventListener("pointermove", handleMove as EventListener);
+      window.removeEventListener("pointerup", handleUp);
+      window.removeEventListener("mousemove", handleMove as EventListener);
+      window.removeEventListener("mouseup", handleUp);
+      document.removeEventListener("pointermove", handleMove as EventListener);
+      document.removeEventListener("pointerup", handleUp);
+      document.removeEventListener("mousemove", handleMove as EventListener);
+      document.removeEventListener("mouseup", handleUp);
+    };
+
+    window.addEventListener("pointermove", handleMove as EventListener);
+    window.addEventListener("pointerup", handleUp);
+    window.addEventListener("mousemove", handleMove as EventListener);
+    window.addEventListener("mouseup", handleUp);
+    document.addEventListener("pointermove", handleMove as EventListener);
+    document.addEventListener("pointerup", handleUp);
+    document.addEventListener("mousemove", handleMove as EventListener);
+    document.addEventListener("mouseup", handleUp);
+  };
+
   const handleNudgePosition = (e: React.MouseEvent) => {
     e.stopPropagation();
     const maxX = Math.max(0, canvasWidth - visual.layout.width);
@@ -156,27 +276,31 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
         top: visual.layout.y,
         width: Math.max(180, visual.layout.width),
         height: Math.max(120, visual.layout.height),
-        zIndex: isActive ? 20 : (visual.layout.z ?? 1),
+        zIndex: isDragging || isResizing ? 50 : isActive ? 20 : (visual.layout.z ?? 1),
         containerType: "inline-size",
         containerName: "visual-card",
         backgroundColor: "var(--bg-card, #ffffff)",
-        border: isActive ? "2px solid #2563eb" : "1px solid var(--border-color, #e5e7eb)",
+        border: isActive || isDragging || isResizing ? "2px solid #2563eb" : "1px solid var(--border-color, #e5e7eb)",
         borderRadius: "var(--radius-md, 8px)",
-        boxShadow: isActive
+        boxShadow: isDragging || isResizing
+          ? "0 14px 28px rgba(37, 99, 235, 0.28), 0 4px 10px rgba(0, 0, 0, 0.08)"
+          : isActive
           ? "0 4px 12px rgba(37, 99, 235, 0.2)"
           : "var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05))",
         padding: isMicro ? "0.4rem" : "0.625rem",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        transition: "box-shadow 0.15s ease, border-color 0.15s ease",
+        transition: isDragging || isResizing ? "none" : "box-shadow 0.15s ease, border-color 0.15s ease",
         boxSizing: "border-box",
         overflow: "hidden"
       }}
     >
-      {/* Visual Header & Controls with Size-Aware Responsive Adaptations */}
+      {/* Visual Header & Controls with Cursor Drag-to-Move */}
       <div
         data-testid={`visual-header-${visual.name}`}
+        onPointerDown={handleHeaderStart}
+        onMouseDown={handleHeaderStart}
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -185,10 +309,14 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
           paddingBottom: isMicro ? "0.2rem" : "0.35rem",
           marginBottom: isMicro ? "0.2rem" : "0.35rem",
           gap: "0.35rem",
-          flexWrap: isMicro ? "wrap" : "nowrap"
+          flexWrap: isMicro ? "wrap" : "nowrap",
+          cursor: isDragging ? "grabbing" : "grab",
+          userSelect: "none"
         }}
+        title="Drag header with cursor to position visual anywhere on canvas"
       >
         <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", minWidth: 0, flex: 1 }}>
+          <span style={{ fontSize: "0.8rem", color: "var(--text-muted, #94a3b8)", userSelect: "none" }}>⠿</span>
           <span style={{ fontSize: "0.875rem" }}>{getVisualTypeIcon(visual.visualType)}</span>
           <span
             style={{
@@ -365,8 +493,16 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", overflow: "hidden", minWidth: 0, flex: 1 }}>
-          <span style={{ color: "var(--text-muted, #94a3b8)", fontFamily: "monospace", fontSize: "0.65rem", flexShrink: 0 }}>
-            ⤢ {visual.layout.x}, {visual.layout.y}
+          <span
+            style={{
+              color: isDragging || isResizing ? "#2563eb" : "var(--text-muted, #94a3b8)",
+              fontFamily: "monospace",
+              fontSize: "0.65rem",
+              flexShrink: 0,
+              fontWeight: isDragging || isResizing ? 700 : 400
+            }}
+          >
+            ⤢ {visual.layout.x}, {visual.layout.y} ({visual.layout.width}×{visual.layout.height})
           </span>
           {visual.boundFields[0] && (
             <span
@@ -390,7 +526,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
           )}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", flexShrink: 0, paddingRight: "14px" }}>
           {currentDashboard && currentDashboard.pages.length > 1 && (
             <select
               value=""
@@ -439,6 +575,34 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
             ⇄ Move
           </button>
         </div>
+      </div>
+
+      {/* Manual Cursor Drag-to-Resize Corner Handle */}
+      <div
+        data-testid="visual-resize-handle"
+        onPointerDown={handleResizeStart}
+        onMouseDown={handleResizeStart}
+        style={{
+          position: "absolute",
+          right: 2,
+          bottom: 2,
+          width: 16,
+          height: 16,
+          cursor: "se-resize",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: isActive || isResizing ? "#2563eb" : "var(--text-muted, #94a3b8)",
+          fontSize: "11px",
+          fontWeight: 700,
+          userSelect: "none",
+          zIndex: 35,
+          lineHeight: 1
+        }}
+        title="Drag corner to manually resize visual width and height"
+        aria-label={`resize-${visual.name}`}
+      >
+        ⤡
       </div>
     </div>
   );

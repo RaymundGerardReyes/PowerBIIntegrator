@@ -414,6 +414,7 @@ export const DashboardCanvas: React.FC = () => {
               visual={visual}
               canvasWidth={page.canvasWidth}
               canvasHeight={page.canvasHeight}
+              scale={effectiveScale}
               isActive={activeVisual === visual.name}
               onActivate={() => setActiveVisual(visual.name)}
             />
