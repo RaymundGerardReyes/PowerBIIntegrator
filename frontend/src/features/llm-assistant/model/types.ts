@@ -1,18 +1,30 @@
 import type {
-  LlmProviderPreference,
+  LlmProviderPreference as BaseLlmProviderPreference,
   SensitivityLevelDto,
   RunLlmTaskRequest,
   LlmTaskResultDto,
   LlmPolicyDto
 } from "@shared/types/api-contracts";
 
+export type LlmProviderPreference = BaseLlmProviderPreference | "CloudGemini";
+
 export type {
-  LlmProviderPreference,
   SensitivityLevelDto,
   RunLlmTaskRequest,
   LlmTaskResultDto,
   LlmPolicyDto
 };
+
+export interface ToolExecutionDetail {
+  toolName: string;
+  status: "running" | "completed" | "failed";
+  latencyMs?: number;
+  args?: Record<string, unknown> | string;
+  result?: Record<string, unknown> | string;
+}
+
+export type LiveStreamingStatus = "idle" | "listening" | "thinking" | "speaking";
+export type DockMode = "docked" | "floating";
 
 export interface ChatMessage {
   id: string;
@@ -22,5 +34,5 @@ export interface ChatMessage {
   providerUsed?: string;
   guardrailNotice?: string;
   isBlocked?: boolean;
+  toolDetails?: ToolExecutionDetail[];
 }
-

@@ -4,6 +4,7 @@ import { routePaths } from "../routes/routePaths";
 import { useTheme } from "../providers/ThemeProvider";
 import { useAuth } from "@features/auth/hooks/useAuth";
 import { AssistantPanel } from "@features/llm-assistant/components/AssistantPanel";
+import { useLlmAssistantStore } from "@features/llm-assistant/model/llmAssistantSlice";
 import { Button } from "@shared/ui/Button/Button";
 
 interface AppLayoutProps {
@@ -121,7 +122,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           )}
 
           <Button
-            onClick={() => setIsAssistantOpen((prev) => !prev)}
+            onClick={() => {
+              setIsAssistantOpen((prev) => {
+                const next = !prev;
+                useLlmAssistantStore.getState().setOpen(next);
+                return next;
+              });
+            }}
             variant={isAssistantOpen ? "primary" : "secondary"}
             className="btn-sm"
             aria-label="toggle-ai-assistant"
@@ -151,7 +158,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           <section
             aria-label="AI Copilot Assistant Panel"
             style={{
-              width: "400px",
+              width: "420px",
               borderLeft: "1px solid var(--border-color)",
               backgroundColor: "var(--bg-surface)",
               display: "flex",
@@ -161,9 +168,18 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           >
             <div style={{ padding: "0.75rem", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontSize: "0.875rem", fontWeight: 600 }}>Model Context Protocol Agent</div>
-              <button onClick={() => setIsAssistantOpen(false)} aria-label="close-assistant-panel" style={{ background: "none", border: "none", cursor: "pointer" }}>×</button>
+              <button
+                onClick={() => {
+                  setIsAssistantOpen(false);
+                  useLlmAssistantStore.getState().setOpen(false);
+                }}
+                aria-label="close-assistant-panel"
+                style={{ background: "none", border: "none", cursor: "pointer" }}
+              >
+                ×
+              </button>
             </div>
-            <div style={{ padding: "1rem", flex: 1, overflowY: "auto" }}>
+            <div style={{ padding: 0, flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
               <AssistantPanel />
             </div>
           </section>
