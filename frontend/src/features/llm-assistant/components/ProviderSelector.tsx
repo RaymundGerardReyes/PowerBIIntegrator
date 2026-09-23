@@ -20,23 +20,31 @@ export const ProviderSelector: React.FC<ProviderSelectorProps> = ({
     switch (value) {
       case "CloudGemini":
         return {
-          text: "✨ Gemini 3.1 Flash Live",
-          color: "bg-blue-100 text-blue-800 border-blue-200"
+          text: "✨ Antigravity Gemini Live",
+          bg: "rgba(37, 99, 235, 0.12)",
+          color: "var(--primary, #2563eb)",
+          border: "rgba(37, 99, 235, 0.3)"
         };
       case "CloudOpenAi":
         return {
           text: "⚡ OpenAI GPT-4o",
-          color: "bg-emerald-100 text-emerald-800 border-emerald-200"
+          bg: "rgba(16, 185, 129, 0.12)",
+          color: "var(--success, #059669)",
+          border: "rgba(16, 185, 129, 0.3)"
         };
       case "CloudAnthropic":
         return {
           text: "🧠 Claude 3.5 Sonnet",
-          color: "bg-purple-100 text-purple-800 border-purple-200"
+          bg: "rgba(147, 51, 234, 0.12)",
+          color: "#9333ea",
+          border: "rgba(147, 51, 234, 0.3)"
         };
       default:
         return {
-          text: "🦙 Local Ollama (Zero Egress)",
-          color: "bg-amber-100 text-amber-800 border-amber-200"
+          text: "🦙 Local Ollama (Zero-Leak)",
+          bg: "rgba(217, 119, 6, 0.12)",
+          color: "var(--warning, #d97706)",
+          border: "rgba(217, 119, 6, 0.3)"
         };
     }
   };
@@ -45,14 +53,51 @@ export const ProviderSelector: React.FC<ProviderSelectorProps> = ({
 
   return (
     <div
-      className="provider-selector bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-lg p-2.5 border border-gray-200/80 dark:border-gray-700/80 shadow-xs transition-all"
+      className="provider-selector"
       data-testid="provider-selector"
+      style={{
+        backgroundColor: "var(--bg-surface, #ffffff)",
+        border: "1px solid var(--border-color, #e2e8f0)",
+        borderRadius: "8px",
+        padding: "0.625rem 0.75rem",
+        boxShadow: "var(--shadow-xs, 0 1px 2px rgba(0,0,0,0.04))"
+      }}
     >
-      <div className="flex items-center justify-between mb-1.5">
-        <label htmlFor="llm-provider-select" className="text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-1.5">
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "0.4rem"
+        }}
+      >
+        <label
+          htmlFor="llm-provider-select"
+          style={{
+            fontSize: "0.75rem",
+            fontWeight: 600,
+            color: "var(--text-primary, #0f172a)",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.35rem"
+          }}
+        >
           <span>LLM Provider:</span>
         </label>
-        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${badge.color}`}>
+        <span
+          style={{
+            fontSize: "0.6875rem",
+            fontWeight: 600,
+            padding: "0.15rem 0.5rem",
+            borderRadius: "9999px",
+            backgroundColor: badge.bg,
+            color: badge.color,
+            border: `1px solid ${badge.border}`,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.25rem"
+          }}
+        >
           {badge.text}
         </span>
       </div>
@@ -61,8 +106,19 @@ export const ProviderSelector: React.FC<ProviderSelectorProps> = ({
         id="llm-provider-select"
         value={value}
         onChange={(e) => onChange(e.target.value as LlmProviderPreference)}
-        className="w-full px-2.5 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 shadow-inner"
         aria-label="Select LLM provider"
+        style={{
+          width: "100%",
+          padding: "0.4rem 0.6rem",
+          borderRadius: "6px",
+          border: "1px solid var(--border-color, #cbd5e1)",
+          backgroundColor: "var(--bg-card, #ffffff)",
+          color: "var(--text-primary, #0f172a)",
+          fontSize: "0.8125rem",
+          fontWeight: 500,
+          outline: "none",
+          cursor: "pointer"
+        }}
       >
         <option value="LocalOllama">Local Ollama (Zero-Leak Default)</option>
         <option value="CloudGemini" disabled={isCloudDisabled}>
@@ -78,8 +134,20 @@ export const ProviderSelector: React.FC<ProviderSelectorProps> = ({
 
       {isSensitiveMode && (
         <div
-          className="text-xs text-amber-600 dark:text-amber-400 mt-1.5 flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 px-2 py-1 rounded border border-amber-200/60"
           data-testid="sensitive-lock-notice"
+          style={{
+            marginTop: "0.4rem",
+            padding: "0.35rem 0.5rem",
+            borderRadius: "6px",
+            backgroundColor: "var(--warning-bg, #fffbeb)",
+            border: "1px solid var(--warning-border, #fde68a)",
+            color: "var(--warning, #d97706)",
+            fontSize: "0.6875rem",
+            fontWeight: 500,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.35rem"
+          }}
         >
           <span>🔒 Sensitive mode active: Cloud providers locked to Local Ollama.</span>
         </div>

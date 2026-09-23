@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useLlmAssistantStore } from "../model/llmAssistantSlice";
-import { runLlmTask } from "../api/llmApi";
 import { useLlmStream } from "../hooks/useLlmStream";
 import { ProviderSelector } from "./ProviderSelector";
 import { SensitiveModeToggle } from "./SensitiveModeToggle";
 import { GuardrailNotice } from "./GuardrailNotice";
 import { ChatStream } from "./ChatStream";
 import { ToolExecutionBadge } from "./ToolExecutionBadge";
-import type { ChatMessage } from "../model/types";
+import type { ChatMessage, ToolExecutionDetail } from "../model/types";
+import "../styles/llm-assistant.css";
 
 export const AssistantPanel: React.FC = () => {
   const {
@@ -36,17 +36,19 @@ export const AssistantPanel: React.FC = () => {
     tokens,
     isStreaming,
     activeTool,
+    activeToolDetail,
     guardrailWarning,
     startStream
   } = useLlmStream({
-    onComplete: (fullText) => {
+    onComplete: (fullText, toolDetails) => {
       const assistantMsg: ChatMessage = {
         id: crypto.randomUUID(),
         sender: "assistant",
         text: fullText,
         timestamp: new Date().toISOString(),
         providerUsed: providerPreference,
-        guardrailNotice: guardrailWarning ?? undefined
+        guardrailNotice: guardrailWarning ?? undefined,
+        toolDetails: toolDetails && toolDetails.length > 0 ? toolDetails : undefined
       };
       addMessage(assistantMsg);
       setIsSubmitting(false);
@@ -55,7 +57,7 @@ export const AssistantPanel: React.FC = () => {
       const errorMsg: ChatMessage = {
         id: crypto.randomUUID(),
         sender: "system",
-        text: err.message || "Error streaming from LLM provider.",
+        text: err.message || "Error streaming from Antigravity Gemini engine.",
         timestamp: new Date().toISOString(),
         isBlocked: true
       };
@@ -85,57 +87,18 @@ export const AssistantPanel: React.FC = () => {
     setInputPrompt("");
     setIsSubmitting(true);
 
-    // If Gemini or streaming-compatible provider, run stream client
-    if (providerPreference === "CloudGemini") {
-      try {
-        await startStream(trimmed, providerPreference, activePolicyId);
-      } catch (err: unknown) {
-        setIsSubmitting(false);
-        const errorMsg: ChatMessage = {
-          id: crypto.randomUUID(),
-          sender: "system",
-          text: err instanceof Error ? err.message : "Error establishing Gemini Live stream.",
-          timestamp: new Date().toISOString(),
-          isBlocked: true
-        };
-        addMessage(errorMsg);
-      }
-    } else {
-      // Direct REST fallback
-      try {
-        const response = await runLlmTask({
-          taskType: "InteractiveChat",
-          userPrompt: userMsg.text,
-          contextIds: [],
-          providerPreference,
-          sensitivity: sensitiveMode ? "Sensitive" : "Internal",
-          policyId: activePolicyId,
-          correlationId: crypto.randomUUID()
-        });
-
-        const assistantMsg: ChatMessage = {
-          id: crypto.randomUUID(),
-          sender: "assistant",
-          text: response.rawText,
-          timestamp: new Date().toISOString(),
-          providerUsed: response.providerUsed,
-          guardrailNotice: response.guardrailNotice,
-          isBlocked: response.isBlocked
-        };
-
-        addMessage(assistantMsg);
-      } catch (err: unknown) {
-        const errorMsg: ChatMessage = {
-          id: crypto.randomUUID(),
-          sender: "system",
-          text: err instanceof Error ? err.message : "Error executing LLM task.",
-          timestamp: new Date().toISOString(),
-          isBlocked: true
-        };
-        addMessage(errorMsg);
-      } finally {
-        setIsSubmitting(false);
-      }
+    try {
+      await startStream(trimmed, providerPreference, activePolicyId);
+    } catch (err: unknown) {
+      setIsSubmitting(false);
+      const errorMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        sender: "system",
+        text: err instanceof Error ? err.message : "Error executing Copilot reasoning.",
+        timestamp: new Date().toISOString(),
+        isBlocked: true
+      };
+      addMessage(errorMsg);
     }
   };
 
@@ -155,14 +118,51 @@ export const AssistantPanel: React.FC = () => {
     return (
       <button
         onClick={togglePanel}
-        className="fixed bottom-4 right-4 bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600 text-white px-4 py-2.5 rounded-full shadow-xl hover:shadow-indigo-500/30 hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2 z-50 font-medium text-xs border border-white/20 backdrop-blur-md"
         data-testid="open-assistant-btn"
         aria-label="Open AI Analytics Assistant"
+        style={{
+          position: "fixed",
+          bottom: "1.25rem",
+          right: "1.25rem",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "8px",
+          padding: "10px 18px",
+          borderRadius: "9999px",
+          background: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)",
+          color: "#ffffff",
+          border: "1px solid rgba(255, 255, 255, 0.25)",
+          boxShadow: "0 8px 24px rgba(37, 99, 235, 0.35)",
+          cursor: "pointer",
+          zIndex: 50,
+          fontWeight: 600,
+          fontSize: "12px",
+          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+          backdropFilter: "blur(12px)"
+        }}
       >
-        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+        <span
+          style={{
+            width: "8px",
+            height: "8px",
+            borderRadius: "50%",
+            backgroundColor: "#10b981",
+            boxShadow: "0 0 6px #10b981"
+          }}
+        />
         <span>✨ AI Copilot</span>
         {providerPreference === "CloudGemini" && (
-          <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full font-mono">Live</span>
+          <span
+            style={{
+              fontSize: "10px",
+              fontFamily: "monospace",
+              backgroundColor: "rgba(255, 255, 255, 0.2)",
+              padding: "2px 6px",
+              borderRadius: "9999px"
+            }}
+          >
+            Live
+          </span>
         )}
       </button>
     );
@@ -172,27 +172,73 @@ export const AssistantPanel: React.FC = () => {
 
   return (
     <section
-      className={`assistant-panel flex flex-col z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border border-gray-200 dark:border-gray-800 shadow-2xl transition-all duration-300 ${
-        isDocked
-          ? "w-full h-full"
-          : "fixed bottom-4 right-4 w-[420px] max-w-[calc(100vw-2rem)] h-[620px] max-h-[calc(100vh-2rem)] rounded-2xl overflow-hidden"
-      }`}
       data-testid="assistant-panel"
       aria-label="AI Analytics Assistant Panel"
+      className={`copilot-panel ${isDocked ? "copilot-panel-docked w-full" : "copilot-panel-floating fixed"}`}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: isDocked ? "100%" : "420px",
+        height: isDocked ? "100%" : "640px",
+        maxWidth: isDocked ? "100%" : "calc(100vw - 2.5rem)",
+        maxHeight: isDocked ? "100%" : "calc(100vh - 2.5rem)",
+        position: isDocked ? "relative" : "fixed",
+        bottom: isDocked ? "auto" : "1.25rem",
+        right: isDocked ? "auto" : "1.25rem",
+        borderRadius: isDocked ? "0" : "12px",
+        backgroundColor: "var(--bg-surface, #ffffff)",
+        border: "1px solid var(--border-color, #e2e8f0)",
+        boxShadow: "var(--shadow-lg, 0 10px 25px -5px rgba(0,0,0,0.1))",
+        zIndex: 50,
+        overflow: "hidden",
+        boxSizing: "border-box"
+      }}
     >
-      {/* Header */}
-      <div className="flex justify-between items-center px-4 py-3 bg-linear-to-r from-indigo-700 via-indigo-800 to-purple-900 text-white shrink-0 select-none">
-        <div className="flex items-center gap-2">
-          <span className="text-base">✨</span>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h3 className="font-semibold text-xs leading-none">Analytics Copilot</h3>
-              <span className="text-[9px] bg-indigo-500/40 border border-indigo-400/30 px-1.5 py-0.5 rounded text-indigo-100 font-mono">
+      {/* Header Toolbar */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "10px 14px",
+          background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+          color: "#ffffff",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+          userSelect: "none",
+          flexShrink: 0
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "16px", lineHeight: 1 }}>✨</span>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <h3 style={{ fontSize: "12px", fontWeight: 700, margin: 0, color: "#ffffff", lineHeight: 1.2 }}>
+                Analytics Copilot
+              </h3>
+              <span
+                style={{
+                  fontSize: "9px",
+                  fontFamily: "monospace",
+                  padding: "1px 5px",
+                  borderRadius: "4px",
+                  backgroundColor: "rgba(59, 130, 246, 0.3)",
+                  border: "1px solid rgba(147, 197, 253, 0.3)",
+                  color: "#93c5fd"
+                }}
+              >
                 MCP Live
               </span>
             </div>
-            <div className="flex items-center gap-1 text-[10px] text-indigo-200 mt-0.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${isVoiceActive ? "bg-pink-400 animate-ping" : "bg-emerald-400"}`} />
+            <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "10px", color: "#94a3b8", marginTop: "2px" }}>
+              <span
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  backgroundColor: isVoiceActive ? "#ec4899" : "#10b981",
+                  boxShadow: isVoiceActive ? "0 0 6px #ec4899" : "0 0 4px #10b981"
+                }}
+              />
               <span>
                 {providerPreference === "CloudGemini"
                   ? "Gemini 3.1 Flash Live (Active)"
@@ -204,70 +250,117 @@ export const AssistantPanel: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {/* Voice Toggle */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          {/* Voice Toggle Button */}
           <button
             onClick={toggleVoice}
-            className={`px-2 py-1 rounded text-xs transition-all flex items-center gap-1 ${
-              isVoiceActive
-                ? "bg-pink-500 text-white shadow-xs shadow-pink-500/50 animate-pulse"
-                : "bg-white/10 hover:bg-white/20 text-indigo-100"
-            }`}
+            data-testid="toggle-voice-btn"
             title={isVoiceActive ? "Disable live voice streaming" : "Enable Gemini Live bidirectional voice streaming"}
             aria-label="Toggle Live Voice"
-            data-testid="toggle-voice-btn"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "4px 8px",
+              borderRadius: "6px",
+              fontSize: "11px",
+              fontWeight: 500,
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+              backgroundColor: isVoiceActive ? "#ec4899" : "rgba(255, 255, 255, 0.12)",
+              color: "#ffffff",
+              border: `1px solid ${isVoiceActive ? "#f472b6" : "rgba(255, 255, 255, 0.2)"}`,
+              boxShadow: isVoiceActive ? "0 0 8px rgba(236, 72, 153, 0.5)" : "none"
+            }}
           >
             <span>🎙️</span>
-            <span className="text-[10px] font-medium hidden sm:inline">
-              {isVoiceActive ? "Voice Live" : "Voice"}
-            </span>
+            <span>{isVoiceActive ? "Voice Live" : "Voice"}</span>
           </button>
 
-          {/* Dock / Undock Toggle */}
+          {/* Dock / Undock Toggle Button */}
           <button
             onClick={() => setDockMode(isDocked ? "floating" : "docked")}
-            className="p-1 rounded bg-white/10 hover:bg-white/20 text-indigo-100 text-xs transition-colors"
+            data-testid="dock-toggle-btn"
             title={isDocked ? "Undock to floating window" : "Dock to sidebar panel"}
             aria-label={isDocked ? "Undock to floating window" : "Dock to sidebar panel"}
-            data-testid="dock-toggle-btn"
+            style={{
+              padding: "4px 8px",
+              borderRadius: "6px",
+              fontSize: "11px",
+              cursor: "pointer",
+              backgroundColor: "rgba(255, 255, 255, 0.12)",
+              color: "#ffffff",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              lineHeight: 1
+            }}
           >
             {isDocked ? "🗗" : "📌"}
           </button>
 
-          {/* Close / Minimize */}
+          {/* Close Panel Button */}
           <button
             onClick={togglePanel}
-            className="p-1 rounded bg-white/10 hover:bg-red-500/80 text-white text-xs transition-colors leading-none font-bold"
             data-testid="close-assistant-btn"
             aria-label="Close Assistant Panel"
+            style={{
+              padding: "3px 8px",
+              borderRadius: "6px",
+              fontSize: "14px",
+              fontWeight: 700,
+              cursor: "pointer",
+              backgroundColor: "rgba(255, 255, 255, 0.12)",
+              color: "#ffffff",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              lineHeight: 1
+            }}
           >
             &times;
           </button>
         </div>
       </div>
 
-      {/* Voice Waveform Live Visualizer (when voice is enabled) */}
+      {/* Voice Frequency Waveform Visualizer */}
       {isVoiceActive && (
         <div
           data-testid="voice-waveform"
-          className="bg-pink-950/40 border-b border-pink-500/30 px-3 py-1.5 flex items-center justify-between text-pink-300 text-xs animate-fade-in"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "6px 12px",
+            backgroundColor: "rgba(236, 72, 153, 0.08)",
+            borderBottom: "1px solid rgba(236, 72, 153, 0.2)",
+            color: "#db2777",
+            fontSize: "11px",
+            fontWeight: 500
+          }}
         >
-          <div className="flex items-center gap-2">
-            <span className="text-xs">🔊</span>
-            <span className="text-[11px] font-medium">Gemini Live Audio Active ({liveStatus})</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span>🔊</span>
+            <span>Gemini Live Audio Active ({liveStatus})</span>
           </div>
-          <div className="flex items-center gap-1 h-3">
-            <span className="w-1 bg-pink-400 rounded-full animate-bounce [animation-delay:-0.3s] h-3" />
-            <span className="w-1 bg-pink-400 rounded-full animate-bounce [animation-delay:-0.15s] h-2" />
-            <span className="w-1 bg-pink-400 rounded-full animate-bounce h-3.5" />
-            <span className="w-1 bg-pink-400 rounded-full animate-bounce [animation-delay:-0.2s] h-1.5" />
-            <span className="w-1 bg-pink-400 rounded-full animate-bounce [animation-delay:-0.05s] h-2.5" />
+          <div style={{ display: "flex", alignItems: "center", gap: "3px", height: "14px" }}>
+            <span style={{ width: "3px", height: "10px", backgroundColor: "#ec4899", borderRadius: "2px" }} />
+            <span style={{ width: "3px", height: "14px", backgroundColor: "#ec4899", borderRadius: "2px" }} />
+            <span style={{ width: "3px", height: "8px", backgroundColor: "#ec4899", borderRadius: "2px" }} />
+            <span style={{ width: "3px", height: "12px", backgroundColor: "#ec4899", borderRadius: "2px" }} />
+            <span style={{ width: "3px", height: "6px", backgroundColor: "#ec4899", borderRadius: "2px" }} />
           </div>
         </div>
       )}
 
-      {/* Policy & Provider Settings Controls */}
-      <div className="p-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/50 flex flex-col space-y-2 shrink-0">
+      {/* Controls Card: Provider & Sensitive Mode */}
+      <div
+        style={{
+          padding: "10px 12px",
+          backgroundColor: "var(--bg-subtle, #f8fafc)",
+          borderBottom: "1px solid var(--border-color, #e2e8f0)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          flexShrink: 0
+        }}
+      >
         <ProviderSelector
           value={providerPreference}
           onChange={setProviderPreference}
@@ -279,34 +372,104 @@ export const AssistantPanel: React.FC = () => {
 
       {/* Chat Messages History */}
       <div
-        className="flex-1 p-3 overflow-y-auto space-y-3 min-h-0 bg-transparent"
         data-testid="chat-history"
+        style={{
+          flex: 1,
+          padding: "12px",
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          backgroundColor: "var(--bg-primary, #f8fafc)"
+        }}
       >
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center px-2 py-4">
-            <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-lg mb-2 shadow-inner">
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              padding: "16px 8px",
+              margin: "auto 0"
+            }}
+          >
+            <div
+              style={{
+                width: "42px",
+                height: "42px",
+                borderRadius: "50%",
+                backgroundColor: "var(--primary-tint, rgba(37, 99, 235, 0.1))",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "20px",
+                marginBottom: "8px"
+              }}
+            >
               ✨
             </div>
-            <h4 className="font-semibold text-xs text-gray-800 dark:text-gray-200 mb-1">
+            <h4
+              style={{
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "var(--text-primary, #0f172a)",
+                margin: "0 0 4px 0"
+              }}
+            >
               Power BI Analytics Copilot
             </h4>
-            <p className="text-gray-500 dark:text-gray-400 text-[11px] max-w-[280px] mb-3 leading-relaxed">
+            <p
+              style={{
+                fontSize: "11px",
+                color: "var(--text-muted, #64748b)",
+                maxWidth: "280px",
+                margin: "0 0 14px 0",
+                lineHeight: 1.4
+              }}
+            >
               Ask about DAX measures, verify PBIR layout parity, or request optimal visual rearrangement.
             </p>
 
-            {/* Quick Action Chips */}
-            <div className="w-full space-y-1.5" data-testid="quick-action-chips">
-              <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider block text-left">
+            {/* Quick Action Prompt Chips */}
+            <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "6px" }} data-testid="quick-action-chips">
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  color: "var(--text-muted, #64748b)",
+                  letterSpacing: "0.04em",
+                  textAlign: "left"
+                }}
+              >
                 Suggested Prompts
               </span>
-              <div className="flex flex-wrap gap-1.5">
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {quickActionChips.map((chip, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSendPrompt(chip.prompt)}
-                    className="text-left text-[11px] px-2.5 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 transition-all shadow-2xs"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 12px",
+                      borderRadius: "20px",
+                      backgroundColor: "var(--bg-surface, #ffffff)",
+                      border: "1px solid var(--border-color, #e2e8f0)",
+                      color: "var(--text-primary, #0f172a)",
+                      fontSize: "11px",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      boxShadow: "var(--shadow-xs, 0 1px 2px rgba(0,0,0,0.04))",
+                      transition: "all 0.15s ease"
+                    }}
                   >
-                    💡 {chip.label}
+                    <span>💡</span>
+                    <span>{chip.label}</span>
                   </button>
                 ))}
               </div>
@@ -316,24 +479,45 @@ export const AssistantPanel: React.FC = () => {
           messages.map((m) => (
             <div
               key={m.id}
-              className={`flex flex-col ${m.sender === "user" ? "items-end" : "items-start"}`}
               data-testid={`message-${m.sender}`}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: m.sender === "user" ? "flex-end" : "flex-start",
+                width: "100%"
+              }}
             >
               <div
-                className={`max-w-[88%] px-3.5 py-2 rounded-xl text-xs leading-relaxed transition-all shadow-xs ${
-                  m.sender === "user"
-                    ? "bg-linear-to-r from-indigo-600 to-indigo-700 text-white rounded-br-xs"
-                    : m.sender === "system"
-                    ? "bg-red-50 text-red-900 border border-red-200 dark:bg-red-950/40 dark:text-red-300"
-                    : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-bl-xs"
-                }`}
+                style={{
+                  maxWidth: "88%",
+                  padding: "8px 12px",
+                  borderRadius: m.sender === "user" ? "12px 12px 2px 12px" : "12px 12px 12px 2px",
+                  backgroundColor:
+                    m.sender === "user"
+                      ? "var(--primary, #2563eb)"
+                      : m.sender === "system"
+                      ? "var(--danger-bg, #fef2f2)"
+                      : "var(--bg-surface, #ffffff)",
+                  color:
+                    m.sender === "user"
+                      ? "var(--primary-contrast, #ffffff)"
+                      : m.sender === "system"
+                      ? "var(--danger, #dc2626)"
+                      : "var(--text-primary, #0f172a)",
+                  border: m.sender === "user" ? "none" : "1px solid var(--border-color, #e2e8f0)",
+                  fontSize: "12px",
+                  lineHeight: 1.5,
+                  boxShadow: "var(--shadow-xs, 0 1px 2px rgba(0,0,0,0.05))",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word"
+                }}
               >
                 {m.text}
               </div>
 
               {m.toolDetails && m.toolDetails.length > 0 && (
-                <div className="mt-1 space-y-1">
-                  {m.toolDetails.map((tool, idx) => (
+                <div style={{ marginTop: "4px", width: "100%" }}>
+                  {m.toolDetails.map((tool: ToolExecutionDetail, idx: number) => (
                     <ToolExecutionBadge
                       key={idx}
                       toolName={tool.toolName}
@@ -351,7 +535,15 @@ export const AssistantPanel: React.FC = () => {
               )}
 
               {m.providerUsed && (
-                <span className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5 px-1 font-mono">
+                <span
+                  style={{
+                    fontSize: "9px",
+                    fontFamily: "monospace",
+                    color: "var(--text-muted, #64748b)",
+                    marginTop: "2px",
+                    padding: "0 2px"
+                  }}
+                >
                   via {m.providerUsed}
                 </span>
               )}
@@ -359,7 +551,7 @@ export const AssistantPanel: React.FC = () => {
           ))
         )}
 
-        {/* Live Chat Stream Rendering */}
+        {/* Real-Time Chat Stream Rendering */}
         <ChatStream
           tokens={tokens}
           isStreaming={isStreaming}
@@ -368,9 +560,26 @@ export const AssistantPanel: React.FC = () => {
         />
 
         {isSubmitting && !isStreaming && (
-          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 italic py-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
-            <span>Copilot is reasoning with {providerPreference}...</span>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "11px",
+              color: "var(--text-muted, #64748b)",
+              fontStyle: "italic",
+              padding: "4px 0"
+            }}
+          >
+            <span
+              style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                backgroundColor: "var(--primary, #2563eb)"
+              }}
+            />
+            <span>Copilot is reasoning with Antigravity Gemini...</span>
           </div>
         )}
 
@@ -380,7 +589,15 @@ export const AssistantPanel: React.FC = () => {
       {/* Input Bar */}
       <form
         onSubmit={handleSubmit}
-        className="p-2.5 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0 flex items-center space-x-2"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          padding: "8px 12px",
+          borderTop: "1px solid var(--border-color, #e2e8f0)",
+          backgroundColor: "var(--bg-surface, #ffffff)",
+          flexShrink: 0
+        }}
       >
         <input
           type="text"
@@ -388,18 +605,35 @@ export const AssistantPanel: React.FC = () => {
           onChange={(e) => setInputPrompt(e.target.value)}
           placeholder="Ask Copilot about your Power BI model..."
           disabled={isSubmitting || isStreaming}
-          className="flex-1 border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50 shadow-inner"
           data-testid="assistant-input"
           aria-label="Assistant question input"
+          style={{
+            flex: 1,
+            padding: "8px 12px",
+            borderRadius: "6px",
+            border: "1px solid var(--border-color, #cbd5e1)",
+            backgroundColor: "var(--bg-primary, #f8fafc)",
+            color: "var(--text-primary, #0f172a)",
+            fontSize: "12px",
+            outline: "none"
+          }}
         />
 
         {messages.length > 0 && (
           <button
             type="button"
             onClick={clearMessages}
-            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition"
             title="Clear conversation history"
             aria-label="Clear chat history"
+            style={{
+              padding: "6px 8px",
+              borderRadius: "6px",
+              border: "1px solid var(--border-color, #e2e8f0)",
+              backgroundColor: "var(--bg-surface, #ffffff)",
+              cursor: "pointer",
+              fontSize: "12px",
+              lineHeight: 1
+            }}
           >
             🧹
           </button>
@@ -408,11 +642,25 @@ export const AssistantPanel: React.FC = () => {
         <button
           type="submit"
           disabled={isSubmitting || isStreaming || !inputPrompt.trim()}
-          className="bg-linear-to-r from-indigo-600 to-purple-600 text-white px-3.5 py-2 rounded-lg text-xs font-semibold disabled:opacity-50 hover:shadow-md hover:from-indigo-700 hover:to-purple-700 transition-all flex items-center gap-1"
           data-testid="assistant-send-btn"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+            padding: "8px 14px",
+            borderRadius: "6px",
+            border: "none",
+            backgroundColor: isSubmitting || isStreaming || !inputPrompt.trim() ? "var(--border-strong, #cbd5e1)" : "var(--primary, #2563eb)",
+            color: "var(--primary-contrast, #ffffff)",
+            fontSize: "12px",
+            fontWeight: 600,
+            cursor: isSubmitting || isStreaming || !inputPrompt.trim() ? "not-allowed" : "pointer",
+            transition: "all 0.15s ease",
+            lineHeight: 1
+          }}
         >
           <span>Send</span>
-          <span>➤</span>
+          <span style={{ fontSize: "10px" }}>➤</span>
         </button>
       </form>
     </section>

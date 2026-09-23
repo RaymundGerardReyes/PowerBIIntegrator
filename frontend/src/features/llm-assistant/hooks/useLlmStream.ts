@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback } from "react";
 import { streamLlmChat } from "../api/llmStreamClient";
+import type { ToolExecutionDetail } from "../model/types";
 
 interface UseLlmStreamOptions {
-  onComplete?: (fullText: string) => void;
+  onComplete?: (fullText: string, toolDetails?: ToolExecutionDetail[]) => void;
   onError?: (err: Error) => void;
 }
 
@@ -10,16 +11,20 @@ export function useLlmStream(options?: UseLlmStreamOptions) {
   const [tokens, setTokens] = useState<string>("");
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  const [activeToolDetail, setActiveToolDetail] = useState<ToolExecutionDetail | null>(null);
   const [guardrailWarning, setGuardrailWarning] = useState<string | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const accumulatedRef = useRef<string>("");
+  const toolDetailRef = useRef<ToolExecutionDetail | null>(null);
 
   const startStream = useCallback(
     async (userPrompt: string, providerPreference?: string, policyId?: string) => {
       setTokens("");
       setIsStreaming(true);
       setActiveTool(null);
+      setActiveToolDetail(null);
+      toolDetailRef.current = null;
       setGuardrailWarning(null);
       accumulatedRef.current = "";
 
@@ -37,15 +42,25 @@ export function useLlmStream(options?: UseLlmStreamOptions) {
             accumulatedRef.current += token;
             setTokens((prev) => prev + token);
           },
-          onToolCall: (tool) => {
+          onToolCall: (tool, args, result, latencyMs) => {
             setActiveTool(tool);
+            const detail: ToolExecutionDetail = {
+              toolName: tool,
+              status: "completed",
+              latencyMs,
+              args,
+              result
+            };
+            setActiveToolDetail(detail);
+            toolDetailRef.current = detail;
           },
           onGuardrailViolation: (warning) => {
             setGuardrailWarning(warning);
           },
           onDone: () => {
             setIsStreaming(false);
-            options?.onComplete?.(accumulatedRef.current);
+            const details = toolDetailRef.current ? [toolDetailRef.current] : undefined;
+            options?.onComplete?.(accumulatedRef.current, details);
           }
         });
       } catch (err: unknown) {
@@ -67,9 +82,9 @@ export function useLlmStream(options?: UseLlmStreamOptions) {
     tokens,
     isStreaming,
     activeTool,
+    activeToolDetail,
     guardrailWarning,
     startStream,
     stopStream
   };
 }
-

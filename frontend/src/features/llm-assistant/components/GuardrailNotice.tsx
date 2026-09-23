@@ -8,38 +8,53 @@ interface GuardrailNoticeProps {
 export const GuardrailNotice: React.FC<GuardrailNoticeProps> = ({ message, isBlocked }) => {
   if (!message) return null;
 
-  const styleConfig = isBlocked
-    ? {
-        container: "bg-rose-50/90 dark:bg-rose-950/60 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-800",
-        badge: "bg-rose-600 text-white",
-        icon: "🛑"
-      }
-    : {
-        container: "bg-amber-50/90 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-800",
-        badge: "bg-amber-600 text-white",
-        icon: "⚠️"
-      };
+  const isDanger = Boolean(isBlocked);
 
   return (
     <div
       role="alert"
       aria-live="polite"
-      className={`p-2.5 my-2 border rounded-lg text-xs flex items-start space-x-2.5 backdrop-blur-xs shadow-2xs transition-all ${styleConfig.container}`}
       data-testid="guardrail-notice"
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: "8px",
+        padding: "8px 10px",
+        margin: "6px 0",
+        borderRadius: "6px",
+        backgroundColor: isDanger ? "var(--danger-bg, #fef2f2)" : "var(--warning-bg, #fffbeb)",
+        border: `1px solid ${isDanger ? "var(--danger-border, #fecaca)" : "var(--warning-border, #fde68a)"}`,
+        color: isDanger ? "var(--danger, #dc2626)" : "var(--warning, #d97706)",
+        fontSize: "12px",
+        lineHeight: 1.4,
+        boxShadow: "var(--shadow-xs, 0 1px 2px rgba(0,0,0,0.04))"
+      }}
     >
-      <span className="text-sm select-none shrink-0" aria-hidden="true">
-        {styleConfig.icon}
+      <span style={{ fontSize: "14px", lineHeight: 1, flexShrink: 0 }}>
+        {isDanger ? "🛑" : "⚠️"}
       </span>
-      <div className="flex-1 flex flex-col space-y-0.5">
-        <div className="flex items-center gap-1.5">
-          <span className={`font-bold text-[10px] uppercase px-1.5 py-0.2 rounded font-mono ${styleConfig.badge}`}>
-            {isBlocked ? "[BLOCKED]" : "[GUARDRAIL NOTICE]"}
+      <div style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: 0, flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span
+            style={{
+              fontSize: "10px",
+              fontWeight: 700,
+              fontFamily: "monospace",
+              padding: "1px 5px",
+              borderRadius: "4px",
+              backgroundColor: isDanger ? "var(--danger, #dc2626)" : "var(--warning, #d97706)",
+              color: "#ffffff"
+            }}
+          >
+            {isDanger ? "[BLOCKED]" : "[GUARDRAIL NOTICE]"}
           </span>
-          <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
-            AI Policy Guardrail
+          <span style={{ fontSize: "10px", color: "var(--text-muted, #64748b)", fontWeight: 500 }}>
+            Policy Enforcement
           </span>
         </div>
-        <p className="text-xs leading-relaxed m-0">{message}</p>
+        <p style={{ margin: "2px 0 0 0", color: "inherit", fontSize: "12px", lineHeight: 1.4 }}>
+          {message}
+        </p>
       </div>
     </div>
   );
