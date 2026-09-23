@@ -9,6 +9,19 @@ import { LineChartVisual } from "./visuals/LineChartVisual";
 import { DonutChartVisual } from "./visuals/DonutChartVisual";
 import { TableVisual } from "./visuals/TableVisual";
 
+export const RECOMMENDED_VISUAL_DIMENSIONS: Record<string, { minW: number; minH: number; recW: number; recH: number }> = {
+  card: { minW: 180, minH: 120, recW: 300, recH: 160 },
+  barChart: { minW: 260, minH: 220, recW: 580, recH: 320 },
+  columnChart: { minW: 260, minH: 220, recW: 580, recH: 320 },
+  lineChart: { minW: 260, minH: 200, recW: 580, recH: 300 },
+  areaChart: { minW: 260, minH: 200, recW: 580, recH: 300 },
+  donutChart: { minW: 240, minH: 220, recW: 380, recH: 260 },
+  pieChart: { minW: 240, minH: 220, recW: 380, recH: 260 },
+  table: { minW: 300, minH: 220, recW: 600, recH: 340 },
+  tableEx: { minW: 300, minH: 220, recW: 600, recH: 340 },
+  matrix: { minW: 300, minH: 220, recW: 600, recH: 340 }
+};
+
 interface VisualLayoutEditorProps {
   pageName: string;
   visual: Visual;
@@ -28,6 +41,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
 }) => {
   const { updateVisualLayout, updateVisualType, updateVisualBoundField } = useLayoutEditor();
   const currentDashboard = useDashboardStore((s) => s.current);
+  const moveVisualToPage = useDashboardStore((s) => s.moveVisualToPage);
 
   const availableFields = React.useMemo<string[]>(() => {
     if (!currentDashboard) return visual.boundFields;
@@ -93,6 +107,35 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
         return <TableVisual visual={visual} />;
       default:
         return <BarChartVisual visual={visual} />;
+    }
+  };
+
+  const handleTypeChange = (newType: string) => {
+    updateVisualType(pageName, visual.name, newType);
+    const rec = RECOMMENDED_VISUAL_DIMENSIONS[newType];
+    if (rec) {
+      const currentW = visual.layout.width;
+      const currentH = visual.layout.height;
+      let targetW = currentW;
+      let targetH = currentH;
+
+      if (currentH < rec.minH) {
+        targetH = rec.recH;
+      }
+      if (currentW < rec.minW) {
+        targetW = rec.recW;
+      }
+
+      if (targetW !== currentW || targetH !== currentH) {
+        const maxX = canvasWidth - visual.layout.x;
+        const maxY = canvasHeight - visual.layout.y;
+        const clampedW = Math.max(rec.minW, Math.min(maxX, targetW));
+        const clampedH = Math.max(rec.minH, Math.min(maxY, targetH));
+        updateVisualLayout(pageName, visual.name, {
+          width: clampedW,
+          height: clampedH
+        });
+      }
     }
   };
 
@@ -279,7 +322,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
           {/* Live Type Customization Dropdown */}
           <select
             value={visual.visualType}
-            onChange={(e) => updateVisualType(pageName, visual.name, e.target.value)}
+            onChange={(e) => handleTypeChange(e.target.value)}
             aria-label={`select-type-${visual.name}`}
             style={{
               fontSize: "0.6875rem",
@@ -317,11 +360,12 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
           borderTop: "1px solid var(--border-color, #f1f5f9)",
           paddingTop: "0.25rem",
           marginTop: "0.25rem",
-          fontSize: "0.6875rem"
+          fontSize: "0.6875rem",
+          gap: "0.25rem"
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", overflow: "hidden" }}>
-          <span style={{ color: "var(--text-muted, #94a3b8)", fontFamily: "monospace", fontSize: "0.65rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", overflow: "hidden", minWidth: 0, flex: 1 }}>
+          <span style={{ color: "var(--text-muted, #94a3b8)", fontFamily: "monospace", fontSize: "0.65rem", flexShrink: 0 }}>
             ⤢ {visual.layout.x}, {visual.layout.y}
           </span>
           {visual.boundFields[0] && (
@@ -337,7 +381,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
-                maxWidth: isMicro ? "80px" : isCompact ? "120px" : "180px"
+                maxWidth: isMicro ? "70px" : isCompact ? "100px" : "150px"
               }}
               title={visual.boundFields[0]}
             >
@@ -346,21 +390,55 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
           )}
         </div>
 
-        <button
-          onClick={handleNudgePosition}
-          aria-label={`move-${visual.name}`}
-          className="btn btn-secondary btn-sm"
-          style={{
-            fontSize: "0.65rem",
-            padding: "1px 6px",
-            lineHeight: 1.4,
-            borderRadius: "3px",
-            color: "var(--text-secondary, #64748b)"
-          }}
-          title="Nudge visual position by +10px X (clamped at canvas border)"
-        >
-          ⇄ Move
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", flexShrink: 0 }}>
+          {currentDashboard && currentDashboard.pages.length > 1 && (
+            <select
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  moveVisualToPage(pageName, e.target.value, visual.name);
+                }
+              }}
+              aria-label={`move-to-page-${visual.name}`}
+              style={{
+                fontSize: "0.625rem",
+                padding: "1px 4px",
+                borderRadius: "3px",
+                border: "1px solid var(--border-color, #d1d5db)",
+                backgroundColor: "var(--bg-subtle, #f8fafc)",
+                color: "var(--text-secondary, #64748b)",
+                cursor: "pointer",
+                maxWidth: isMicro ? "65px" : "85px"
+              }}
+              title="Move this visual to another report page"
+            >
+              <option value="" disabled>Move ➡️</option>
+              {currentDashboard.pages
+                .filter((p) => p.name !== pageName)
+                .map((p) => (
+                  <option key={p.name} value={p.name}>
+                    To {p.name}
+                  </option>
+                ))}
+            </select>
+          )}
+
+          <button
+            onClick={handleNudgePosition}
+            aria-label={`move-${visual.name}`}
+            className="btn btn-secondary btn-sm"
+            style={{
+              fontSize: "0.65rem",
+              padding: "1px 6px",
+              lineHeight: 1.4,
+              borderRadius: "3px",
+              color: "var(--text-secondary, #64748b)"
+            }}
+            title="Nudge visual position by +10px X (clamped at canvas border)"
+          >
+            ⇄ Move
+          </button>
+        </div>
       </div>
     </div>
   );

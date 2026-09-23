@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useLayoutEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect, useCallback, useMemo } from "react";
 import { LayoutGrid, CanvasDisplayOption } from "@shared/ui/LayoutGrid/LayoutGrid";
 import { PageSelector } from "./PageSelector";
 import { VisualLayoutEditor } from "./VisualLayoutEditor";
@@ -7,6 +7,11 @@ import { useDashboardStore } from "../model/dashboardSlice";
 export const DashboardCanvas: React.FC = () => {
   const dashboard = useDashboardStore((s) => s.current);
   const addVisual = useDashboardStore((s) => s.addVisual);
+  const addPage = useDashboardStore((s) => s.addPage);
+  const removePage = useDashboardStore((s) => s.removePage);
+  const moveVisualToPage = useDashboardStore((s) => s.moveVisualToPage);
+  const rearrangePageVisuals = useDashboardStore((s) => s.rearrangePageVisuals);
+
   const [selectedPage, setSelectedPage] = useState<string>(dashboard?.pages[0]?.name ?? "");
   const [displayOption, setDisplayOption] = useState<CanvasDisplayOption>("FitToPage");
   const [manualZoom, setManualZoom] = useState<number>(1.0);
@@ -55,14 +60,36 @@ export const DashboardCanvas: React.FC = () => {
     }
   }, [updateDimensions]);
 
-  if (!dashboard) return <p>No dashboard loaded.</p>;
+  const page = dashboard?.pages.find((p) => p.name === selectedPage) ?? dashboard?.pages[0];
 
-  const page = dashboard.pages.find((p) => p.name === selectedPage) ?? dashboard.pages[0];
+  // Congestion & Canvas Capacity Detection
+  const isCrowded = useMemo(() => {
+    if (!page || page.visuals.length < 3) return false;
+    // Condition 1: 5 or more visuals on single canvas
+    if (page.visuals.length >= 5) return true;
+    // Condition 2: Visual bounding box collisions
+    for (let i = 0; i < page.visuals.length; i++) {
+      for (let j = i + 1; j < page.visuals.length; j++) {
+        const a = page.visuals[i].layout;
+        const b = page.visuals[j].layout;
+        const overlapX = a.x < b.x + b.width && a.x + a.width > b.x;
+        const overlapY = a.y < b.y + b.height && a.y + a.height > b.y;
+        if (overlapX && overlapY) return true;
+      }
+    }
+    // Condition 3: Total visual area exceeds 75% of canvas area
+    const totalArea = page.visuals.reduce((acc, v) => acc + v.layout.width * v.layout.height, 0);
+    const canvasArea = (page.canvasWidth || 1280) * (page.canvasHeight || 720);
+    return totalArea > 0.75 * canvasArea;
+  }, [page]);
+
+  if (!dashboard) return <p>No dashboard loaded.</p>;
+  if (!page) return <p>No pages available.</p>;
 
   // Compute responsive scale factor based on active mode
   let baseScale = 1.0;
-  const canvasWidth = page?.canvasWidth || 1280;
-  const canvasHeight = page?.canvasHeight || 720;
+  const canvasWidth = page.canvasWidth || 1280;
+  const canvasHeight = page.canvasHeight || 720;
 
   if (displayOption === "FitToPage") {
     const scaleX = containerDimensions.width / canvasWidth;
@@ -81,8 +108,37 @@ export const DashboardCanvas: React.FC = () => {
   const handleZoomOut = () => setManualZoom((z) => Math.max(0.25, Math.round((z - 0.1) * 10) / 10));
   const handleZoomReset = () => setManualZoom(1.0);
 
+  const handleAddNewPage = () => {
+    const newName = addPage();
+    if (newName) {
+      setSelectedPage(newName);
+    }
+  };
+
+  const handleDeletePage = (pageNameToDelete: string) => {
+    if (dashboard.pages.length <= 1) return;
+    removePage(pageNameToDelete);
+    if (selectedPage === pageNameToDelete) {
+      const remaining = dashboard.pages.filter((p) => p.name !== pageNameToDelete);
+      if (remaining.length > 0) {
+        setSelectedPage(remaining[0].name);
+      }
+    }
+  };
+
+  const handleDistributeToNewPage = () => {
+    if (!page || page.visuals.length <= 2) return;
+    const newPageName = addPage();
+    const countToMove = Math.min(2, Math.floor(page.visuals.length / 2));
+    const visualsToMove = page.visuals.slice(-countToMove);
+    visualsToMove.forEach((v) => {
+      moveVisualToPage(page.name, newPageName, v.name);
+    });
+    rearrangePageVisuals(page.name);
+    setSelectedPage(newPageName);
+  };
+
   const handleAddSampleVisual = () => {
-    if (!page) return;
     addVisual(page.name, {
       name: `Visual_${Date.now() % 10000}`,
       visualType: "card",
@@ -119,9 +175,15 @@ export const DashboardCanvas: React.FC = () => {
           padding: "0.25rem 0"
         }}
       >
-        <PageSelector pages={dashboard.pages} selected={page.name} onSelect={setSelectedPage} />
+        <PageSelector
+          pages={dashboard.pages}
+          selected={page.name}
+          onSelect={setSelectedPage}
+          onAddPage={handleAddNewPage}
+          onDeletePage={handleDeletePage}
+        />
 
-        {/* Canvas Display Modes & Zoom Controls Toolbar */}
+        {/* Canvas Display Modes, Zoom & Smart Auto-Rearrange Toolbar */}
         <div
           data-testid="canvas-toolbar"
           style={{
@@ -135,6 +197,26 @@ export const DashboardCanvas: React.FC = () => {
             boxShadow: "var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05))"
           }}
         >
+          {/* Smart Auto-Rearrange Action */}
+          <button
+            data-testid="btn-auto-rearrange"
+            onClick={() => rearrangePageVisuals(page.name)}
+            className="btn btn-secondary btn-sm"
+            style={{
+              fontSize: "0.75rem",
+              padding: "3px 8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              fontWeight: 500
+            }}
+            title="Auto-rearrange visuals into an optimal Power BI grid layout"
+          >
+            <span>✨</span> Auto-Rearrange
+          </button>
+
+          <div style={{ width: "1px", height: "18px", backgroundColor: "var(--border-color, #e2e8f0)" }} />
+
           {/* Display Mode Switcher */}
           <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
             <button
@@ -230,6 +312,67 @@ export const DashboardCanvas: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Canvas Crowding & Multi-Page Suggestion Banner */}
+      {isCrowded && (
+        <div
+          data-testid="canvas-congestion-banner"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            padding: "0.5rem 0.85rem",
+            backgroundColor: "#fef3c7",
+            border: "1px solid #f59e0b",
+            borderRadius: "6px",
+            fontSize: "0.8125rem",
+            color: "#92400e",
+            gap: "0.75rem"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <span style={{ fontSize: "1rem" }}>💡</span>
+            <span>
+              <strong>Canvas layout crowded ({page.visuals.length} visuals):</strong> Visuals may clip or overlap. Auto-rearrange layout or distribute excess visuals to a new page.
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <button
+              data-testid="btn-banner-rearrange"
+              onClick={() => rearrangePageVisuals(page.name)}
+              className="btn btn-sm"
+              style={{
+                backgroundColor: "#d97706",
+                color: "#ffffff",
+                border: "none",
+                fontSize: "0.75rem",
+                padding: "3px 10px",
+                fontWeight: 600,
+                borderRadius: "4px"
+              }}
+            >
+              ✨ Auto-Rearrange
+            </button>
+            <button
+              data-testid="btn-banner-add-page"
+              onClick={handleDistributeToNewPage}
+              className="btn btn-sm"
+              style={{
+                backgroundColor: "#ffffff",
+                border: "1px solid #d97706",
+                color: "#92400e",
+                fontSize: "0.75rem",
+                padding: "3px 10px",
+                fontWeight: 600,
+                borderRadius: "4px"
+              }}
+            >
+              📄 Add New Page & Distribute
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Canvas Viewport */}
       {page.visuals.length === 0 ? (

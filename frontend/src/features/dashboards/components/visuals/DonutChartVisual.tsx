@@ -136,36 +136,51 @@ export const DonutChartVisual: React.FC<DonutChartVisualProps> = ({ visual }) =>
     return { ...seg, strokeDasharray, strokeDashoffset };
   });
 
+  const isCompactHeight = visual.layout.height < 220;
+
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        padding: "0.5rem",
+        padding: isCompactHeight ? "0.25rem 0.4rem" : "0.5rem",
         overflow: "hidden",
         boxSizing: "border-box"
       }}
     >
-      <div style={{ marginBottom: "0.25rem" }}>
-        <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--text-primary, #111827)" }}>
+      <div style={{ marginBottom: isCompactHeight ? "0.1rem" : "0.25rem", flexShrink: 0 }}>
+        <span style={{ fontSize: isCompactHeight ? "0.75rem" : "0.8125rem", fontWeight: 700, color: "var(--text-primary, #111827)" }}>
           {isPie ? "Pie Chart" : "Proportions"} by {friendlyCategory}
         </span>
-        <p style={{ margin: 0, fontSize: "0.6875rem", color: "var(--text-muted, #9ca3af)" }}>
-          {isPie ? "Full Proportional Slices" : "Ring Ratio Distribution"}
-        </p>
+        {!isCompactHeight && (
+          <p style={{ margin: 0, fontSize: "0.6875rem", color: "var(--text-muted, #9ca3af)" }}>
+            {isPie ? "Full Proportional Slices" : "Ring Ratio Distribution"}
+          </p>
+        )}
       </div>
 
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "1rem" }}>
-        {/* SVG Donut / Pie */}
-        <div style={{ position: "relative", width: "110px", height: "110px", flexShrink: 0 }}>
+      <div style={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: isCompactHeight ? "0.5rem" : "1rem" }}>
+        {/* SVG Donut / Pie with fluid container-aware scaling */}
+        <div
+          style={{
+            position: "relative",
+            height: "100%",
+            maxHeight: isCompactHeight ? "85px" : "110px",
+            aspectRatio: "1 / 1",
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
           <svg
             data-testid="donutchart-svg"
-            width="110"
-            height="110"
+            width="100%"
+            height="100%"
             viewBox="0 0 110 110"
             preserveAspectRatio="xMidYMid meet"
-            style={{ transform: "rotate(-90deg)" }}
+            style={{ transform: "rotate(-90deg)", width: "100%", height: "100%" }}
           >
             <circle
               cx="55"
@@ -202,24 +217,37 @@ export const DonutChartVisual: React.FC<DonutChartVisualProps> = ({ visual }) =>
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "0.75rem",
+                fontSize: isCompactHeight ? "0.65rem" : "0.75rem",
                 fontWeight: 700,
-                color: "var(--text-primary, #111827)"
+                color: "var(--text-primary, #111827)",
+                pointerEvents: "none"
               }}
             >
               <span>100%</span>
-              <span style={{ fontSize: "0.6rem", color: "var(--text-muted, #9ca3af)", fontWeight: 400 }}>Total</span>
+              <span style={{ fontSize: isCompactHeight ? "0.5rem" : "0.6rem", color: "var(--text-muted, #9ca3af)", fontWeight: 400 }}>Total</span>
             </div>
           )}
         </div>
 
         {/* Legend */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: "0.75rem", minWidth: "95px" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: isCompactHeight ? "0.15rem" : "0.35rem",
+            fontSize: isCompactHeight ? "0.6875rem" : "0.75rem",
+            minWidth: isCompactHeight ? "80px" : "95px",
+            maxHeight: "100%",
+            overflowY: "auto"
+          }}
+        >
           {segments.map((seg) => (
-            <div key={seg.label} style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: seg.color, flexShrink: 0 }} />
-              <span style={{ color: "var(--text-secondary, #4b5563)", fontWeight: 500, fontSize: "0.75rem" }}>{seg.label}</span>
-              <span style={{ fontWeight: 700, color: "var(--text-primary, #111827)", marginLeft: "auto", fontFamily: "monospace", fontSize: "0.75rem" }}>
+            <div key={seg.label} style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: seg.color, flexShrink: 0 }} />
+              <span style={{ color: "var(--text-secondary, #4b5563)", fontWeight: 500, fontSize: isCompactHeight ? "0.6875rem" : "0.75rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {seg.label}
+              </span>
+              <span style={{ fontWeight: 700, color: "var(--text-primary, #111827)", marginLeft: "auto", fontFamily: "monospace", fontSize: isCompactHeight ? "0.6875rem" : "0.75rem" }}>
                 {seg.percent}%
               </span>
             </div>
