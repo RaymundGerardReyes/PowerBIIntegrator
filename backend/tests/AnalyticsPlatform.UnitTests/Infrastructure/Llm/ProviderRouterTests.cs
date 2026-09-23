@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using AnalyticsPlatform.Application.Features.LlmOrchestration.Contracts;
 using AnalyticsPlatform.Domain.Features.LlmOrchestration.Entities;
 using AnalyticsPlatform.Domain.Features.LlmOrchestration.ValueObjects;
@@ -65,6 +66,29 @@ public class ProviderRouterTests
         result.IsBlocked.Should().BeFalse();
         result.RawText.Should().Be("Local fallback analysis.");
         result.GuardrailNotice.Should().Contain("routed to Local Ollama");
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenLocalOllamaThrowsOrOffline_FallsBackToEmbeddedAntigravityIntelligence()
+    {
+        _ollamaClient.ChatAsync("llama3.3:8b-instruct", "Audit measures", ct: Arg.Any<CancellationToken>())
+            .ThrowsAsync(new HttpRequestException("Connection refused - local daemon offline"));
+
+        var task = LlmTask.Create(
+            "AuditMeasures",
+            "Audit measures",
+            Array.Empty<string>(),
+            LlmProviderType.LocalOllama,
+            SensitivityLevel.Internal,
+            "corr-offline-1").Value!;
+
+        var policy = new LlmPolicy("default", "Default", false, false, Array.Empty<string>(), 2048, 10000, SensitivityLevel.Internal);
+
+        var result = await _router.InvokeAsync(task, policy, CancellationToken.None);
+
+        result.IsBlocked.Should().BeFalse();
+        result.RawText.Should().Contain("Antigravity Gemini");
+        result.GuardrailNotice.Should().Contain("Local Ollama daemon is offline");
     }
 }
 

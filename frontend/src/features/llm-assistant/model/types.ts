@@ -6,7 +6,7 @@ import type {
   LlmPolicyDto
 } from "@shared/types/api-contracts";
 
-export type LlmProviderPreference = BaseLlmProviderPreference | "CloudGemini";
+export type LlmProviderPreference = BaseLlmProviderPreference | "CloudGemini" | "AntigravityGemini";
 
 export type {
   SensitivityLevelDto,

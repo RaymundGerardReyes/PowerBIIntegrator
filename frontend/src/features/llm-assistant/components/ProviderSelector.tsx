@@ -18,9 +18,16 @@ export const ProviderSelector: React.FC<ProviderSelectorProps> = ({
 
   const getProviderBadge = () => {
     switch (value) {
+      case "AntigravityGemini":
+        return {
+          text: "✨ Antigravity Gemini (Embedded)",
+          bg: "rgba(37, 99, 235, 0.12)",
+          color: "var(--primary, #2563eb)",
+          border: "rgba(37, 99, 235, 0.3)"
+        };
       case "CloudGemini":
         return {
-          text: "✨ Antigravity Gemini Live",
+          text: "✨ Gemini 3.1 Flash Live",
           bg: "rgba(37, 99, 235, 0.12)",
           color: "var(--primary, #2563eb)",
           border: "rgba(37, 99, 235, 0.3)"
@@ -41,7 +48,7 @@ export const ProviderSelector: React.FC<ProviderSelectorProps> = ({
         };
       default:
         return {
-          text: "🦙 Local Ollama (Zero-Leak)",
+          text: "🦙 Local Ollama (Zero Egress)",
           bg: "rgba(217, 119, 6, 0.12)",
           color: "var(--warning, #d97706)",
           border: "rgba(217, 119, 6, 0.3)"
@@ -120,6 +127,9 @@ export const ProviderSelector: React.FC<ProviderSelectorProps> = ({
           cursor: "pointer"
         }}
       >
+        <option value="AntigravityGemini">
+          ✨ Antigravity Gemini (Embedded - Zero API Key)
+        </option>
         <option value="LocalOllama">Local Ollama (Zero-Leak Default)</option>
         <option value="CloudGemini" disabled={isCloudDisabled}>
           Google Gemini 3.1 Flash Live {isCloudDisabled ? "(Disabled by Policy)" : ""}

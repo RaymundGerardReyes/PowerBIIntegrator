@@ -167,3 +167,4 @@ How else can I assist with your Power BI reports?`;
 
   options.onDone?.();
 }
+

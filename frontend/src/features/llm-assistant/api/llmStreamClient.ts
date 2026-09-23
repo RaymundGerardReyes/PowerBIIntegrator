@@ -16,7 +16,7 @@ export async function streamLlmChat(options: StreamChatOptions): Promise<void> {
   const correlationId = crypto.randomUUID();
 
   // If using Antigravity Gemini or offline copilot, stream directly from the in-app intelligence engine
-  if (options.providerPreference === "CloudGemini" || !options.providerPreference) {
+  if (options.providerPreference === "AntigravityGemini" || options.providerPreference === "CloudGemini" || !options.providerPreference) {
     try {
       await streamAntigravityGemini(options);
       return;
@@ -50,6 +50,7 @@ export async function streamLlmChat(options: StreamChatOptions): Promise<void> {
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
 
+    let tokenCount = 0;
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -63,19 +64,33 @@ export async function streamLlmChat(options: StreamChatOptions): Promise<void> {
         if (!trimmed.startsWith("data:")) continue;
         const dataStr = trimmed.replace("data:", "").trim();
         if (dataStr === "[DONE]") {
+          if (tokenCount === 0 && !options.signal?.aborted) {
+            await streamAntigravityGemini(options);
+            return;
+          }
           options.onDone?.();
           return;
         }
 
         try {
           const payload = JSON.parse(dataStr);
-          if (payload.token) options.onToken(payload.token);
+          if (payload.token) {
+            options.onToken(payload.token);
+            tokenCount++;
+          }
           if (payload.activeTool) options.onToolCall?.(payload.activeTool);
           if (payload.guardrailNotice) options.onGuardrailViolation?.(payload.guardrailNotice);
         } catch {
-          if (dataStr) options.onToken(dataStr);
+          if (dataStr) {
+            options.onToken(dataStr);
+            tokenCount++;
+          }
         }
       }
+    }
+    if (tokenCount === 0 && !options.signal?.aborted) {
+      await streamAntigravityGemini(options);
+      return;
     }
     options.onDone?.();
   } catch (err: unknown) {

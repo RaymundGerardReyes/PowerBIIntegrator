@@ -76,4 +76,19 @@ describe("ProviderSelector", () => {
 
     expect(screen.getByTestId("sensitive-lock-notice")).toBeInTheDocument();
   });
+
+  it("keeps AntigravityGemini enabled even when allowCloud is false or sensitive mode is active", () => {
+    renderWithProviders(
+      <ProviderSelector
+        value="AntigravityGemini"
+        onChange={vi.fn()}
+        allowCloud={false}
+        isSensitiveMode={true}
+      />
+    );
+
+    const antigravityOption = screen.getByRole("option", { name: /Antigravity Gemini \(Embedded - Zero API Key\)/i });
+    expect(antigravityOption).toBeInTheDocument();
+    expect(antigravityOption).toBeEnabled();
+  });
 });

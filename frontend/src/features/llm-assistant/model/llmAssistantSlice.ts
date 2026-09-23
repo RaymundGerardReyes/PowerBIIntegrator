@@ -26,7 +26,7 @@ interface LlmAssistantState {
 export const useLlmAssistantStore = create<LlmAssistantState>((set) => ({
   isOpen: false,
   dockMode: "docked",
-  providerPreference: "LocalOllama",
+  providerPreference: "AntigravityGemini",
   sensitiveMode: false,
   activePolicyId: "default",
   isVoiceActive: false,
@@ -39,9 +39,10 @@ export const useLlmAssistantStore = create<LlmAssistantState>((set) => ({
   setSensitiveMode: (enabled) =>
     set((state) => ({
       sensitiveMode: enabled,
-      providerPreference: enabled && state.providerPreference !== "LocalOllama"
-        ? "LocalOllama"
-        : state.providerPreference
+      providerPreference:
+        enabled && state.providerPreference !== "LocalOllama" && state.providerPreference !== "AntigravityGemini"
+          ? "LocalOllama"
+          : state.providerPreference
     })),
   setActivePolicyId: (policyId) => set({ activePolicyId: policyId }),
   toggleVoice: () =>
