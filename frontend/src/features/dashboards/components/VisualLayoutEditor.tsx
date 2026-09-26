@@ -325,6 +325,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
     <div
       data-testid={`visual-${visual.name}`}
       onClick={onActivate}
+      className="visual-card"
       style={{
         position: "absolute",
         left: visual.layout.x,
@@ -332,8 +333,6 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
         width: Math.max(180, visual.layout.width),
         height: Math.max(120, visual.layout.height),
         zIndex: isDragging || isResizing ? 50 : isActive ? 20 : (visual.layout.z ?? 1),
-        containerType: "inline-size",
-        containerName: "visual-card",
         backgroundColor: "var(--bg-card, #ffffff)",
         border: isActive || isDragging || isResizing ? "2px solid #2563eb" : "1px solid var(--border-color, #e5e7eb)",
         borderRadius: "var(--radius-md, 8px)",
@@ -356,6 +355,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
         data-testid={`visual-header-${visual.name}`}
         onPointerDown={handleHeaderStart}
         onMouseDown={handleHeaderStart}
+        className="vc-header"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -374,6 +374,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
           <span style={{ fontSize: "0.8rem", color: "var(--text-muted, #94a3b8)", userSelect: "none" }}>⠿</span>
           <span style={{ fontSize: "0.875rem" }}>{getVisualTypeIcon(visual.visualType)}</span>
           <span
+            className="vc-title"
             style={{
               fontWeight: 600,
               fontSize: isMicro ? "0.75rem" : "0.8125rem",
@@ -404,6 +405,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
               value={visual.boundFields[0] ?? ""}
               onChange={(e) => handleSlot0Change(e.target.value)}
               aria-label={`select-field-${visual.name}`}
+              className="vc-field-select"
               style={{
                 fontSize: "0.6875rem",
                 padding: "2px 4px",
@@ -467,6 +469,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
               value={visual.boundFields[1] ?? ""}
               onChange={(e) => updateVisualBoundField(pageName, visual.name, 1, e.target.value)}
               aria-label={`select-measure-${visual.name}`}
+              className="vc-measure-select"
               style={{
                 fontSize: "0.6875rem",
                 padding: "2px 4px",

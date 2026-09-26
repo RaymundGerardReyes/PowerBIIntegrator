@@ -73,26 +73,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </Link>
 
           {/* Primary Modules */}
-          <nav style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <nav style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
             {navItems.map((item) => {
               const isActive = location.pathname.startsWith(item.path);
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  style={{
-                    padding: "0.4rem 0.75rem",
-                    borderRadius: "var(--radius-sm)",
-                    textDecoration: "none",
-                    fontSize: "0.85rem",
-                    fontWeight: isActive ? 500 : 400,
-                    color: isActive ? "var(--primary)" : "var(--text-secondary)",
-                    backgroundColor: isActive ? "var(--primary-tint)" : "transparent",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.4rem",
-                    transition: "all 0.15s ease"
-                  }}
+                  className={`nav-link${isActive ? " nav-link--active" : ""}`}
                 >
                   <span style={{ fontSize: "0.9rem" }}>{item.icon}</span>
                   {item.label}
@@ -144,11 +132,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         <main
           style={{
             flex: 1,
-            padding: "1.5rem",
+            padding: "1.25rem 1.5rem",
             overflowY: "auto",
-            maxWidth: "1400px",
-            margin: "0 auto",
-            width: "100%"
+            width: "100%",
+            minWidth: 0
           }}
         >
           {children}

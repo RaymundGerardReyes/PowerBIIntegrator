@@ -317,19 +317,7 @@ export const DashboardCanvas: React.FC = () => {
       {isCrowded && (
         <div
           data-testid="canvas-congestion-banner"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            padding: "0.5rem 0.85rem",
-            backgroundColor: "#fef3c7",
-            border: "1px solid #f59e0b",
-            borderRadius: "6px",
-            fontSize: "0.8125rem",
-            color: "#92400e",
-            gap: "0.75rem"
-          }}
+          className="congestion-banner"
         >
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <span style={{ fontSize: "1rem" }}>💡</span>
@@ -343,7 +331,7 @@ export const DashboardCanvas: React.FC = () => {
               onClick={() => rearrangePageVisuals(page.name)}
               className="btn btn-sm"
               style={{
-                backgroundColor: "#d97706",
+                backgroundColor: "var(--warning)",
                 color: "#ffffff",
                 border: "none",
                 fontSize: "0.75rem",
@@ -359,9 +347,9 @@ export const DashboardCanvas: React.FC = () => {
               onClick={handleDistributeToNewPage}
               className="btn btn-sm"
               style={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #d97706",
-                color: "#92400e",
+                backgroundColor: "var(--bg-card)",
+                border: "1px solid var(--warning-border)",
+                color: "var(--warning)",
                 fontSize: "0.75rem",
                 padding: "3px 10px",
                 fontWeight: 600,
@@ -378,14 +366,7 @@ export const DashboardCanvas: React.FC = () => {
       {page.visuals.length === 0 ? (
         <div
           data-testid="empty-canvas-state"
-          style={{
-            padding: "3rem 1.5rem",
-            textAlign: "center",
-            backgroundColor: "var(--bg-canvas-outer, #f8fafc)",
-            border: "2px dashed var(--border-color, #cbd5e1)",
-            borderRadius: "8px",
-            color: "var(--text-secondary, #64748b)"
-          }}
+          className="canvas-empty-state"
         >
           <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📊</div>
           <h3 style={{ margin: "0 0 0.5rem 0", color: "var(--text-primary, #1e293b)" }}>No visuals on this page</h3>
@@ -401,25 +382,27 @@ export const DashboardCanvas: React.FC = () => {
           </button>
         </div>
       ) : (
-        <LayoutGrid
-          width={page.canvasWidth}
-          height={page.canvasHeight}
-          scale={effectiveScale}
-          displayOption={displayOption}
-        >
-          {page.visuals.map((visual) => (
-            <VisualLayoutEditor
-              key={visual.name}
-              pageName={page.name}
-              visual={visual}
-              canvasWidth={page.canvasWidth}
-              canvasHeight={page.canvasHeight}
-              scale={effectiveScale}
-              isActive={activeVisual === visual.name}
-              onActivate={() => setActiveVisual(visual.name)}
-            />
-          ))}
-        </LayoutGrid>
+        <div className="canvas-viewport-outer" style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+          <LayoutGrid
+            width={page.canvasWidth}
+            height={page.canvasHeight}
+            scale={effectiveScale}
+            displayOption={displayOption}
+          >
+            {page.visuals.map((visual) => (
+              <VisualLayoutEditor
+                key={visual.name}
+                pageName={page.name}
+                visual={visual}
+                canvasWidth={page.canvasWidth}
+                canvasHeight={page.canvasHeight}
+                scale={effectiveScale}
+                isActive={activeVisual === visual.name}
+                onActivate={() => setActiveVisual(visual.name)}
+              />
+            ))}
+          </LayoutGrid>
+        </div>
       )}
     </div>
   );

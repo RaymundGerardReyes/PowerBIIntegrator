@@ -399,3 +399,195 @@ tr:hover td {
   max-height: 90vh;
   overflow-y: auto;
 }
+
+/* ===== CSS Container Query — Visual Card Containment Context ===== */
+/*
+ * CRITICAL: container-type is NOT a valid React CSSProperties key.
+ * Visual cards must carry className="visual-card" for @container rules to fire.
+ */
+.visual-card {
+  container-type: inline-size;
+  container-name: visual-card;
+}
+
+/* ── Micro tier: < 240px ──────────────────────────────────────────── */
+@container visual-card (max-width: 239px) {
+  .vc-title {
+    max-width: 90px;
+    font-size: 0.75rem;
+  }
+  .vc-header {
+    flex-wrap: wrap;
+    padding-bottom: 0.2rem;
+    margin-bottom: 0.2rem;
+  }
+  .vc-field-select,
+  .vc-measure-select {
+    max-width: 80px;
+    font-size: 0.6rem;
+  }
+  .vc-footer-field-pill { max-width: 70px; }
+  .vc-move-select { max-width: 65px; }
+}
+
+/* ── Compact tier: 240px – 379px ─────────────────────────────────── */
+@container visual-card (240px <= width <= 379px) {
+  .vc-title { max-width: 120px; }
+  .vc-header { flex-wrap: nowrap; }
+  .vc-field-select { max-width: 105px; }
+  .vc-measure-select { max-width: 95px; }
+  .vc-footer-field-pill { max-width: 100px; }
+  .vc-move-select { max-width: 85px; }
+}
+
+/* ── Standard tier: 380px – 599px ────────────────────────────────── */
+@container visual-card (380px <= width <= 599px) {
+  .vc-title { max-width: 200px; font-size: 0.8125rem; }
+  .vc-field-select { max-width: 130px; }
+  .vc-measure-select { max-width: 110px; }
+  .vc-footer-field-pill { max-width: 150px; }
+  .vc-move-select { max-width: 100px; }
+}
+
+/* ── Expanded tier: ≥ 600px ──────────────────────────────────────── */
+@container visual-card (min-width: 600px) {
+  .vc-title { max-width: 260px; font-size: 0.875rem; }
+  .vc-field-select { max-width: 160px; }
+  .vc-measure-select { max-width: 140px; }
+  .vc-footer-field-pill { max-width: 200px; }
+  .vc-move-select { max-width: 120px; }
+}
+
+/* ===== Modern Thin Scrollbar ======================================= */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: var(--border-strong);
+  border-radius: 999px;
+}
+
+/* ===== Canvas Outer Viewport ======================================= */
+:root, [data-theme="light"] {
+  --bg-canvas-outer: #f0f4f8;
+  --bg-canvas-dot: rgba(99, 115, 135, 0.18);
+}
+[data-theme="dark"] {
+  --bg-canvas-outer: #0a0f1a;
+  --bg-canvas-dot: rgba(148, 163, 184, 0.1);
+}
+
+.canvas-viewport-outer {
+  background-color: var(--bg-canvas-outer);
+  background-image: radial-gradient(circle, var(--bg-canvas-dot) 1px, transparent 1px);
+  background-size: 24px 24px;
+  border-radius: 6px;
+}
+
+/* ===== Top Navigation Link ========================================= */
+.nav-link {
+  position: relative;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+.nav-link:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-subtle);
+}
+.nav-link.nav-link--active {
+  font-weight: 600;
+  color: var(--primary);
+  background-color: var(--primary-tint);
+}
+.nav-link.nav-link--active::after {
+  content: "";
+  position: absolute;
+  bottom: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 2px;
+  border-radius: 999px;
+  background-color: var(--primary);
+}
+.nav-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ===== Toolbar Button Group ======================================== */
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: var(--shadow-sm);
+  padding: 3px 6px;
+  gap: 2px;
+}
+.toolbar-divider {
+  width: 1px;
+  height: 18px;
+  background-color: var(--border-color);
+  flex-shrink: 0;
+}
+.zoom-badge {
+  font-size: 0.75rem;
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 44px;
+  text-align: center;
+  transition: color 0.15s ease;
+}
+
+/* ===== Congestion Banner (design-token-aware) ====================== */
+.congestion-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.85rem;
+  background-color: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  color: var(--warning);
+  gap: 0.75rem;
+}
+
+/* ===== Canvas Empty State ========================================== */
+.canvas-empty-state {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  background-color: var(--bg-canvas-outer);
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+}
+
+/* ===== Canvas Host Card (no double-padding) ======================== */
+.canvas-host-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 0.75rem;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}

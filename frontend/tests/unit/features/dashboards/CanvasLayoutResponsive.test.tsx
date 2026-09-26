@@ -236,7 +236,9 @@ describe("40 UI Automated Verification Test Cases - Canvas Layout & Size-Aware S
     const visual = useDashboardStore.getState().current!.pages[0].visuals[0];
     render(<VisualLayoutEditor pageName="Overview" visual={visual} />);
     const card = screen.getByTestId("visual-RevenueKpi");
-    expect(card.style.containerType).toBe("inline-size");
+    // container-type must be declared via CSS class, NOT inline style prop
+    // (containerType is not a valid React CSSProperties key)
+    expect(card.classList.contains("visual-card")).toBe(true);
   });
 
   it("UI-TC-18: Micro card layout (< 240px width) adapts header styling", () => {

@@ -326,7 +326,7 @@ export const DashboardWorkspacePage: React.FC = () => {
           }}
         />
       ) : (
-        <div className="card" style={{ padding: "1rem", minHeight: "650px", overflow: "auto" }}>
+        <div className="canvas-host-card" style={{ minHeight: "600px" }}>
           {viewMode === "canvas" ? (
             <DashboardCanvas />
           ) : (
