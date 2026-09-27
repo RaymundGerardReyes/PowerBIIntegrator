@@ -8,7 +8,8 @@ describe("DataSourcesPage", () => {
   it("renders all ingestion tabs and defaults to Excel upload", () => {
     renderWithProviders(<DataSourcesPage />);
 
-    expect(screen.getByText(/Data Sources & Ingestion Hub/i)).toBeInTheDocument();
+    // Heading was shortened from "Data Sources & Ingestion Hub" to "Data Sources & Ingestion" in v1.19.0
+    expect(screen.getByText(/Data Sources & Ingestion/i)).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Excel Spreadsheets/i })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Delimited CSV/i })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Relational Database/i })).toBeInTheDocument();

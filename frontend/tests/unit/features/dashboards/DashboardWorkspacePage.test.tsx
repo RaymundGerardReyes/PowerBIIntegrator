@@ -16,7 +16,8 @@ describe("DashboardWorkspacePage", () => {
     await waitFor(() => {
       expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument();
     });
-    expect(screen.getByRole("button", { name: "toggle-view-mode" })).toHaveTextContent(/Local Power BI Desktop/i);
+    // Button text updated in v1.19.0 — "Local Power BI Desktop" → "🖥 Power BI Desktop"
+    expect(screen.getByRole("button", { name: "toggle-view-mode" })).toHaveTextContent(/Power BI Desktop/i);
     expect(screen.getByRole("button", { name: "validate-model-btn" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "compile-pbir-btn" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "compile-tmdl-btn" })).toBeInTheDocument();
@@ -31,10 +32,12 @@ describe("DashboardWorkspacePage", () => {
     const toggleBtn = screen.getByRole("button", { name: "toggle-view-mode" });
     await user.click(toggleBtn);
 
-    expect(toggleBtn).toHaveTextContent(/Layout Canvas Editor/i);
+    // "Layout Canvas Editor" → "◈ Canvas Editor" in v1.19.0
+    expect(toggleBtn).toHaveTextContent(/Canvas Editor/i);
 
     await user.click(toggleBtn);
-    expect(toggleBtn).toHaveTextContent(/Local Power BI Desktop/i);
+    // "Local Power BI Desktop" → "🖥 Power BI Desktop" in v1.19.0
+    expect(toggleBtn).toHaveTextContent(/Power BI Desktop/i);
   });
 
   it("compiles PBIR successfully and displays notification feedback", async () => {

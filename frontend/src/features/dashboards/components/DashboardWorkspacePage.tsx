@@ -207,29 +207,41 @@ export const DashboardWorkspacePage: React.FC = () => {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      {/* Workspace Header & Action Bar */}
-      <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <h2 style={{ margin: 0, fontSize: "1.25rem" }}>{activeDashboard.name}</h2>
-            <span className="badge badge-info">PBIP/PBIR Target</span>
-          </div>
-          <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.875rem", color: "var(--text-muted)" }}>
-            ID: {activeDashboard.id} | Canvas Pages: {activeDashboard.pages.length}
-          </p>
-        </div>
-
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
-          {availableModels.length > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-              <label htmlFor="semantic-model-select" style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                Target Model:
-              </label>
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+      {/* Workspace Header — Refined */}
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.875rem",
+        backgroundColor: "var(--bg-card)",
+        border: "1px solid var(--border-color)",
+        borderRadius: "var(--radius-lg)",
+        padding: "1rem 1.25rem",
+        boxShadow: "var(--shadow-sm)"
+      }}>
+        {/* Title row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", minWidth: 0 }}>
+            <h2 style={{ margin: 0, fontSize: "1.125rem", letterSpacing: "-0.025em", fontWeight: 700 }}>
+              {activeDashboard.name}
+            </h2>
+            <span className="badge badge-info" style={{ fontSize: "0.7rem", padding: "2px 8px", borderRadius: "999px", fontWeight: 500 }}>
+              PBIR
+            </span>
+            {availableModels.length > 0 && (
               <select
                 id="semantic-model-select"
                 className="form-input"
-                style={{ padding: "0.35rem 0.5rem", fontSize: "0.875rem", minWidth: "220px" }}
+                style={{
+                  padding: "0.2rem 0.5rem",
+                  fontSize: "0.8125rem",
+                  minWidth: "200px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--border-color)",
+                  backgroundColor: "var(--bg-subtle)",
+                  color: "var(--text-secondary)",
+                  maxWidth: "260px"
+                }}
                 value={activeModelId}
                 onChange={(e) => {
                   setSelectedModelId(e.target.value);
@@ -243,52 +255,79 @@ export const DashboardWorkspacePage: React.FC = () => {
                   </option>
                 ))}
               </select>
-            </div>
-          )}
+            )}
+          </div>
+          <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "monospace" }}>
+            {activeDashboard.id.slice(0, 24)}… · {activeDashboard.pages.length} page{activeDashboard.pages.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+
+        {/* Action toolbar — grouped clusters */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+          {/* View Mode */}
           <Button
             onClick={() => setViewMode(viewMode === "canvas" ? "embed" : "canvas")}
             variant="secondary"
             aria-label="toggle-view-mode"
+            style={{ fontSize: "0.8125rem" }}
           >
-            {viewMode === "canvas" ? "Local Power BI Desktop" : "Layout Canvas Editor"}
+            {viewMode === "canvas" ? "🖥 Power BI Desktop" : "◈ Canvas Editor"}
           </Button>
+
+          <div className="toolbar-divider" />
+
+          {/* Validate */}
           <Button
             onClick={() => setIsValidateModalOpen(true)}
             variant="secondary"
             disabled={!activeModelId}
             aria-label="validate-model-btn"
+            style={{ fontSize: "0.8125rem" }}
           >
-            Validate Model
+            ✓ Validate
           </Button>
-          <Button
-            onClick={handleCompilePbir}
-            variant="secondary"
-            disabled={isCompiling || !activeModelId}
-            aria-label="compile-pbir-btn"
-          >
-            Compile PBIR
-          </Button>
-          <Button
-            onClick={handleCompileTmdl}
-            variant="secondary"
-            disabled={isCompiling || !activeModelId}
-            aria-label="compile-tmdl-btn"
-          >
-            Compile TMDL
-          </Button>
+
+          {/* Compile cluster */}
+          <div className="toolbar-group">
+            <Button
+              onClick={handleCompilePbir}
+              variant="secondary"
+              disabled={isCompiling || !activeModelId}
+              aria-label="compile-pbir-btn"
+              style={{ fontSize: "0.8125rem", border: "none", boxShadow: "none", backgroundColor: "transparent" }}
+            >
+              PBIR
+            </Button>
+            <div className="toolbar-divider" />
+            <Button
+              onClick={handleCompileTmdl}
+              variant="secondary"
+              disabled={isCompiling || !activeModelId}
+              aria-label="compile-tmdl-btn"
+              style={{ fontSize: "0.8125rem", border: "none", boxShadow: "none", backgroundColor: "transparent" }}
+            >
+              TMDL
+            </Button>
+          </div>
+
+          <div className="toolbar-divider" />
+
+          {/* Export / Import cluster */}
           <Button
             onClick={handleDownloadPbip}
             disabled={isCompiling || !activeModelId}
             aria-label="download-pbip-btn"
+            style={{ fontSize: "0.8125rem" }}
           >
-            Download PBIP (.zip)
+            ↓ Download PBIP
           </Button>
           <Button
             onClick={() => setIsImportModalOpen(true)}
             variant="secondary"
             aria-label="import-fabric-btn"
+            style={{ fontSize: "0.8125rem" }}
           >
-            Fabric Import
+            ⇡ Fabric
           </Button>
         </div>
       </div>

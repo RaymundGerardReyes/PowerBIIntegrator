@@ -19,33 +19,49 @@ export const ContextBar: React.FC<ContextBarProps> = ({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0.75rem 1rem",
-        backgroundColor: "var(--bg-surface)",
+        padding: "0.75rem 1.25rem",
+        backgroundColor: "var(--bg-card)",
         border: "1px solid var(--border-color)",
-        borderRadius: "var(--radius-md)",
-        marginBottom: "1rem",
+        borderRadius: "var(--radius-lg)",
         flexWrap: "wrap",
-        gap: "1rem"
+        gap: "0.75rem",
+        boxShadow: "var(--shadow-xs)"
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
-        <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>{title}</div>
-        
-        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexWrap: "wrap", minWidth: 0 }}>
+        <div style={{
+          fontWeight: 700,
+          fontSize: "0.9375rem",
+          color: "var(--text-primary)",
+          letterSpacing: "-0.02em",
+          whiteSpace: "nowrap"
+        }}>
+          {title}
+        </div>
+
+        <div style={{ display: "flex", gap: "0.875rem", flexWrap: "wrap", alignItems: "center" }}>
           {metadata.map((item, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.85rem" }}>
-              <span style={{ color: "var(--text-muted)" }}>{item.label}:</span>
-              <span style={{ fontWeight: 500 }}>{item.value}</span>
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.3rem",
+                fontSize: "0.8125rem"
+              }}
+            >
+              <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>{item.label}</span>
+              <span style={{ color: "var(--border-strong)", userSelect: "none" }}>·</span>
+              <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>{item.value}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "0.5rem" }}>
+      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexShrink: 0 }}>
         {secondaryAction}
         {primaryAction}
       </div>
     </div>
   );
 };
-

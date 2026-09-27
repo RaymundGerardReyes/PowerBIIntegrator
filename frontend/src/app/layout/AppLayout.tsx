@@ -18,29 +18,34 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   const navItems = [
-    { label: "Dashboards & PBIP", path: routePaths.dashboards, icon: "📊" },
-    { label: "Data Sources", path: routePaths.dataSources, icon: "🔌" },
-    { label: "Data Quality & Advisory", path: routePaths.dataQuality, icon: "✓" },
-    { label: "Executive Reports", path: routePaths.reports, icon: "📈" }
+    { label: "Dashboards & PBIP", path: routePaths.dashboards },
+    { label: "Data Sources", path: routePaths.dataSources },
+    { label: "Data Quality", path: routePaths.dataQuality },
+    { label: "Executive Reports", path: routePaths.reports }
   ];
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "var(--bg-primary)" }}>
-      {/* Unified Top Navigation Header */}
+      {/* Unified Top Navigation Header — Glassmorphism */}
       <header
         style={{
-          height: "56px",
-          backgroundColor: "var(--bg-surface)",
-          borderBottom: "1px solid var(--border-color)",
+          height: "60px",
+          backgroundColor: "var(--header-bg)",
+          backdropFilter: "var(--header-blur)",
+          WebkitBackdropFilter: "var(--header-blur)",
+          borderBottom: "1px solid var(--header-border)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 1.5rem",
-          flexShrink: 0
+          padding: "0 1.75rem",
+          flexShrink: 0,
+          position: "sticky",
+          top: 0,
+          zIndex: 100
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
-          {/* Product Identity */}
+        <div style={{ display: "flex", alignItems: "center", gap: "2.25rem" }}>
+          {/* Product Identity — Refined */}
           <Link
             to={routePaths.dashboards}
             style={{
@@ -49,31 +54,35 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               gap: "0.5rem",
               textDecoration: "none",
               color: "var(--text-primary)",
-              fontWeight: 600,
-              fontSize: "0.95rem"
+              fontWeight: 700,
+              fontSize: "0.9375rem",
+              letterSpacing: "-0.02em"
             }}
           >
             <div
               style={{
-                width: "24px",
-                height: "24px",
-                borderRadius: "4px",
-                backgroundColor: "#f59e0b",
+                width: "28px",
+                height: "28px",
+                borderRadius: "8px",
+                background: "linear-gradient(135deg, var(--primary) 0%, #6d28d9 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#111827",
-                fontWeight: 900,
-                fontSize: "0.75rem"
+                color: "#ffffff",
+                fontWeight: 800,
+                fontSize: "0.7rem",
+                letterSpacing: "0.02em",
+                boxShadow: "var(--shadow-primary)"
               }}
             >
               PB
             </div>
-            <span>PowerBI Enhanced</span>
+            <span style={{ color: "var(--text-primary)" }}>PowerBI</span>
+            <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>Enhanced</span>
           </Link>
 
           {/* Primary Modules */}
-          <nav style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+          <nav style={{ display: "flex", alignItems: "center", gap: "0.125rem" }}>
             {navItems.map((item) => {
               const isActive = location.pathname.startsWith(item.path);
               return (
@@ -82,7 +91,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   to={item.path}
                   className={`nav-link${isActive ? " nav-link--active" : ""}`}
                 >
-                  <span style={{ fontSize: "0.9rem" }}>{item.icon}</span>
                   {item.label}
                 </Link>
               );
@@ -91,14 +99,27 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </div>
 
         {/* User / System Controls */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <button onClick={toggleTheme} className="btn btn-ghost btn-sm" aria-label="toggle-theme-button">
-            {theme === "light" ? "🌙 Dark" : "☀️ Light"}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <button
+            onClick={toggleTheme}
+            className="btn btn-ghost btn-sm"
+            aria-label="toggle-theme-button"
+            title={theme === "light" ? "Switch to Dark mode" : "Switch to Light mode"}
+            style={{ fontSize: "1rem", padding: "0.375rem 0.5rem" }}
+          >
+            {theme === "light" ? "🌙" : "☀️"}
           </button>
 
           {isAuthenticated && user ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+              <span style={{
+                fontSize: "0.8125rem",
+                color: "var(--text-muted)",
+                maxWidth: "140px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap"
+              }}>
                 {user.displayName || user.email}
               </span>
               <button onClick={logout} className="btn btn-ghost btn-sm">Sign out</button>
@@ -108,6 +129,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               <button className="btn btn-secondary btn-sm">Sign in</button>
             </Link>
           )}
+
+          <div style={{ width: "1px", height: "20px", backgroundColor: "var(--border-color)", margin: "0 0.125rem" }} />
 
           <Button
             onClick={() => {
@@ -120,9 +143,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             variant={isAssistantOpen ? "primary" : "secondary"}
             className="btn-sm"
             aria-label="toggle-ai-assistant"
-            style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}
+            style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontWeight: 500 }}
           >
-            <span>✨</span> Advisory Copilot
+            <span style={{ fontSize: "0.8rem" }}>✦</span> Copilot
           </Button>
         </div>
       </header>
@@ -132,7 +155,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         <main
           style={{
             flex: 1,
-            padding: "1.25rem 1.5rem",
+            padding: "1.5rem 2rem",
             overflowY: "auto",
             width: "100%",
             minWidth: 0
@@ -145,23 +168,40 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           <section
             aria-label="AI Copilot Assistant Panel"
             style={{
-              width: "420px",
+              width: "400px",
               borderLeft: "1px solid var(--border-color)",
-              backgroundColor: "var(--bg-surface)",
+              backgroundColor: "var(--bg-card)",
               display: "flex",
               flexDirection: "column",
               flexShrink: 0
             }}
           >
-            <div style={{ padding: "0.75rem", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ fontSize: "0.875rem", fontWeight: 600 }}>Model Context Protocol Agent</div>
+            <div style={{
+              padding: "0.875rem 1rem",
+              borderBottom: "1px solid var(--border-color)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              backgroundColor: "var(--bg-card)"
+            }}>
+              <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-primary)" }}>
+                ✦ AI Advisory Copilot
+              </div>
               <button
                 onClick={() => {
                   setIsAssistantOpen(false);
                   useLlmAssistantStore.getState().setOpen(false);
                 }}
                 aria-label="close-assistant-panel"
-                style={{ background: "none", border: "none", cursor: "pointer" }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "var(--text-muted)",
+                  fontSize: "1.125rem",
+                  lineHeight: 1,
+                  padding: "0.25rem"
+                }}
               >
                 ×
               </button>

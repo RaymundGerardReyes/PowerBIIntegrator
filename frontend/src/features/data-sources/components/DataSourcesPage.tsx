@@ -52,22 +52,67 @@ export const DataSourcesPage: React.FC = () => {
   }));
 
   const sourceTypes = [
-    { id: "excel" as Tab, label: "Excel Spreadsheets (.xlsx)", icon: "📊", desc: "Local spreadsheet files" },
-    { id: "csv" as Tab, label: "Delimited CSV (.csv)", icon: "📄", desc: "Delimited text data" },
-    { id: "sql" as Tab, label: "Relational Database", icon: "🗄️", desc: "Relational DB connection" },
-    { id: "catalog" as Tab, label: "Registered Catalog", icon: "📁", desc: "Existing connections" }
+    {
+      id: "excel" as Tab,
+      label: "Excel Spreadsheets",
+      sublabel: ".xlsx",
+      desc: "Upload local spreadsheet files with automatic schema detection",
+      icon: (
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="3" width="18" height="18" rx="3" fill="#16a34a" opacity="0.12"/>
+          <path d="M7 8l3 4-3 4M13 8h4M13 12h4M13 16h4" stroke="#16a34a" strokeWidth="1.75" strokeLinecap="round"/>
+        </svg>
+      )
+    },
+    {
+      id: "csv" as Tab,
+      label: "Delimited CSV",
+      sublabel: ".csv",
+      desc: "Import structured text files with auto-detected delimiters",
+      icon: (
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="3" width="18" height="18" rx="3" fill="#6366f1" opacity="0.12"/>
+          <path d="M7 8h10M7 12h10M7 16h6" stroke="#6366f1" strokeWidth="1.75" strokeLinecap="round"/>
+        </svg>
+      )
+    },
+    {
+      id: "sql" as Tab,
+      label: "Relational Database",
+      sublabel: "SQL",
+      desc: "Connect to enterprise databases and introspect schemas",
+      icon: (
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="3" width="18" height="18" rx="3" fill="#0ea5e9" opacity="0.12"/>
+          <ellipse cx="12" cy="8" rx="5" ry="2.5" stroke="#0ea5e9" strokeWidth="1.5"/>
+          <path d="M7 8v4c0 1.38 2.24 2.5 5 2.5s5-1.12 5-2.5V8M7 12v4c0 1.38 2.24 2.5 5 2.5s5-1.12 5-2.5v-4" stroke="#0ea5e9" strokeWidth="1.5"/>
+        </svg>
+      )
+    },
+    {
+      id: "catalog" as Tab,
+      label: "Registered Catalog",
+      sublabel: "Hub",
+      desc: "Manage and reuse existing registered data connections",
+      icon: (
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="3" width="18" height="18" rx="3" fill="#f59e0b" opacity="0.12"/>
+          <path d="M12 7v5l3 3M12 4a8 8 0 100 16A8 8 0 0012 4z" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      )
+    }
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       <div>
-        <h2 style={{ marginBottom: "0.25rem", fontSize: "1.25rem" }}>Data Sources & Ingestion Hub</h2>
-        <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.875rem" }}>
-          Configure enterprise data sources to extract schemas and ingest data into the medallion architecture.
+        <h2 style={{ marginBottom: "0.25rem", fontSize: "1.25rem", letterSpacing: "-0.025em" }}>Data Sources & Ingestion</h2>
+        <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.875rem" }}>
+          Configure enterprise data sources to extract schemas and ingest into the medallion architecture.
         </p>
       </div>
 
-      <div role="tablist" style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+      <div role="tablist" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem" }}>
         {sourceTypes.map(source => (
           <div
             key={source.id}
@@ -76,22 +121,31 @@ export const DataSourcesPage: React.FC = () => {
             aria-label={source.label}
             onClick={() => setActiveTab(source.id)}
             style={{
-              flex: "1 1 200px",
-              padding: "1.5rem",
-              borderRadius: "var(--radius-md)",
-              border: `1px solid ${activeTab === source.id ? "var(--primary)" : "var(--border-color)"}`,
-              backgroundColor: activeTab === source.id ? "var(--primary-tint)" : "var(--bg-surface)",
+              padding: "1.125rem 1.25rem",
+              borderRadius: "var(--radius-lg)",
+              border: `1.5px solid ${activeTab === source.id ? "var(--primary)" : "var(--border-color)"}`,
+              backgroundColor: activeTab === source.id ? "var(--primary-tint)" : "var(--bg-card)",
               cursor: "pointer",
               display: "flex",
               flexDirection: "column",
-              gap: "0.5rem",
-              transition: "all 0.15s ease",
-              boxShadow: activeTab === source.id ? "var(--shadow-sm)" : "none"
+              gap: "0.625rem",
+              transition: "all 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
+              boxShadow: activeTab === source.id ? "var(--shadow-primary)" : "var(--shadow-xs)",
+              transform: activeTab === source.id ? "translateY(-1px)" : "none"
             }}
           >
-            <span style={{ fontSize: "1.5rem" }}>{source.icon}</span>
-            <span style={{ fontWeight: 600, fontSize: "0.95rem" }}>{source.label}</span>
-            <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{source.desc}</span>
+            {source.icon}
+            <div>
+              <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "var(--text-primary)", lineHeight: 1.3 }}>
+                {source.label}
+                <span style={{ marginLeft: "0.35rem", fontSize: "0.7rem", color: "var(--text-muted)", fontFamily: "monospace" }}>
+                  {source.sublabel}
+                </span>
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.2rem", lineHeight: 1.4 }}>
+                {source.desc}
+              </div>
+            </div>
           </div>
         ))}
       </div>

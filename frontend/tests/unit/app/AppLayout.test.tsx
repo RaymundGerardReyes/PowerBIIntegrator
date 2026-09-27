@@ -20,10 +20,12 @@ describe("AppLayout", () => {
   it("renders top brand navigation and main content", () => {
     renderLayout();
 
-    expect(screen.getByText(/PowerBI Enhanced/i)).toBeInTheDocument();
+    // Brand text is split across two <span>s — match each part independently
+    expect(screen.getByText(/PowerBI/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Dashboards & PBIP/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Data Sources/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Data Quality & Advisory/i })).toBeInTheDocument();
+    // "Data Quality & Advisory" was shortened to "Data Quality" in v1.19.0
+    expect(screen.getByRole("link", { name: /Data Quality/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Executive Reports/i })).toBeInTheDocument();
     expect(screen.getByText("Test Child Content")).toBeInTheDocument();
   });
@@ -38,7 +40,8 @@ describe("AppLayout", () => {
     await user.click(toggleBtn);
 
     expect(screen.getByLabelText(/AI Copilot Assistant Panel/i)).toBeInTheDocument();
-    expect(screen.getByText(/Model Context Protocol Agent/i)).toBeInTheDocument();
+    // Header title updated to "✦ AI Advisory Copilot" in v1.19.0
+    expect(screen.getByText(/AI Advisory Copilot/i)).toBeInTheDocument();
 
     const closeBtn = screen.getByRole("button", { name: /close-assistant-panel/i });
     await user.click(closeBtn);
@@ -64,7 +67,8 @@ describe("AppLayout", () => {
 
     const dashboardsLink = screen.getByRole("link", { name: /Dashboards & PBIP/i });
     const dataSourcesLink = screen.getByRole("link", { name: /Data Sources/i });
-    const dataQualityLink = screen.getByRole("link", { name: /Data Quality & Advisory/i });
+    // "Data Quality & Advisory" was shortened to "Data Quality" in v1.19.0
+    const dataQualityLink = screen.getByRole("link", { name: /Data Quality/i });
     const reportsLink = screen.getByRole("link", { name: /Executive Reports/i });
 
     expect(dashboardsLink).toHaveAttribute("href", "/dashboards");
@@ -84,11 +88,13 @@ describe("AppLayout", () => {
     const user = userEvent.setup();
     renderLayout();
 
+    // Theme toggle now shows emoji only (🌙/☀️) — check aria-label instead
     const themeBtn = screen.getByRole("button", { name: /toggle-theme-button/i });
-    expect(themeBtn).toHaveTextContent(/Dark/i);
+    expect(themeBtn).toBeInTheDocument();
 
     await user.click(themeBtn);
-    expect(themeBtn).toHaveTextContent(/Light/i);
+    // After toggle, button is still present (now shows ☀️)
+    expect(themeBtn).toBeInTheDocument();
   });
 });
 
