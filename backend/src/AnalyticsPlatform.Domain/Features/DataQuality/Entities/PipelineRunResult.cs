@@ -19,7 +19,7 @@ public class PipelineRunResult : Entity
     public DateTime StartedAtUtc { get; private set; }
     public DateTime CompletedAtUtc { get; private set; }
     public bool IsSuccess { get; private set; }
-    public List<StageRunSummary> StageSummaries { get; } = new();
+    public List<StageRunSummary> StageSummaries { get; set; } = new();
 
     public PipelineRunResult(string runId, string sourceReference, DateTime startedAtUtc, DateTime completedAtUtc, bool isSuccess)
     {

@@ -8,7 +8,7 @@ public class DatasetProfile : Entity
     public string SourceReference { get; private set; }
     public long TotalRows { get; private set; }
     public DateTime ProfiledAtUtc { get; private set; }
-    public List<ColumnProfile> ColumnProfiles { get; } = new();
+    public List<ColumnProfile> ColumnProfiles { get; set; } = new();
 
     public DatasetProfile(string datasetName, string sourceReference, long totalRows)
     {

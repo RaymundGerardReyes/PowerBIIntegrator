@@ -45,9 +45,14 @@ export function DataTable<T extends Record<string, unknown>>({
           ) : (
             rows.map((row, idx) => (
               <tr key={idx}>
-                {columns.map((col) => (
-                  <td key={String(col.key)}>{String(row[col.key] ?? "")}</td>
-                ))}
+                {columns.map((col) => {
+                  const val = row[col.key];
+                  return (
+                    <td key={String(col.key)}>
+                      {React.isValidElement(val) ? val : String(val ?? "")}
+                    </td>
+                  );
+                })}
               </tr>
             ))
           )}
