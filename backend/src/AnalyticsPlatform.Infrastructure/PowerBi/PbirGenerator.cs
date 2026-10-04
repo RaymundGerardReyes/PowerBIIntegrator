@@ -139,8 +139,8 @@ public class PbirGenerator : IPbirGenerator
         Dictionary<string, object> queryState;
         var visualType = visual.VisualType;
 
-        if (visualType.Equals(VisualTypes.Table, StringComparison.OrdinalIgnoreCase) ||
-            visualType.Equals("table", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(visualType, VisualTypes.Table, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(visualType, "table", StringComparison.OrdinalIgnoreCase))
         {
             // ADR 0005: Native Table (tableEx) strictly accepts "Values" role for all projections
             var allProjections = new List<object>(categoryProjections);
@@ -150,13 +150,22 @@ public class PbirGenerator : IPbirGenerator
                 ["Values"] = new { projections = allProjections }
             };
         }
-        else if (visualType.Equals(VisualTypes.Card, StringComparison.OrdinalIgnoreCase))
+        else if (string.Equals(visualType, VisualTypes.Card, StringComparison.OrdinalIgnoreCase))
         {
             // ADR 0005: Native Card strictly accepts "Values" role for scalar measure projections
             var cardProjections = valueProjections.Count > 0 ? valueProjections : categoryProjections;
             queryState = new Dictionary<string, object>
             {
                 ["Values"] = new { projections = cardProjections }
+            };
+        }
+        else if (string.Equals(visualType, VisualTypes.Slicer, StringComparison.OrdinalIgnoreCase))
+        {
+            // Microsoft Power BI PBIR Slicer visual strictly accepts "Values" role for dimension projections
+            var slicerProjections = valueProjections.Count > 0 ? valueProjections : categoryProjections;
+            queryState = new Dictionary<string, object>
+            {
+                ["Values"] = new { projections = slicerProjections }
             };
         }
         else
@@ -183,7 +192,7 @@ public class PbirGenerator : IPbirGenerator
             },
             ["visual"] = new
             {
-                visualType = visual.VisualType,
+                visualType = string.Equals(visualType, VisualTypes.Slicer, StringComparison.OrdinalIgnoreCase) ? VisualTypes.Slicer : visual.VisualType,
                 query = new
                 {
                     queryState

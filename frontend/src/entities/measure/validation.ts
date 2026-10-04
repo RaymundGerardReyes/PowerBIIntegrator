@@ -158,5 +158,21 @@ export function validateVisualRoles(visualType: string, boundFields: string[]): 
     return { isValid: true };
   }
 
+  // Slicer visual: strictly binds to a categorical dimension (measures rejected)
+  if (normType === "slicer") {
+    if (boundFields.length === 0) {
+      return { isValid: true };
+    }
+    const dim = cleanFieldLabel(boundFields[0]);
+    if (isValidMeasureName(dim)) {
+      return {
+        isValid: false,
+        error: `Measure '${dim}' cannot be bound to a Slicer. Slicers require a categorical dimension (e.g. Region, Category, Pclass).`,
+        warning: `Dimension Expected: Measure '${dim}' bound to Slicer.`
+      };
+    }
+    return { isValid: true };
+  }
+
   return { isValid: true };
 }

@@ -1,10 +1,7 @@
 using System.Data;
+using AnalyticsPlatform.Domain.Features.DataQuality.Entities;
 
 namespace AnalyticsPlatform.Infrastructure.Features.DataQuality.Connectors;
-
-public record TabularRow(string RowId, Dictionary<string, string?> Fields);
-
-public record TabularBatch(string SourceName, IReadOnlyList<string> Columns, IReadOnlyList<TabularRow> Rows);
 
 public class TabularBatchReader
 {

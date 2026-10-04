@@ -9,6 +9,10 @@ using AnalyticsPlatform.Domain.Features.DataQuality.Rules;
 using AnalyticsPlatform.Domain.Features.DataSources.Entities;
 using AnalyticsPlatform.Domain.Repositories;
 
+using AnalyticsPlatform.Application.Features.DataQuality.Abstractions;
+using AnalyticsPlatform.Application.Features.DataQuality.Orchestration;
+using AnalyticsPlatform.Application.Features.DataQuality.Orchestration.Stages;
+
 namespace AnalyticsPlatform.Application.Features.DataQuality.Commands;
 
 public record RunFullPipelineCommand(string SourceReference, string DatasetName, string TargetGoldTable) : IRequest<Result<PipelineRunResult>>;
@@ -20,13 +24,14 @@ public class RunFullPipelineCommandHandler : IRequestHandler<RunFullPipelineComm
     private readonly IAdvisoryRunRepository _advisoryRunRepository;
     private readonly ISender _sender;
     private readonly IAnalyticsModelRepository? _modelRepository;
+    private readonly PipelineOrchestrator _orchestrator;
 
     public RunFullPipelineCommandHandler(
         IDataSourceRepository dataSourceRepository,
         IDataSourceReaderFactory readerFactory,
         IAdvisoryRunRepository advisoryRunRepository,
         ISender sender)
-        : this(dataSourceRepository, readerFactory, advisoryRunRepository, sender, null)
+        : this(dataSourceRepository, readerFactory, advisoryRunRepository, sender, null, null)
     {
     }
 
@@ -36,29 +41,49 @@ public class RunFullPipelineCommandHandler : IRequestHandler<RunFullPipelineComm
         IAdvisoryRunRepository advisoryRunRepository,
         ISender sender,
         IAnalyticsModelRepository? modelRepository)
+        : this(dataSourceRepository, readerFactory, advisoryRunRepository, sender, modelRepository, null)
+    {
+    }
+
+    public RunFullPipelineCommandHandler(
+        IDataSourceRepository dataSourceRepository,
+        IDataSourceReaderFactory readerFactory,
+        IAdvisoryRunRepository advisoryRunRepository,
+        ISender sender,
+        IAnalyticsModelRepository? modelRepository,
+        PipelineOrchestrator? orchestrator)
     {
         _dataSourceRepository = dataSourceRepository;
         _readerFactory = readerFactory;
         _advisoryRunRepository = advisoryRunRepository;
         _sender = sender;
         _modelRepository = modelRepository;
+        _orchestrator = orchestrator ?? new PipelineOrchestrator(new IDataQualityStage[]
+        {
+            new ProfilingStage(readerFactory),
+            new DeduplicationStage(),
+            new CleaningStage(),
+            new TransformationStage(modelRepository)
+        });
     }
 
     public async Task<Result<PipelineRunResult>> Handle(RunFullPipelineCommand request, CancellationToken cancellationToken)
     {
         var runId = Guid.NewGuid().ToString();
-        var startTime = DateTime.UtcNow;
 
         // 1. Resolve Data Source definition or path
         var (resolvedPath, dsType, datasetName) = await ResolveDataSourceAsync(request.SourceReference, request.DatasetName, cancellationToken);
 
+        var dataBatches = new Dictionary<string, object>
+        {
+            ["ResolvedPath"] = resolvedPath,
+            ["DataSourceType"] = dsType,
+            ["DatasetName"] = datasetName,
+            ["TargetGoldTable"] = request.TargetGoldTable
+        };
+
         int totalRawRows = 0;
-        int distinctCount = 0;
-        int duplicateCount = 0;
         var headers = new List<string>();
-        var duplicateClusters = new List<DuplicateCluster>();
-        DatasetProfile? profile = null;
-        IReadOnlyList<ChartSuggestion> chartSuggestions = Array.Empty<ChartSuggestion>();
 
         if (!string.IsNullOrWhiteSpace(resolvedPath) && File.Exists(resolvedPath))
         {
@@ -71,43 +96,19 @@ public class RunFullPipelineCommandHandler : IRequestHandler<RunFullPipelineComm
                 if (totalRawRows > 0)
                 {
                     headers = rows[0].Keys.ToList();
-
-                    // Deduplication analysis
-                    var duplicateGroups = rows
-                        .Select((row, idx) => (Index: idx, Fingerprint: string.Join("||", row.OrderBy(k => k.Key).Select(k => Convert.ToString(k.Value, CultureInfo.InvariantCulture)?.Trim() ?? string.Empty))))
-                        .GroupBy(x => x.Fingerprint)
-                        .ToList();
-
-                    distinctCount = duplicateGroups.Count;
-                    duplicateCount = totalRawRows - distinctCount;
-
-                    int cIdx = 1;
-                    foreach (var group in duplicateGroups.Where(g => g.Count() > 1))
-                    {
-                        var items = group.ToList();
-                        var kept = items[0].Index.ToString();
-                        var dropped = items.Skip(1).Select(x => x.Index.ToString()).ToArray();
-                        duplicateClusters.Add(new DuplicateCluster(
-                            $"cluster-{cIdx++:D2}",
-                            "ExactHashDedupe",
-                            kept,
-                            dropped,
-                            1.0,
-                            $"Identical row tuple fingerprint detected across {headers.Count} attributes."));
-                    }
+                    var tabularRows = rows.Select((r, idx) => new TabularRow(
+                        $"row_{idx}",
+                        r.ToDictionary(k => k.Key, v => v.Value?.ToString())
+                    )).ToList();
+                    var rawBatch = new TabularBatch(datasetName, headers, tabularRows);
+                    dataBatches["TabularBatch"] = rawBatch;
+                    dataBatches["Batch"] = rawBatch;
                 }
                 else
                 {
-                    distinctCount = 0;
-                    duplicateCount = 0;
-                }
-
-                // Profile dataset
-                var profileResult = await _sender.Send(new ProfileDatasetCommand(resolvedPath, datasetName), cancellationToken);
-                if (profileResult.IsSuccess && profileResult.Value != null)
-                {
-                    profile = profileResult.Value;
-                    chartSuggestions = VisualMappingRule.MapSuggestions(profile);
+                    var emptyBatch = new TabularBatch(datasetName, Array.Empty<string>(), Array.Empty<TabularRow>());
+                    dataBatches["TabularBatch"] = emptyBatch;
+                    dataBatches["Batch"] = emptyBatch;
                 }
             }
             catch (Exception ex)
@@ -115,72 +116,59 @@ public class RunFullPipelineCommandHandler : IRequestHandler<RunFullPipelineComm
                 return Result<PipelineRunResult>.Failure($"Failed to execute pipeline on dataset: {ex.Message}");
             }
         }
-
-        if (profile == null)
+        else
         {
-            profile = new DatasetProfile(datasetName, request.SourceReference, totalRawRows);
-            chartSuggestions = VisualMappingRule.MapSuggestions(profile);
+            var emptyBatch = new TabularBatch(datasetName, Array.Empty<string>(), Array.Empty<TabularRow>());
+            dataBatches["TabularBatch"] = emptyBatch;
+            dataBatches["Batch"] = emptyBatch;
         }
 
-        var result = new PipelineRunResult(runId, request.SourceReference, startTime, DateTime.UtcNow, true);
+        var context = new PipelineContext(runId, request.SourceReference, dataBatches);
 
-        result.AddStageSummary(new StageRunSummary(
-            "Profiling",
-            true,
-            totalRawRows,
-            totalRawRows,
-            0,
-            new[] { "ProfileEngine" },
-            totalRawRows > 0 ? $"Profiled {totalRawRows} rows across {headers.Count} columns." : "Profiled empty dataset."));
+        // 2. Execute concrete stages through PipelineOrchestrator
+        var result = await _orchestrator.RunAsync(context, cancellationToken);
 
-        result.AddStageSummary(new StageRunSummary(
-            "SchemaValidation",
-            true,
-            totalRawRows,
-            totalRawRows,
-            0,
-            new[] { "SchemaCompatibilityRule" },
-            $"Schema verified with 0 critical violations across {headers.Count} attributes."));
-
-        result.AddStageSummary(new StageRunSummary(
-            "Deduplication",
-            true,
-            totalRawRows,
-            distinctCount,
-            duplicateCount,
-            new[] { "ExactHashDedupe" },
-            duplicateCount > 0 ? $"{duplicateCount} duplicate rows quarantined." : "0 duplicate rows detected; entire dataset contains unique records."));
-
-        result.AddStageSummary(new StageRunSummary(
-            "Cleaning",
-            true,
-            distinctCount,
-            distinctCount,
-            0,
-            new[] { "TrimWhitespace", "NullStandardization" },
-            $"Standardized {distinctCount} Silver rows."));
-
-        result.AddStageSummary(new StageRunSummary(
-            "Transformation",
-            true,
-            distinctCount,
-            distinctCount,
-            0,
-            new[] { "GoldAggregationRule" },
-            $"Gold table '{request.TargetGoldTable}' materialized with {distinctCount} curated records."));
-
-        if (_modelRepository != null && profile != null)
+        // 3. Extract profile and duplicate clusters generated by concrete stages
+        DatasetProfile? profile = null;
+        if (context.DataBatches.TryGetValue("Profile", out var pObj) && pObj is DatasetProfile dp)
         {
-            var goldSchema = profile.ColumnProfiles.Select(cp => new AnalyticsPlatform.Domain.Features.DataSources.Entities.ColumnSchema(
+            profile = dp;
+        }
+        else
+        {
+            profile = new DatasetProfile(datasetName, request.SourceReference, totalRawRows);
+        }
+
+        var duplicateClusters = context.DataBatches.TryGetValue("DuplicateClusters", out var dcObj) && dcObj is IReadOnlyList<DuplicateCluster> dcList
+            ? dcList
+            : Array.Empty<DuplicateCluster>();
+
+        var chartSuggestions = VisualMappingRule.MapSuggestions(profile);
+
+        // 4. Synthesize Gold model with actual Power Query M partition embedding
+        if (_modelRepository != null && !context.DataBatches.ContainsKey("GoldModelSaved"))
+        {
+            var goldSchema = profile?.ColumnProfiles.Select(cp => new AnalyticsPlatform.Domain.Features.DataSources.Entities.ColumnSchema(
                 0,
                 cp.ColumnName,
                 Enum.TryParse<AnalyticsPlatform.Domain.Features.DataSources.Entities.ColumnDataType>(cp.InferredType, true, out var dt) ? dt : AnalyticsPlatform.Domain.Features.DataSources.Entities.ColumnDataType.String,
                 cp.NullCount > 0,
                 cp.TopValues
-            )).ToList();
-            var goldModel = AnalyticsPlatform.Application.Features.Analytics.Services.AnalyticsModelFactory.CreateFromDataSource(request.TargetGoldTable, goldSchema);
+            )).ToList() ?? new List<AnalyticsPlatform.Domain.Features.DataSources.Entities.ColumnSchema>();
+
+            var goldModel = AnalyticsPlatform.Application.Features.Analytics.Services.AnalyticsModelFactory.CreateFromDataSource(
+                request.TargetGoldTable,
+                goldSchema,
+                connectionOrPath: resolvedPath,
+                sourceType: dsType);
+
             await _modelRepository.AddAsync(goldModel, cancellationToken);
+            context.DataBatches["GoldModel"] = goldModel;
+            context.DataBatches["GoldModelSaved"] = true;
         }
+
+        var distinctCount = result.StageSummaries.FirstOrDefault(s => s.StageName == "Deduplication")?.OutputRowCount
+            ?? (long)totalRawRows;
 
         var chartNames = chartSuggestions.Select(s => s.RecommendedVisualType).ToList();
         result.AddStageSummary(new StageRunSummary(

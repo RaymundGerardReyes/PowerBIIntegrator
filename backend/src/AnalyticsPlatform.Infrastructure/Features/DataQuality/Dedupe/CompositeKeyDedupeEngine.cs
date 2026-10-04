@@ -1,9 +1,10 @@
+using AnalyticsPlatform.Application.Features.DataQuality.Abstractions;
 using AnalyticsPlatform.Domain.Features.DataQuality.Entities;
 using AnalyticsPlatform.Infrastructure.Features.DataQuality.Connectors;
 
 namespace AnalyticsPlatform.Infrastructure.Features.DataQuality.Dedupe;
 
-public class CompositeKeyDedupeEngine
+public class CompositeKeyDedupeEngine : ICompositeKeyDedupeEngine
 {
     public (TabularBatch CleanBatch, IReadOnlyList<DuplicateCluster> Clusters) Deduplicate(TabularBatch batch, IReadOnlyList<string> keyColumns)
     {
@@ -14,12 +15,14 @@ public class CompositeKeyDedupeEngine
 
         foreach (var row in batch.Rows)
         {
-            var keyString = string.Join("::", keyColumns.Select(k => row.Fields.TryGetValue(k, out var v) ? v?.Trim() ?? "" : ""));
-            if (string.IsNullOrWhiteSpace(keyString))
+            bool allKeysEmpty = keyColumns.All(k => !row.Fields.TryGetValue(k, out var v) || string.IsNullOrWhiteSpace(v));
+            if (allKeysEmpty)
             {
                 keptRows.Add(row);
                 continue;
             }
+
+            var keyString = string.Join("::", keyColumns.Select(k => row.Fields.TryGetValue(k, out var v) ? v?.Trim() ?? "" : ""));
 
             if (seenKeys.TryGetValue(keyString, out var keptRowId))
             {

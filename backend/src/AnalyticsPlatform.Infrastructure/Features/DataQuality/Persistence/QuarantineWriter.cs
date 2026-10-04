@@ -1,3 +1,4 @@
+using AnalyticsPlatform.Domain.Features.DataQuality.Entities;
 using AnalyticsPlatform.Infrastructure.Features.DataQuality.Connectors;
 
 namespace AnalyticsPlatform.Infrastructure.Features.DataQuality.Persistence;

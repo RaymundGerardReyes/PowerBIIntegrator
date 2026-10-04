@@ -69,4 +69,30 @@ describe("VisualLayoutEditor - Guardrails & Role Grouping", () => {
     const updatedVisual = useDashboardStore.getState().current!.pages[0].visuals[0];
     expect(updatedVisual.layout.x).toBe(50); // 40 + 10
   });
+
+  it("auto-heals bound fields to dimension when switching to Slicer", () => {
+    // Start with KPI card which is bound only to a DAX measure
+    const cardVisual = useDashboardStore.getState().current!.pages[0].visuals[1];
+    render(<VisualLayoutEditor pageName="Page1" visual={cardVisual} />);
+
+    const typeSelect = screen.getByLabelText("select-type-RevenueKpi");
+    fireEvent.change(typeSelect, { target: { value: "slicer" } });
+
+    const updated = useDashboardStore.getState().current!.pages[0].visuals[1];
+    expect(updated.visualType).toBe("slicer");
+    // Slicer should have auto-healed to the available dimension (Sales[Region])
+    expect(updated.boundFields).toHaveLength(1);
+    expect(updated.boundFields[0]).toBe("Sales[Region]");
+    // Slicer is single-slot, so secondary measure select must not be present
+    expect(screen.queryByLabelText("select-measure-RevenueKpi")).not.toBeInTheDocument();
+  });
+
+  it("renders Slicer option in visual type dropdown", () => {
+    const visual = useDashboardStore.getState().current!.pages[0].visuals[0];
+    render(<VisualLayoutEditor pageName="Page1" visual={visual} />);
+
+    const typeSelect = screen.getByLabelText("select-type-SalesBar") as HTMLSelectElement;
+    const optionValues = Array.from(typeSelect.options).map((o) => o.value);
+    expect(optionValues).toContain("slicer");
+  });
 });

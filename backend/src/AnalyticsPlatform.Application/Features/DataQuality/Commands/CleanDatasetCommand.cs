@@ -6,6 +6,10 @@ using AnalyticsPlatform.Domain.Features.DataQuality.Entities;
 using AnalyticsPlatform.Domain.Features.DataSources.Entities;
 using AnalyticsPlatform.Domain.Repositories;
 
+using AnalyticsPlatform.Application.Features.DataQuality.Abstractions;
+using AnalyticsPlatform.Application.Features.DataQuality.Orchestration;
+using AnalyticsPlatform.Application.Features.DataQuality.Orchestration.Stages;
+
 namespace AnalyticsPlatform.Application.Features.DataQuality.Commands;
 
 public record CleanDatasetCommand(string SourceReference, string DatasetName) : IRequest<Result<PipelineRunResult>>;
@@ -14,26 +18,42 @@ public class CleanDatasetCommandHandler : IRequestHandler<CleanDatasetCommand, R
 {
     private readonly IDataSourceRepository _dataSourceRepository;
     private readonly IDataSourceReaderFactory _readerFactory;
+    private readonly PipelineOrchestrator _orchestrator;
 
     public CleanDatasetCommandHandler(
         IDataSourceRepository dataSourceRepository,
         IDataSourceReaderFactory readerFactory)
+        : this(dataSourceRepository, readerFactory, null)
+    {
+    }
+
+    public CleanDatasetCommandHandler(
+        IDataSourceRepository dataSourceRepository,
+        IDataSourceReaderFactory readerFactory,
+        PipelineOrchestrator? orchestrator)
     {
         _dataSourceRepository = dataSourceRepository;
         _readerFactory = readerFactory;
+        _orchestrator = orchestrator ?? new PipelineOrchestrator(new IDataQualityStage[]
+        {
+            new ProfilingStage(readerFactory),
+            new DeduplicationStage(),
+            new CleaningStage()
+        });
     }
 
     public async Task<Result<PipelineRunResult>> Handle(CleanDatasetCommand request, CancellationToken cancellationToken)
     {
         var runId = Guid.NewGuid().ToString();
-        var startTime = DateTime.UtcNow;
 
         var (resolvedPath, dsType, datasetName) = await ResolveDataSourceAsync(request.SourceReference, request.DatasetName, cancellationToken);
 
-        int totalRawRows = 0;
-        int distinctCount = 0;
-        int duplicateCount = 0;
-        var headers = new List<string>();
+        var dataBatches = new Dictionary<string, object>
+        {
+            ["ResolvedPath"] = resolvedPath,
+            ["DataSourceType"] = dsType,
+            ["DatasetName"] = datasetName
+        };
 
         if (!string.IsNullOrWhiteSpace(resolvedPath) && File.Exists(resolvedPath))
         {
@@ -41,18 +61,23 @@ public class CleanDatasetCommandHandler : IRequestHandler<CleanDatasetCommand, R
             {
                 var reader = _readerFactory.GetReader(dsType);
                 var rows = await reader.ReadAsync(resolvedPath, cancellationToken);
-                totalRawRows = rows.Count;
 
-                if (totalRawRows > 0)
+                if (rows.Count > 0)
                 {
-                    headers = rows[0].Keys.ToList();
-                    var duplicateGroups = rows
-                        .Select((row, idx) => (Index: idx, Fingerprint: string.Join("||", row.OrderBy(k => k.Key).Select(k => Convert.ToString(k.Value, CultureInfo.InvariantCulture)?.Trim() ?? string.Empty))))
-                        .GroupBy(x => x.Fingerprint)
-                        .ToList();
-
-                    distinctCount = duplicateGroups.Count;
-                    duplicateCount = totalRawRows - distinctCount;
+                    var headers = rows[0].Keys.ToList();
+                    var tabularRows = rows.Select((r, idx) => new TabularRow(
+                        $"row_{idx}",
+                        r.ToDictionary(k => k.Key, v => v.Value?.ToString())
+                    )).ToList();
+                    var rawBatch = new TabularBatch(datasetName, headers, tabularRows);
+                    dataBatches["TabularBatch"] = rawBatch;
+                    dataBatches["Batch"] = rawBatch;
+                }
+                else
+                {
+                    var emptyBatch = new TabularBatch(datasetName, Array.Empty<string>(), Array.Empty<TabularRow>());
+                    dataBatches["TabularBatch"] = emptyBatch;
+                    dataBatches["Batch"] = emptyBatch;
                 }
             }
             catch (Exception ex)
@@ -60,13 +85,17 @@ public class CleanDatasetCommandHandler : IRequestHandler<CleanDatasetCommand, R
                 return Result<PipelineRunResult>.Failure($"Failed to clean dataset: {ex.Message}");
             }
         }
+        else
+        {
+            var emptyBatch = new TabularBatch(datasetName, Array.Empty<string>(), Array.Empty<TabularRow>());
+            dataBatches["TabularBatch"] = emptyBatch;
+            dataBatches["Batch"] = emptyBatch;
+        }
 
-        var result = new PipelineRunResult(runId, request.SourceReference, startTime, DateTime.UtcNow, true);
+        var context = new PipelineContext(runId, request.SourceReference, dataBatches);
 
-        result.AddStageSummary(new StageRunSummary("Profiling", true, totalRawRows, totalRawRows, 0, new[] { "ProfileEngine" }, totalRawRows > 0 ? $"Dataset profiled ({totalRawRows} rows, {headers.Count} columns)." : "Dataset profiled."));
-        result.AddStageSummary(new StageRunSummary("SchemaValidation", true, totalRawRows, totalRawRows, 0, new[] { "SchemaCompatibilityRule" }, "0 violations found."));
-        result.AddStageSummary(new StageRunSummary("Deduplication", true, totalRawRows, distinctCount, duplicateCount, new[] { "ExactHashDedupe" }, duplicateCount > 0 ? $"{duplicateCount} duplicate rows removed." : "0 duplicate rows detected."));
-        result.AddStageSummary(new StageRunSummary("Cleaning", true, distinctCount, distinctCount, 0, new[] { "TrimWhitespace", "ParseDateUtc" }, $"Cleaned Silver dataset produced with {distinctCount} records."));
+        // Execute stages through PipelineOrchestrator (Profiling, Deduplication, Cleaning)
+        var result = await _orchestrator.RunStagesAsync(context, new[] { "Profiling", "Deduplication", "Cleaning" }, cancellationToken);
 
         return Result.Success(result);
     }

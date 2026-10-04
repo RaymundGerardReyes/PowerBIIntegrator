@@ -1,4 +1,5 @@
 using FluentAssertions;
+using AnalyticsPlatform.Domain.Features.DataQuality.Entities;
 using AnalyticsPlatform.Infrastructure.Features.DataQuality.Connectors;
 using AnalyticsPlatform.Infrastructure.Features.DataQuality.Dedupe;
 using Xunit;

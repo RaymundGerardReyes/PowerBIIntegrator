@@ -54,6 +54,14 @@ public static class AnalyticsModelFactory
                           connectionOrPath.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) ||
                           connectionOrPath.EndsWith(".xls", StringComparison.OrdinalIgnoreCase);
 
+            var stringColumns = table.Columns.Where(c => c.DataType == AnalyticsDataType.String).ToList();
+            var textTransforms = stringColumns.Count > 0
+                ? string.Join(", ", stringColumns.Select(c => $"{{\"{c.Name}\", Text.Trim, type text}}"))
+                : null;
+            var cleanedStep = textTransforms != null
+                ? $"    #\"Cleaned Text\" = Table.TransformColumns(#\"Changed Type\", {{{textTransforms}}})"
+                : "    #\"Cleaned Text\" = #\"Changed Type\"";
+
             string mQuery;
             if (isExcel)
             {
@@ -63,9 +71,10 @@ public static class AnalyticsModelFactory
                     $"    Source = Excel.Workbook(File.Contents(\"{escapedPath}\"), null, true),",
                     "    DataSheet = Source{0}[Data],",
                     "    #\"Promoted Headers\" = Table.PromoteHeaders(DataSheet, [PromoteAllScalars=true]),",
-                    $"    #\"Changed Type\" = Table.TransformColumnTypes(#\"Promoted Headers\", {{{colTransforms}}})",
+                    $"    #\"Changed Type\" = Table.TransformColumnTypes(#\"Promoted Headers\", {{{colTransforms}}}),",
+                    cleanedStep,
                     "in",
-                    "    #\"Changed Type\""
+                    "    #\"Cleaned Text\""
                 });
             }
             else
@@ -75,9 +84,10 @@ public static class AnalyticsModelFactory
                     "let",
                     $"    Source = Csv.Document(File.Contents(\"{escapedPath}\"), [Delimiter=\",\", Encoding=65001, QuoteStyle=QuoteStyle.None]),",
                     "    #\"Promoted Headers\" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),",
-                    $"    #\"Changed Type\" = Table.TransformColumnTypes(#\"Promoted Headers\", {{{colTransforms}}})",
+                    $"    #\"Changed Type\" = Table.TransformColumnTypes(#\"Promoted Headers\", {{{colTransforms}}}),",
+                    cleanedStep,
                     "in",
-                    "    #\"Changed Type\""
+                    "    #\"Cleaned Text\""
                 });
             }
             table.SetMQueryPartition($"{tableName}-Partition", mQuery);

@@ -127,6 +127,55 @@ public class PbirGenerationRegressionTests
     }
 
     [Fact]
+    public void GenerateReportDefinition_WithSlicerVisual_MapsQueryStateToValuesRoleOnlyPerPbirSchema()
+    {
+        var dashboard = new DashboardDefinition("SlicerReport", Guid.NewGuid());
+        var page = new Page("Overview", 1280, 720);
+        page.AddVisual(new Visual(
+            VisualTypes.Slicer,
+            "RegionFilter",
+            new VisualLayout(20, 20, 240, 300, 1, true),
+            new[] { "Sales[Region]" }));
+        dashboard.AddPage(page);
+
+        var generator = new PbirGenerator();
+        var fileTree = generator.GenerateReportDefinition(dashboard, "../SlicerReport.SemanticModel");
+
+        var visual = fileTree.GetContent("definition/pages/Overview/visuals/RegionFilter/visual.json");
+        visual.Should().Contain(VisualTypes.Slicer);
+        visual.Should().Contain("\"Values\"");
+        visual.Should().NotContain("\"Category\"");
+        visual.Should().NotContain("\"Y\"");
+        visual.Should().Contain("Sales.Region");
+    }
+
+    [Fact]
+    public void GenerateReportDefinition_WithSlicerVisualHavingCategoryBinding_NormalizesToValuesRolePerPbirSchema()
+    {
+        var dashboard = new DashboardDefinition("SlicerCustomBindingReport", Guid.NewGuid());
+        var page = new Page("Overview", 1280, 720);
+        var customBinding = new VisualQueryBinding(
+            new[] { new VisualFieldBinding("Sales", "Region", false) },
+            Array.Empty<VisualFieldBinding>());
+        page.AddVisual(new Visual(
+            "SLICER",
+            "CustomRegionFilter",
+            new VisualLayout(20, 20, 240, 300, 1, true),
+            new[] { "Sales[Region]" },
+            customBinding));
+        dashboard.AddPage(page);
+
+        var generator = new PbirGenerator();
+        var fileTree = generator.GenerateReportDefinition(dashboard, "../SlicerReport.SemanticModel");
+
+        var visual = fileTree.GetContent("definition/pages/Overview/visuals/CustomRegionFilter/visual.json");
+        visual.Should().Contain("\"visualType\": \"slicer\"");
+        visual.Should().Contain("\"Values\"");
+        visual.Should().NotContain("\"Category\"");
+        visual.Should().Contain("Sales.Region");
+    }
+
+    [Fact]
     public void GenerateReportDefinition_WithLineAndDonutCharts_MapsQueryStateToCategoryAndYRoles()
     {
         var dashboard = new DashboardDefinition("MultiChartReport", Guid.NewGuid());

@@ -8,9 +8,11 @@ import { BarChartVisual } from "./visuals/BarChartVisual";
 import { LineChartVisual } from "./visuals/LineChartVisual";
 import { DonutChartVisual } from "./visuals/DonutChartVisual";
 import { TableVisual } from "./visuals/TableVisual";
+import { SlicerVisual } from "./visuals/SlicerVisual";
 
 export const RECOMMENDED_VISUAL_DIMENSIONS: Record<string, { minW: number; minH: number; recW: number; recH: number }> = {
   card: { minW: 180, minH: 120, recW: 300, recH: 160 },
+  slicer: { minW: 180, minH: 140, recW: 240, recH: 260 },
   barChart: { minW: 260, minH: 220, recW: 580, recH: 320 },
   columnChart: { minW: 260, minH: 220, recW: 580, recH: 320 },
   lineChart: { minW: 260, minH: 200, recW: 580, recH: 300 },
@@ -89,11 +91,13 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
   const isMultiAxis =
     visual.visualType !== "table" &&
     visual.visualType !== "tableEx" &&
-    visual.visualType !== "card";
+    visual.visualType !== "card" &&
+    visual.visualType !== "slicer";
 
   const getVisualTypeIcon = (type: string) => {
     switch (type) {
       case "card": return "📊";
+      case "slicer": return "🎛️";
       case "barChart": return "📉";
       case "columnChart": return "📊";
       case "lineChart": return "📈";
@@ -111,6 +115,8 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
     switch (visual.visualType) {
       case "card":
         return <CardVisual visual={visual} />;
+      case "slicer":
+        return <SlicerVisual visual={visual} />;
       case "barChart":
       case "columnChart":
         return <BarChartVisual visual={visual} />;
@@ -134,8 +140,9 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
 
     // Auto-heal bound fields to strictly maintain valid data roles for the new visual type
     const isTargetCard = newType === "card";
+    const isTargetSlicer = newType === "slicer";
     const isTargetTable = newType === "table" || newType === "tableEx" || newType === "matrix";
-    const isTargetMultiAxis = !isTargetCard && !isTargetTable;
+    const isTargetMultiAxis = !isTargetCard && !isTargetTable && !isTargetSlicer;
 
     const defaultMeasure = measures[0] ?? "titanic[TotalRows]";
     const defaultDimension = dimensions[0] ?? "titanic[pclass]";
@@ -149,6 +156,15 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
         targetMeasure = visual.boundFields[0];
       }
       updateVisualBoundFields(pageName, visual.name, [targetMeasure]);
+    } else if (isTargetSlicer) {
+      // Slicer visual strictly binds to a single categorical dimension slot
+      let targetDim = defaultDimension;
+      if (visual.boundFields[0] && !isValidMeasureName(cleanFieldLabel(visual.boundFields[0]))) {
+        targetDim = visual.boundFields[0];
+      } else if (visual.boundFields[1] && !isValidMeasureName(cleanFieldLabel(visual.boundFields[1]))) {
+        targetDim = visual.boundFields[1];
+      }
+      updateVisualBoundFields(pageName, visual.name, [targetDim]);
     } else if (isTargetMultiAxis) {
       // Multi-Axis chart requires Slot 0 = Dimension, Slot 1 = Measure
       let targetDim = defaultDimension;
@@ -417,7 +433,13 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
                 maxWidth: isMicro ? "80px" : "105px",
                 textOverflow: "ellipsis"
               }}
-              title={visual.visualType === "card" ? "Select DAX Measure" : "Select Category / Dimension"}
+              title={
+                visual.visualType === "card"
+                  ? "Select DAX Measure"
+                  : visual.visualType === "slicer"
+                  ? "Select Dimension (Slicer)"
+                  : "Select Category / Dimension"
+              }
             >
               {visual.visualType === "card" ? (
                 <>
@@ -431,6 +453,27 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
                   {dimensions.length > 0 && (
                     <optgroup label="Raw Columns (Invalid)">
                       {dimensions.map((f) => (
+                        <option key={f} value={f}>
+                          {cleanFieldLabel(f)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </>
+              ) : visual.visualType === "slicer" ? (
+                <>
+                  {dimensions.length > 0 && (
+                    <optgroup label="Dimensions (Categorical)">
+                      {dimensions.map((f) => (
+                        <option key={f} value={f}>
+                          {cleanFieldLabel(f)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {measures.length > 0 && (
+                    <optgroup label="DAX Measures (Invalid)">
+                      {measures.map((f) => (
                         <option key={f} value={f}>
                           {cleanFieldLabel(f)}
                         </option>
@@ -512,6 +555,7 @@ export const VisualLayoutEditor: React.FC<VisualLayoutEditorProps> = ({
             }}
           >
             <option value="card">KPI Card</option>
+            <option value="slicer">Slicer</option>
             <option value="barChart">Bar Chart</option>
             <option value="columnChart">Column Chart</option>
             <option value="lineChart">Line Chart</option>

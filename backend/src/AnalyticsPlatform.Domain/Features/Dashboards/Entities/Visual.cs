@@ -13,6 +13,7 @@ public static class VisualTypes
     public const string DonutChart = "donutChart";
     public const string PieChart = "pieChart";
     public const string AreaChart = "areaChart";
+    public const string Slicer = "slicer";
 }
 
 public sealed record VisualLayout(double X, double Y, double Width, double Height, int ZOrder, bool Visible);
@@ -78,21 +79,22 @@ public class Visual : Entity
         var categories = new List<VisualFieldBinding>();
         var values = new List<VisualFieldBinding>();
 
-        var isTable = visualType.Equals(VisualTypes.Table, StringComparison.OrdinalIgnoreCase) ||
-                      visualType.Equals("table", StringComparison.OrdinalIgnoreCase);
-        var isCard = visualType.Equals(VisualTypes.Card, StringComparison.OrdinalIgnoreCase);
+        var isTable = string.Equals(visualType, VisualTypes.Table, StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(visualType, "table", StringComparison.OrdinalIgnoreCase);
+        var isCard = string.Equals(visualType, VisualTypes.Card, StringComparison.OrdinalIgnoreCase);
+        var isSlicer = string.Equals(visualType, VisualTypes.Slicer, StringComparison.OrdinalIgnoreCase);
 
         foreach (var field in boundFields)
         {
             var parts = field.Split(FieldSplitChars, StringSplitOptions.RemoveEmptyEntries);
-            var table = parts.Length > 0 ? parts[0] : "Data";
-            var col = parts.Length > 1 ? parts[1] : field;
+            var table = parts.Length > 1 ? parts[0] : "Data";
+            var col = parts.Length > 1 ? parts[1] : (parts.Length > 0 ? parts[0] : field);
 
             var isMeasure = IsMeasureName(col);
 
-            if (isTable || isCard)
+            if (isTable || isCard || isSlicer)
             {
-                // For tables (tableEx) and cards, all projections map to Values role per ADR 0005
+                // For tables (tableEx), cards, and slicers, all projections map to Values role per ADR 0005 & PBIR schema
                 values.Add(new VisualFieldBinding(table, col, IsMeasure: isMeasure));
             }
             else if (isMeasure)

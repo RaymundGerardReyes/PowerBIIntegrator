@@ -84,4 +84,52 @@ public class VisualTests
         visual.QueryBinding!.Values[0].Field.Should().Be("TotalRevenue");
         visual.QueryBinding!.Values[0].IsMeasure.Should().BeTrue();
     }
+
+    [Fact]
+    public void VisualConstructor_ForSlicer_MapsBoundDimensionToValuesRole()
+    {
+        var visual = new Visual(
+            VisualTypes.Slicer,
+            "RegionSlicer",
+            new VisualLayout(0, 0, 200, 300, 1, true),
+            new[] { "Sales[Region]" });
+
+        visual.QueryBinding.Should().NotBeNull();
+        visual.QueryBinding!.Categories.Should().BeEmpty();
+        visual.QueryBinding!.Values.Should().HaveCount(1);
+        visual.QueryBinding!.Values[0].Field.Should().Be("Region");
+        visual.QueryBinding!.Values[0].IsMeasure.Should().BeFalse();
+        visual.QueryBinding!.Values[0].ComputedQueryRef.Should().Be("Sales.Region");
+    }
+
+    [Fact]
+    public void VisualConstructor_ForSlicer_WithoutTable_DefaultsToData()
+    {
+        var visual = new Visual(
+            VisualTypes.Slicer,
+            "RegionSlicerPlain",
+            new VisualLayout(0, 0, 200, 300, 1, true),
+            new[] { "Region" });
+
+        visual.QueryBinding.Should().NotBeNull();
+        visual.QueryBinding!.Categories.Should().BeEmpty();
+        visual.QueryBinding!.Values.Should().HaveCount(1);
+        visual.QueryBinding!.Values[0].Field.Should().Be("Region");
+        visual.QueryBinding!.Values[0].Table.Should().Be("Data");
+        visual.QueryBinding!.Values[0].ComputedQueryRef.Should().Be("Data.Region");
+    }
+
+    [Fact]
+    public void VisualConstructor_WithNullVisualType_DoesNotThrowAndCreatesBinding()
+    {
+        var visual = new Visual(
+            null!,
+            "NullVisual",
+            new VisualLayout(0, 0, 200, 300, 1, true),
+            new[] { "Sales[Region]" });
+
+        visual.QueryBinding.Should().NotBeNull();
+        visual.QueryBinding!.Categories.Should().HaveCount(1);
+        visual.QueryBinding!.Categories[0].Field.Should().Be("Region");
+    }
 }

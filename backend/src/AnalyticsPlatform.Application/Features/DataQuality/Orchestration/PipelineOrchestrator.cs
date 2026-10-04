@@ -7,17 +7,24 @@ public sealed class PipelineOrchestrator
 {
     private readonly IEnumerable<IDataQualityStage> _stages;
 
+    public IReadOnlyList<IDataQualityStage> Stages => _stages.ToList();
+
     public PipelineOrchestrator(IEnumerable<IDataQualityStage> stages)
     {
         _stages = stages;
     }
 
-    public async Task<PipelineRunResult> RunAsync(PipelineContext context, CancellationToken ct)
+    public Task<PipelineRunResult> RunAsync(PipelineContext context, CancellationToken ct)
+    {
+        return RunAsync(context, _stages, ct);
+    }
+
+    public async Task<PipelineRunResult> RunAsync(PipelineContext context, IEnumerable<IDataQualityStage> stages, CancellationToken ct)
     {
         var startTime = DateTime.UtcNow;
         bool overallSuccess = true;
 
-        foreach (var stage in _stages)
+        foreach (var stage in stages)
         {
             var res = await stage.ExecuteAsync(context, ct);
             var summary = new StageRunSummary(
@@ -46,6 +53,20 @@ public sealed class PipelineOrchestrator
         }
 
         return runResult;
+    }
+
+    public Task<PipelineRunResult> RunStagesAsync(PipelineContext context, IEnumerable<string> stageNames, CancellationToken ct)
+    {
+        var stageMap = _stages.ToDictionary(s => s.StageName, StringComparer.OrdinalIgnoreCase);
+        var filteredStages = new List<IDataQualityStage>();
+        foreach (var name in stageNames)
+        {
+            if (stageMap.TryGetValue(name, out var stage))
+            {
+                filteredStages.Add(stage);
+            }
+        }
+        return RunAsync(context, filteredStages, ct);
     }
 }
 

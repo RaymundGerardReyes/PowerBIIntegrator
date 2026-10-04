@@ -181,5 +181,54 @@ describe("VisualLayoutEditor - Visual Type Auto-Healing & Metric Computation", (
       expect(screen.queryByText(/Dimension Expected/i)).not.toBeInTheDocument();
     }
   });
+
+  it("maintains valid role parity when transitioning across all 9 visual types including slicer in succession", () => {
+    const types = ["barChart", "lineChart", "areaChart", "donutChart", "pieChart", "card", "slicer", "table", "columnChart"];
+    const visual = useDashboardStore.getState().current!.pages[0].visuals[0];
+    const { rerender } = render(
+      <VisualLayoutEditor
+        pageName="Overview"
+        visual={visual}
+        canvasWidth={1280}
+        canvasHeight={720}
+      />
+    );
+
+    const typeSelect = screen.getByLabelText("select-type-VisualA");
+
+    for (const t of types) {
+      fireEvent.change(typeSelect, { target: { value: t } });
+      const current = useDashboardStore.getState().current!.pages[0].visuals[0];
+      expect(current.visualType).toBe(t);
+
+      if (t === "card") {
+        expect(current.boundFields.length).toBe(1);
+        expect(current.boundFields[0]).toMatch(/Rate|Total/);
+      } else if (t === "slicer") {
+        expect(current.boundFields.length).toBe(1);
+        expect(current.boundFields[0]).not.toMatch(/Rate|Total/);
+      } else if (t !== "table") {
+        expect(current.boundFields.length).toBeGreaterThanOrEqual(2);
+        // Slot 0 must not be a measure
+        expect(current.boundFields[0]).not.toMatch(/Rate|Total/);
+        // Slot 1 must be a measure
+        expect(current.boundFields[1]).toMatch(/Rate|Total/);
+      }
+
+      rerender(
+        <VisualLayoutEditor
+          pageName="Overview"
+          visual={current}
+          canvasWidth={1280}
+          canvasHeight={720}
+        />
+      );
+
+      // Verify no invalid binding errors rendered in the DOM
+      expect(screen.queryByText(/Invalid Measure Binding/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Invalid Slicer Dimension Binding/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Dimension Expected/i)).not.toBeInTheDocument();
+    }
+  });
 });
 

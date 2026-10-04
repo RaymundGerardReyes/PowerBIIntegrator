@@ -22,6 +22,17 @@ public static class DependencyInjection
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ResponseGuardrailBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LlmTelemetryBehavior<,>));
 
+        // Data Quality & Pipeline Orchestration Stages
+        services.AddScoped<Features.DataQuality.Orchestration.Stages.ProfilingStage>();
+        services.AddScoped<Features.DataQuality.Orchestration.Stages.DeduplicationStage>();
+        services.AddScoped<Features.DataQuality.Orchestration.Stages.CleaningStage>();
+        services.AddScoped<Features.DataQuality.Orchestration.Stages.TransformationStage>();
+
+        services.AddScoped<Features.DataQuality.Abstractions.IDataQualityStage>(sp => sp.GetRequiredService<Features.DataQuality.Orchestration.Stages.ProfilingStage>());
+        services.AddScoped<Features.DataQuality.Abstractions.IDataQualityStage>(sp => sp.GetRequiredService<Features.DataQuality.Orchestration.Stages.DeduplicationStage>());
+        services.AddScoped<Features.DataQuality.Abstractions.IDataQualityStage>(sp => sp.GetRequiredService<Features.DataQuality.Orchestration.Stages.CleaningStage>());
+        services.AddScoped<Features.DataQuality.Abstractions.IDataQualityStage>(sp => sp.GetRequiredService<Features.DataQuality.Orchestration.Stages.TransformationStage>());
+
         services.AddScoped<Features.DataQuality.Orchestration.PipelineOrchestrator>();
 
         return services;

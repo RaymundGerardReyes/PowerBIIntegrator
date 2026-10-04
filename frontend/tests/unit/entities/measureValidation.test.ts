@@ -110,5 +110,18 @@ describe("Measure Validation Utilities", () => {
     it("accepts table visuals with any column or measure combination", () => {
       expect(validateVisualRoles("table", ["Data[Id]", "Data[Name]", "Data[TotalSales]"]).isValid).toBe(true);
     });
+
+    it("validates slicer visuals requiring categorical dimension and rejecting measures", () => {
+      const valid = validateVisualRoles("slicer", ["Sales[Region]"]);
+      expect(valid.isValid).toBe(true);
+      expect(valid.error).toBeUndefined();
+
+      const invalidMeasure = validateVisualRoles("slicer", ["Sales[TotalRevenue]"]);
+      expect(invalidMeasure.isValid).toBe(false);
+      expect(invalidMeasure.error).toContain("cannot be bound to a Slicer");
+      expect(invalidMeasure.warning).toContain("Dimension Expected");
+
+      expect(validateVisualRoles("slicer", []).isValid).toBe(true);
+    });
   });
 });

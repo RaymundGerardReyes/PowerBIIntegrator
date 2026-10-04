@@ -84,7 +84,9 @@ public static class DependencyInjection
         // Data Quality & Transformation Engine (DQTE) Infrastructure Adapters
         services.AddScoped<Features.DataQuality.Connectors.TabularBatchReader>();
         services.AddScoped<Features.DataQuality.Dedupe.HashDedupeEngine>();
+        services.AddScoped<Application.Features.DataQuality.Abstractions.IHashDedupeEngine>(sp => sp.GetRequiredService<Features.DataQuality.Dedupe.HashDedupeEngine>());
         services.AddScoped<Features.DataQuality.Dedupe.CompositeKeyDedupeEngine>();
+        services.AddScoped<Application.Features.DataQuality.Abstractions.ICompositeKeyDedupeEngine>(sp => sp.GetRequiredService<Features.DataQuality.Dedupe.CompositeKeyDedupeEngine>());
         services.AddScoped<Features.DataQuality.Dedupe.SimilarityClusterDedupeEngine>();
         services.AddSingleton<Features.DataQuality.Repositories.SchemaContractRepository>();
         services.AddSingleton<Features.DataQuality.Repositories.PipelineRunRepository>();

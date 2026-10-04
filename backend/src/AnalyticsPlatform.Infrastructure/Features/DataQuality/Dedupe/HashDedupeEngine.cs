@@ -1,11 +1,12 @@
 using System.Security.Cryptography;
 using System.Text;
+using AnalyticsPlatform.Application.Features.DataQuality.Abstractions;
 using AnalyticsPlatform.Domain.Features.DataQuality.Entities;
 using AnalyticsPlatform.Infrastructure.Features.DataQuality.Connectors;
 
 namespace AnalyticsPlatform.Infrastructure.Features.DataQuality.Dedupe;
 
-public class HashDedupeEngine
+public class HashDedupeEngine : IHashDedupeEngine
 {
     public (TabularBatch CleanBatch, IReadOnlyList<DuplicateCluster> Clusters) Deduplicate(TabularBatch batch)
     {
